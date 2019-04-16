@@ -115,10 +115,8 @@ phpstan.phar
 
 # Custom: Ignore Usage
 /usage/
-
-# Custom: Ignore ._.DS_Store
+/stats/
+/stats/*
 ._.DS_Store
-
-# Custom: Ignore Node_modules
 node_modules/
-
+/robots.txt
