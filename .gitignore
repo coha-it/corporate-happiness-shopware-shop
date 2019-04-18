@@ -120,3 +120,6 @@ phpstan.phar
 ._.DS_Store
 node_modules/
 /robots.txt
+
+# Custom: Ignore .vscode/
+/.vscode/
