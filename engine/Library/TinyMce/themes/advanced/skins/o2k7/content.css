@@ -54,8 +54,3 @@ body, td, pre {
     font: 13px/21px Arial, "Helvetica Neue", Helvetica, sans-serif;
     color: #333;
 }
-
-/* START CUSTOM */
-html {background-image: repeating-linear-gradient(to bottom, transparent, transparent 10px, #ececec 10px, #ececec 10px),                     repeating-linear-gradient(to right, #ececec, #ececec 5px, #e0e0e0 5px, #e0e0e0 10px);}
-body {background-color: transparent;}
-/* END CUSTOM */
