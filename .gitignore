@@ -122,4 +122,6 @@ node_modules/
 /robots.txt
 
 # Custom: Ignore .vscode/
-/.vscode/
+/.vscode
+/vscode.code-workspace
+
