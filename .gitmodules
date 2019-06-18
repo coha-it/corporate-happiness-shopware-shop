@@ -1,0 +1,3 @@
+[submodule "custom/plugins/CohaQuoteSlider"]
+	path = custom/plugins/CohaQuoteSlider
+	url = git@github.com:coha-it/CohaQuoteSlider.git
