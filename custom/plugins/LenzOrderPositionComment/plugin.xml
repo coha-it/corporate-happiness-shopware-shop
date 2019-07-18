@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<plugin xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../../engine/Shopware/Components/Plugin/schema/plugin.xsd">
+	<label>Order position comment</label>
+	<label lang="de">Bestellpositionskommentar</label>
+	<version>2.2.13</version>
+	<copyright>LENZ eBusiness GmbH</copyright>
+	<license>proprietary</license>
+	<link>https://www.shopdoktor.com/</link>
+	<author>LENZ eBusiness GmbH</author>
+	<compatibility minVersion="5.5.0" />
+	<changelog version="2.2.13">
+		<changes><![CDATA[Comment is now changeable in basket even if saved in s_order_basket.articlename.]]></changes>
+		<changes lang="de"><![CDATA[Der Kommentar ist nun änderbar auch wenn er im Namen der Warenkorbposition gespeichert wird.]]></changes>
+	</changelog>
+	<changelog version="2.2.12">
+		<changes><![CDATA[Improved saving of comments in basket.]]></changes>
+		<changes lang="de"><![CDATA[Speichern von Kommentaren im Warenkorb verbessert.]]></changes>
+	</changelog>
+	<changelog version="2.0.0">
+		<changes><![CDATA[Initial release in new plugin system]]></changes>
+		<changes lang="de"><![CDATA[Erste Version im neuen Pluginsystem]]></changes>
+	</changelog>
+	<description>
+		<![CDATA[
+   <p><b>Order position comment</b></p>
+   <p>This Plugin allows your customers to send an extra comment for each order position on the checkout-confirm-page. It is easy to show the comment in the order mail. Within the backend the comment is not displayed.</p>
+   <p>This plugin works with the standard Shopware 5 Responsive Theme.</p>
+   <p><a href="https://store.shopware.com/?sSearch=lenz671159673790">Plugin in Shopware Community Store</a></p>
+   ]]>
+	</description>
+	<description lang="de">
+		<![CDATA[
+   <p><b>Bestellpositionskommentar</b></p>
+   <p>Mit dem Plugin "Bestellpositionskommentar" von Shopdoktor können Sie Ihren Kunden das Senden eines zusätzlichen Kommentars auf Artikelbasis ermöglichen. Dies ist u.a. hilfreich, wenn Sie individuelle Produkte haben und Sie spezielle Daten vom Kunden abfragen möchten.</p>
+   <p>Dieses neue Plugin erlaubt es Ihren Kunden im letzten Checkout-Schritt (Confirm-Seite) pro Artikel einen Kommentar einzugeben. Der Kommentar kann dann in der Bestellmail verwendet werden. Im Backend wird der Kommentar ab Version 1.1.0 angezeigt. Ab Version 2.0.0 lässt sich der Kommentar bereits auf der Detailseite eintragen.</p>
+   <p>Das Plugin funktioniert mit dem Standard Shopware 5 Responsive Theme.</p>
+   <p><a href="https://store.shopware.com/?sSearch=lenz671159673790">Plugin im Shopware Community Store</a></p>
+   ]]>
+	</description>
+</plugin>
