@@ -6,11 +6,11 @@
 	],
 	"settings": {
 		// Whether git is enabled.
-		"git.enabled": false,
+		// "git.enabled": false,
 
 		// When enabled, commits will automatically be fetched from the default remote of the current Git repository.
-		"git.autofetch": false,
-		"git.autorefresh": false,
+		// "git.autofetch": false,
+		// "git.autorefresh": false,
 
 		"files.exclude": {
 			"**/._*": true
