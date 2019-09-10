@@ -29,7 +29,7 @@ use Shopware\Models\Customer\Customer;
 /**
  * Deprecated Shopware Class that handle frontend orders
  */
-class sOrder
+class sOrder implements \Enlight_Hook
 {
     /**
      * Array with user data
@@ -60,6 +60,7 @@ class sOrder
     public $sComment;
 
     /**
+     * @deprecated in 5.6, will be removed in 5.7 without replacement
      * Payment-mean object
      *
      * @var object
@@ -219,7 +220,6 @@ class sOrder
     private $attributePersister;
 
     /**
-     * Class constructor.
      * Injects all dependencies which are required for this class.
      *
      * @param ContextServiceInterface $contextService
@@ -253,7 +253,7 @@ class sOrder
             ['subject' => $this]
         );
 
-        return $number;
+        return (string) $number;
     }
 
     /**
@@ -456,10 +456,7 @@ class sOrder
         // Create order attributes
         $this->attributePersister->persist($this->orderAttributes, 's_order_attributes', $orderID);
 
-        $position = 0;
         foreach ($this->sBasketData['content'] as $basketRow) {
-            ++$position;
-
             if (!$basketRow['price']) {
                 $basketRow['price'] = '0,00';
             }
@@ -668,11 +665,8 @@ class sOrder
         $attributes = $this->attributeLoader->load('s_order_attributes', $orderID);
         unset($attributes['id'], $attributes['orderID']);
 
-        $position = 0;
         $esdOrder = null;
         foreach ($this->sBasketData['content'] as $key => $basketRow) {
-            ++$position;
-
             $basketRow = $this->formatBasketRow($basketRow);
 
             $preparedQuery = '
@@ -855,6 +849,13 @@ class sOrder
             $variables['confirmMailDeliveryFailed'] = $confirmMailDeliveryFailed;
             $this->getSession()->offsetSet('sOrderVariables', $variables);
         }
+
+        $this->eventManager->notify('Shopware_Modules_Order_SaveOrder_OrderCreated', [
+            'subject' => $this,
+            'details' => $this->sBasketData['content'],
+            'orderId' => $orderID,
+            'orderNumber' => $orderNumber,
+        ]);
 
         return $orderNumber;
     }
@@ -1308,7 +1309,7 @@ class sOrder
         $shopId = is_numeric($order['language']) ? $order['language'] : $order['subshopID'];
         // The (sub-)shop might be inactive by now, so that's why we use `getById` instead of `getActiveById`
         $shop = $repository->getById($shopId);
-        $shop->registerResources();
+        Shopware()->Container()->get('shopware.components.shop_registration_service')->registerShop($shop);
 
         $dispatch = Shopware()->Modules()->Admin()->sGetDispatchTranslation($dispatch);
         $payment = Shopware()->Modules()->Admin()->sGetPaymentTranslation(['id' => $order['paymentID']]);

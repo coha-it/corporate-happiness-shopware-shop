@@ -45,11 +45,6 @@ use ShopwarePlugins\SwagUpdate\Components\UpdateCheck;
 use ShopwarePlugins\SwagUpdate\Components\Validation;
 use Symfony\Component\Filesystem\Filesystem;
 
-/**
- * @category Shopware
- *
- * @copyright Copyright (c) shopware AG (http://www.shopware.de)
- */
 class Shopware_Controllers_Backend_SwagUpdate extends Shopware_Controllers_Backend_ExtJs implements CSRFWhitelistAware
 {
     /**
@@ -84,7 +79,7 @@ class Shopware_Controllers_Backend_SwagUpdate extends Shopware_Controllers_Backe
             return;
         }
 
-        $user = Shopware()->Container()->get('Auth')->getIdentity();
+        $user = Shopware()->Container()->get('auth')->getIdentity();
         $userLang = $this->getUserLanguage($user);
         $languagePriorities = [
             $userLang,
@@ -115,7 +110,7 @@ class Shopware_Controllers_Backend_SwagUpdate extends Shopware_Controllers_Backe
             return;
         }
 
-        $user = Shopware()->Container()->get('Auth')->getIdentity();
+        $user = Shopware()->Container()->get('auth')->getIdentity();
         $userLang = $this->getUserLanguage($user);
 
         $namespace = $this->get('snippets')->getNamespace('backend/swag_update/main');
@@ -304,6 +299,8 @@ class Shopware_Controllers_Backend_SwagUpdate extends Shopware_Controllers_Backe
                 'data' => [
                     'success' => true,
                     'name' => $data->version,
+                    'security_update' => (bool) $data->security_update,
+                    'security_plugin_active' => $this->checkSecurityPlugin(),
                 ],
             ]);
         }
@@ -313,7 +310,7 @@ class Shopware_Controllers_Backend_SwagUpdate extends Shopware_Controllers_Backe
     {
         $clientIp = $this->Request()->getClientIp();
         $base = $this->Request()->getBaseUrl();
-        $user = Shopware()->Container()->get('Auth')->getIdentity();
+        $user = Shopware()->Container()->get('auth')->getIdentity();
 
         /** @var \Shopware\Models\Shop\Locale $locale */
         $locale = $user->locale;
@@ -356,7 +353,7 @@ class Shopware_Controllers_Backend_SwagUpdate extends Shopware_Controllers_Backe
             $result = $downloadStep->run($offset);
             $this->view->assign($this->mapResult($result));
         } catch (Exception $e) {
-            $this->Response()->setHttpResponseCode(500);
+            $this->Response()->setStatusCode(500);
             $this->View()->assign('message', $e->getMessage());
             $this->View()->assign('success', false);
         }
@@ -548,7 +545,7 @@ class Shopware_Controllers_Backend_SwagUpdate extends Shopware_Controllers_Backe
         ];
 
         /** @var UpdateCheck $update */
-        $update = $this->get('SwagUpdateUpdateCheck');
+        $update = $this->get('swagupdateupdatecheck');
         $result = $update->checkUpdate($shopwareVersion, $params);
 
         /** @var \Zend_Cache_Core $cache */
@@ -608,5 +605,10 @@ class Shopware_Controllers_Backend_SwagUpdate extends Shopware_Controllers_Backe
         $locale = strtolower($locale->getLocale());
 
         return substr($locale, 0, 2);
+    }
+
+    private function checkSecurityPlugin(): bool
+    {
+        return array_key_exists('SwagSecurity', $this->container->getParameter('active_plugins'));
     }
 }

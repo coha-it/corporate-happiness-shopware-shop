@@ -26,11 +26,6 @@ namespace Shopware\Bundle\StoreFrontBundle\Gateway;
 
 use Shopware\Bundle\StoreFrontBundle\Struct;
 
-/**
- * @category Shopware
- *
- * @copyright Copyright (c) shopware AG (http://www.shopware.de)
- */
 interface CategoryGatewayInterface
 {
     /**
@@ -50,7 +45,6 @@ interface CategoryGatewayInterface
      * - Assigned media object
      * - Core attribute of the media object
      *
-     * @param int $id
      *
      * @return Struct\Category
      */

@@ -76,9 +76,6 @@ class RegisterService implements RegisterServiceInterface
      */
     private $addressService;
 
-    /**
-     * RegisterService constructor.
-     */
     public function __construct(
         ModelManager $modelManager,
         CustomerValidatorInterface $validator,
@@ -110,14 +107,15 @@ class RegisterService implements RegisterServiceInterface
         try {
             $this->saveCustomer($shop, $customer);
             if (
-                ($optinAttribute = $shop->getAttribute('sendOptinMail')) !== null &&
-                $optinAttribute->get('sendOptinMail') === true &&
-                $customer->getDoubleOptinRegister() &&
-                $customer->getDoubleOptinConfirmDate() === null
+                ($optinAttribute = $shop->getAttribute('sendOptinMail')) !== null
+                && $optinAttribute->get('sendOptinMail') === true
+                && $customer->getDoubleOptinRegister()
+                && $customer->getDoubleOptinConfirmDate() === null
             ) {
                 $hash = Random::getAlphanumericString(32);
 
-                $this->doubleOptInSaveHash($customer, $hash);
+                $optinId = $this->doubleOptInSaveHash($customer, $hash);
+                $this->saveOptinIdToCustomer($optinId, $customer);
                 $this->doubleOptInVerificationMail($shop, $customer, $hash);
             }
 
@@ -192,17 +190,13 @@ class RegisterService implements RegisterServiceInterface
             $customer->setPaymentId($this->config->get('defaultPayment'));
         }
 
-        /** @var \Shopware\Models\Shop\Shop $shop */
-        $shop = $this->modelManager->find(\Shopware\Models\Shop\Shop::class, $shop->getParentId());
-        $customer->setShop($shop);
-
         /** @var \Shopware\Models\Shop\Shop $subShop */
         $subShop = $this->modelManager->find(\Shopware\Models\Shop\Shop::class, $shop->getId());
         $customer->setLanguageSubShop($subShop);
 
         if ($customer->getGroup() === null) {
             /** @var Group $customerGroup */
-            $customerGroup = $this->modelManager->find(\Shopware\Models\Customer\Group::class, $shop->getCustomerGroup()->getId());
+            $customerGroup = $this->modelManager->find(\Shopware\Models\Customer\Group::class, $subShop->getCustomerGroup()->getId());
             $customer->setGroup($customerGroup);
         }
 
@@ -277,11 +271,9 @@ class RegisterService implements RegisterServiceInterface
     }
 
     /**
-     * @param string $hash
-     *
      * @throws \Doctrine\DBAL\DBALException
      */
-    private function doubleOptInSaveHash(Customer $customer, $hash)
+    private function doubleOptInSaveHash(Customer $customer, string $hash): int
     {
         /** @var Request|null $request */
         $request = Shopware()->Container()->get('front')->Request();
@@ -304,5 +296,14 @@ class RegisterService implements RegisterServiceInterface
         ];
 
         $this->connection->executeQuery($sql, [$customer->getDoubleOptinEmailSentDate()->format('Y-m-d H:i:s'), $hash, serialize($storedData)]);
+
+        return (int) $this->connection->fetchColumn('SELECT id FROM `s_core_optin` WHERE `hash` = :hash', [':hash' => $hash]);
+    }
+
+    private function saveOptinIdToCustomer(int $optinId, Customer $customer): void
+    {
+        $customer->setRegisterOptInId($optinId);
+        $this->modelManager->persist($customer);
+        $this->modelManager->flush($customer);
     }
 }

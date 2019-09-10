@@ -13,12 +13,8 @@
  * to license@shopware.de so we can send you a copy immediately.
  *
  * @category   Enlight
- * @package    Enlight_Test
  * @copyright  Copyright (c) 2011, shopware AG (http://www.shopware.de)
  * @license    http://enlight.de/license     New BSD License
- * @version    $Id$
- * @author     Heiner Lohaus
- * @author     $Author$
  */
 
 /**
@@ -61,6 +57,6 @@ abstract class Enlight_Components_Test_Plugin_TestCase extends Enlight_Component
     {
         parent::setUp();
 
-        Shopware()->Container()->load('Plugins');
+        Shopware()->Container()->load('plugins');
     }
 }

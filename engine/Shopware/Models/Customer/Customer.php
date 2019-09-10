@@ -462,7 +462,7 @@ class Customer extends LazyFetchModelEntity
     private $lastname;
 
     /**
-     * @var string
+     * @var \DateTimeInterface
      *
      * @ORM\Column(name="birthday", type="date", nullable=true)
      */
@@ -494,11 +494,30 @@ class Customer extends LazyFetchModelEntity
      */
     private $customerType;
 
+    /**
+     * Contains the date on which the customer account last changed the password
+     *
+     * @var \DateTimeInterface
+     *
+     * @ORM\Column(name="password_change_date", type="datetime", nullable=false)
+     */
+    private $passwordChangeDate;
+
+    /**
+     * Contains the ID of the opt-in entry, if any available
+     *
+     * @var int
+     *
+     * @ORM\Column(name="register_opt_in_id", type="integer", nullable=true)
+     */
+    private $registerOptInId;
+
     public function __construct()
     {
         $this->orders = new ArrayCollection();
         $this->firstLogin = new \DateTime();
         $this->lastLogin = new \DateTime();
+        $this->passwordChangeDate = new \DateTime();
         $this->notifications = new ArrayCollection();
         $this->paymentInstances = new ArrayCollection();
         $this->paymentData = new ArrayCollection();
@@ -991,6 +1010,14 @@ class Customer extends LazyFetchModelEntity
             $this->encoderName = Shopware()->PasswordEncoder()->getDefaultPasswordEncoderName();
             $this->hashPassword = Shopware()->PasswordEncoder()->encodePassword($this->password, $this->encoderName);
         }
+
+        $changeSet = Shopware()->Models()->getUnitOfWork()->getEntityChangeSet($this);
+
+        $passwordChanged = isset($changeSet['hashPassword']) && $changeSet['hashPassword'][0] !== $changeSet['hashPassword'][1];
+
+        if ($passwordChanged) {
+            $this->passwordChangeDate = new \DateTime();
+        }
     }
 
     /**
@@ -1313,7 +1340,7 @@ class Customer extends LazyFetchModelEntity
     }
 
     /**
-     * @return string
+     * @return \DateTimeInterface
      */
     public function getBirthday()
     {
@@ -1325,8 +1352,8 @@ class Customer extends LazyFetchModelEntity
      */
     public function setBirthday($birthday = null)
     {
-        if ($birthday instanceof \DateTimeInterface) {
-            $birthday = $birthday->format('Y-m-d');
+        if (!$birthday instanceof \DateTimeInterface && $birthday !== null) {
+            $birthday = new \DateTime($birthday);
         }
 
         $this->birthday = $birthday;
@@ -1444,6 +1471,11 @@ class Customer extends LazyFetchModelEntity
         $this->doubleOptinConfirmDate = $doubleOptinConfirmDate;
     }
 
+    public function getPasswordChangeDate(): \DateTimeInterface
+    {
+        return $this->passwordChangeDate;
+    }
+
     /**
      * @ORM\PrePersist()
      * @ORM\PreUpdate()
@@ -1451,5 +1483,18 @@ class Customer extends LazyFetchModelEntity
     public function updateChangedTimestamp()
     {
         $this->changed = new \DateTime();
+    }
+
+    public function getRegisterOptInId(): int
+    {
+        return $this->registerOptInId;
+    }
+
+    /**
+     * @param int $registerOptInId
+     */
+    public function setRegisterOptInId(int $registerOptInId = null): void
+    {
+        $this->registerOptInId = $registerOptInId;
     }
 }

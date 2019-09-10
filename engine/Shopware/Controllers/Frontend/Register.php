@@ -33,16 +33,8 @@ use Shopware\Models\Customer\Customer;
 use Symfony\Component\Form\Form;
 use Symfony\Component\Form\FormInterface;
 
-/**
- * Register controller
- */
 class Shopware_Controllers_Frontend_Register extends Enlight_Controller_Action
 {
-    /**
-     * @var sAdmin
-     */
-    protected $admin;
-
     /**
      * Will be called from the dispatcher before an action is processed
      */
@@ -71,11 +63,15 @@ class Shopware_Controllers_Frontend_Register extends Enlight_Controller_Action
             $this->forward('index', 'account');
 
             return;
-        } elseif ($this->shouldRedirectToCheckout()) {
+        }
+
+        if ($this->shouldRedirectToCheckout()) {
             $this->forward('confirm', 'checkout');
 
             return;
-        } elseif ($this->shouldRedirectToTarget()) {
+        }
+
+        if ($this->shouldRedirectToTarget()) {
             $this->redirect(['controller' => $sTarget, 'action' => $sTargetAction]);
 
             return;
@@ -83,7 +79,7 @@ class Shopware_Controllers_Frontend_Register extends Enlight_Controller_Action
 
         $this->View()->assign('isAccountless', $this->get('session')->get('isAccountless'));
         $this->View()->assign('register', $this->getRegisterData());
-        $this->View()->assign('countryList', $this->getCountries());
+        $this->View()->assign('countryList', $this->get('modules')->Admin()->sGetCountryList());
     }
 
     /**
@@ -144,10 +140,10 @@ class Shopware_Controllers_Frontend_Register extends Enlight_Controller_Action
         }
 
         $errors['occurred'] = (
-            !empty($errors['personal']) ||
-            !empty($errors['shipping']) ||
-            !empty($errors['billing']) ||
-            !empty($errors['captcha'])
+            !empty($errors['personal'])
+            || !empty($errors['shipping'])
+            || !empty($errors['billing'])
+            || !empty($errors['captcha'])
         );
 
         if ($errors['occurred']) {
@@ -252,7 +248,7 @@ class Shopware_Controllers_Frontend_Register extends Enlight_Controller_Action
             return;
         }
 
-        if (($data = unserialize($result)) === false || !isset($data['customerId'])) {
+        if (($data = unserialize($result, ['allowed_classes' => false])) === false || !isset($data['customerId'])) {
             throw new InvalidArgumentException(sprintf('The data for hash \'%s\' is corrupted.', $hash));
         }
         $customerId = (int) $data['customerId'];
@@ -279,6 +275,7 @@ class Shopware_Controllers_Frontend_Register extends Enlight_Controller_Action
         $customer->setFirstLogin($date);
         $customer->setDoubleOptinConfirmDate($date);
         $customer->setActive(true);
+        $customer->setRegisterOptInId(null);
 
         $modelManager->persist($customer);
         $modelManager->flush();
@@ -305,8 +302,8 @@ class Shopware_Controllers_Frontend_Register extends Enlight_Controller_Action
             'emailConfirmation' => $errors['emailConfirmation'] ?: false,
         ];
 
-        $this->Response()->setHeader('Content-type', 'application/json', true);
-        $this->Response()->setBody(json_encode($errors));
+        $this->Response()->headers->set('content-type', 'application/json', true);
+        $this->Response()->setContent(json_encode($errors));
     }
 
     public function ajaxValidatePasswordAction()
@@ -322,8 +319,8 @@ class Shopware_Controllers_Frontend_Register extends Enlight_Controller_Action
             'passwordConfirmation' => $errors['passwordConfirmation'] ?: false,
         ];
 
-        $this->Response()->setHeader('Content-type', 'application/json', true);
-        $this->Response()->setBody(json_encode($errors));
+        $this->Response()->headers->set('content-type', 'application/json', true);
+        $this->Response()->setContent(json_encode($errors));
     }
 
     /**
@@ -594,18 +591,6 @@ class Shopware_Controllers_Frontend_Register extends Enlight_Controller_Action
         $form->submit($data);
 
         return $form;
-    }
-
-    /**
-     * @return array
-     */
-    private function getCountries()
-    {
-        $context = $this->get('shopware_storefront.context_service')->getShopContext();
-        $service = $this->get('shopware_storefront.location_service');
-        $countries = $service->getCountries($context);
-
-        return $this->get('legacy_struct_converter')->convertCountryStructList($countries);
     }
 
     private function sendRegistrationMail(Customer $customer)

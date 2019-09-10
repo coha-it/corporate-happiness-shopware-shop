@@ -30,10 +30,6 @@ use Shopware\Components\Session\PdoSessionHandler;
 /**
  * Session Dependency Injection Bridge
  * Starts and handles the session
- *
- * @category Shopware
- *
- * @copyright Copyright (c) shopware AG (http://www.shopware.de)
  */
 class Session
 {
@@ -80,11 +76,17 @@ class Session
         }
 
         /** @var \Shopware\Models\Shop\Shop $shop */
-        $shop = $container->get('Shop');
-
-        $sessionOptions['name'] = 'session-' . $shop->getId();
-
+        $shop = $container->get('shop');
         $mainShop = $shop->getMain() ?: $shop;
+
+        $name = 'session-' . $shop->getId();
+
+        if ($container->get('config')->get('shareSessionBetweenLanguageShops')) {
+            $name = 'session-' . $mainShop->getId();
+        }
+
+        $sessionOptions['name'] = $name;
+
         if ($mainShop->getSecure()) {
             $sessionOptions['cookie_secure'] = true;
         }
@@ -98,7 +100,7 @@ class Session
 
         \Enlight_Components_Session::start($sessionOptions);
 
-        $container->set('SessionID', \Enlight_Components_Session::getId());
+        $container->set('sessionid', \Enlight_Components_Session::getId());
 
         $namespace = new \Enlight_Components_Session_Namespace('Shopware');
         $namespace->offsetSet('sessionId', \Enlight_Components_Session::getId());

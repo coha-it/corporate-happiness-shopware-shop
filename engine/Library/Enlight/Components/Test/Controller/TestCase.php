@@ -22,15 +22,16 @@
  * our trademarks remain entirely with us.
  */
 
+use Shopware\Components\Cart\ConditionalLineItemServiceInterface;
+use Symfony\Component\HttpFoundation\Response;
+
 /**
  * Test case for Enlight controller.
  *
  * The Enlight_Components_Test_Controller_TestCase extends the basic Enlight_Components_Test_TestCase
  * with controller specified functions to grant an easily access to standard controller actions.
  *
- * @category   Enlight
  *
- * @copyright  Copyright (c) 2011, shopware AG (http://www.shopware.de)
  * @license    http://enlight.de/license     New BSD License
  */
 abstract class Enlight_Components_Test_Controller_TestCase extends Enlight_Components_Test_TestCase
@@ -72,10 +73,6 @@ abstract class Enlight_Components_Test_Controller_TestCase extends Enlight_Compo
 
     /**
      * Magic get method
-     *
-     * @param mixed $name
-     *
-     * @return mixed
      */
     public function __get($name)
     {
@@ -99,8 +96,8 @@ abstract class Enlight_Components_Test_Controller_TestCase extends Enlight_Compo
     {
         parent::setUp();
 
-        Shopware()->Container()->reset('Session');
-        Shopware()->Container()->reset('Auth');
+        Shopware()->Container()->reset('session');
+        Shopware()->Container()->reset('auth');
 
         $this->reset();
     }
@@ -109,10 +106,11 @@ abstract class Enlight_Components_Test_Controller_TestCase extends Enlight_Compo
      * Dispatch the request
      *
      * @param string|null $url
+     * @param bool        $followRedirects
      *
      * @return Enlight_Controller_Response_Response
      */
-    public function dispatch($url = null)
+    public function dispatch($url = null, $followRedirects = false)
     {
         $request = $this->Request();
         if ($url !== null) {
@@ -127,6 +125,16 @@ abstract class Enlight_Components_Test_Controller_TestCase extends Enlight_Compo
                 ->setResponse($response);
 
         $front->dispatch();
+
+        if ($followRedirects && $this->Response()->getStatusCode() === Response::HTTP_FOUND) {
+            $link = parse_url($this->Response()->getHeader('Location'), PHP_URL_PATH);
+            $this->resetResponse();
+            $cookies = $this->Response()->getCookies();
+            $this->resetRequest();
+            $this->Request()->setCookies($cookies);
+
+            return $this->dispatch($link);
+        }
 
         /** @var Enlight_Controller_Plugins_ViewRenderer_Bootstrap $viewRenderer */
         $viewRenderer = $front->Plugins()->get('ViewRenderer');
@@ -162,15 +170,15 @@ abstract class Enlight_Components_Test_Controller_TestCase extends Enlight_Compo
         $container->get('models')->clear();
 
         $container
-                ->reset('Plugins')
-                ->reset('Front')
-                ->reset('Router')
-                ->reset('System')
-                ->reset('Modules')
-        ;
+            ->reset('plugins')
+            ->reset('front')
+            ->reset('router')
+            ->reset('system')
+            ->reset('modules')
+            ->reset(ConditionalLineItemServiceInterface::class);
 
-        $container->load('Front');
-        $container->load('Plugins');
+        $container->load('front');
+        $container->load('plugins');
 
         foreach ($container->get('kernel')->getPlugins() as $plugin) {
             if (!$plugin->isActive()) {
@@ -187,7 +195,7 @@ abstract class Enlight_Components_Test_Controller_TestCase extends Enlight_Compo
      */
     public function resetRequest()
     {
-        if ($this->_request instanceof Enlight_Controller_Request_Request) {
+        if ($this->_request instanceof Enlight_Controller_Request_RequestTestCase) {
             $this->_request->clearQuery()
                     ->clearPost()
                     ->clearCookies();
@@ -217,7 +225,7 @@ abstract class Enlight_Components_Test_Controller_TestCase extends Enlight_Compo
     public function Front()
     {
         if ($this->_front === null) {
-            $this->_front = Shopware()->Container()->get('Front');
+            $this->_front = Shopware()->Container()->get('front');
         }
 
         return $this->_front;
@@ -231,7 +239,7 @@ abstract class Enlight_Components_Test_Controller_TestCase extends Enlight_Compo
     public function Template()
     {
         if ($this->_template === null) {
-            $this->_template = Shopware()->Container()->get('Template');
+            $this->_template = Shopware()->Container()->get('template');
         }
 
         return $this->_template;
@@ -255,7 +263,7 @@ abstract class Enlight_Components_Test_Controller_TestCase extends Enlight_Compo
     public function Request()
     {
         if ($this->_request === null) {
-            $this->_request = new Enlight_Controller_Request_RequestTestCase();
+            $this->_request = Enlight_Controller_Request_RequestTestCase::createFromGlobals();
         }
 
         return $this->_request;
@@ -279,7 +287,6 @@ abstract class Enlight_Components_Test_Controller_TestCase extends Enlight_Compo
      * Allows to set a Shopware config
      *
      * @param string $name
-     * @param mixed  $value
      */
     protected function setConfig($name, $value)
     {

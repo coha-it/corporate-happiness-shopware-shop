@@ -35,10 +35,6 @@ use Symfony\Component\HttpFoundation\File\UploadedFile;
 
 /**
  * Media API Resource
- *
- * @category Shopware
- *
- * @copyright Copyright (c) shopware AG (http://www.shopware.de)
  */
 class Media extends Resource
 {
@@ -393,7 +389,7 @@ class Media extends Resource
         }
 
         $meta = stream_get_meta_data($get_handle);
-        if (!strpos($meta['mediatype'], 'image/') === false) {
+        if (strpos($meta['mediatype'], 'image/') === false) {
             throw new ApiException\CustomValidationException(sprintf('No valid media type passed for the product image: %s', $url));
         }
 

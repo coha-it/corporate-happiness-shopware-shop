@@ -187,6 +187,13 @@ class Blog extends ModelEntity
     private $metaTitle;
 
     /**
+     * @var string
+     *
+     * @ORM\Column(name="shop_ids", type="string", nullable=false)
+     */
+    private $shopIds;
+
+    /**
      * INVERSE SIDE
      *
      * @var \Shopware\Models\User\User
@@ -205,8 +212,6 @@ class Blog extends ModelEntity
     }
 
     /**
-     * Get Id
-     *
      * @return int
      */
     public function getId()
@@ -215,8 +220,6 @@ class Blog extends ModelEntity
     }
 
     /**
-     * Get Title
-     *
      * @return string
      */
     public function getTitle()
@@ -225,8 +228,6 @@ class Blog extends ModelEntity
     }
 
     /**
-     * Set Title
-     *
      * @param string $title
      */
     public function setTitle($title)
@@ -251,8 +252,6 @@ class Blog extends ModelEntity
     }
 
     /**
-     * Get Active
-     *
      * @return bool
      */
     public function getActive()
@@ -261,8 +260,6 @@ class Blog extends ModelEntity
     }
 
     /**
-     * Set Active
-     *
      * @param bool $active
      */
     public function setActive($active)
@@ -271,8 +268,6 @@ class Blog extends ModelEntity
     }
 
     /**
-     * Get ShortDescription
-     *
      * @return string
      */
     public function getShortDescription()
@@ -281,8 +276,6 @@ class Blog extends ModelEntity
     }
 
     /**
-     * Set ShortDescription
-     *
      * @param string $shortDescription
      */
     public function setShortDescription($shortDescription)
@@ -291,8 +284,6 @@ class Blog extends ModelEntity
     }
 
     /**
-     * Get Description
-     *
      * @return string
      */
     public function getDescription()
@@ -301,8 +292,6 @@ class Blog extends ModelEntity
     }
 
     /**
-     * Set Description
-     *
      * @param string $description
      */
     public function setDescription($description)
@@ -311,8 +300,6 @@ class Blog extends ModelEntity
     }
 
     /**
-     * Get Views
-     *
      * @return int
      */
     public function getViews()
@@ -321,8 +308,6 @@ class Blog extends ModelEntity
     }
 
     /**
-     * Set Views
-     *
      * @param int $views
      */
     public function setViews($views)
@@ -331,8 +316,6 @@ class Blog extends ModelEntity
     }
 
     /**
-     * Get DisplayDate
-     *
      * @return \DateTimeInterface
      */
     public function getDisplayDate()
@@ -341,8 +324,6 @@ class Blog extends ModelEntity
     }
 
     /**
-     * Set DisplayDate
-     *
      * @param \DateTimeInterface|string $displayDate
      */
     public function setDisplayDate($displayDate)
@@ -354,8 +335,6 @@ class Blog extends ModelEntity
     }
 
     /**
-     * Get CategoryId
-     *
      * @return int
      */
     public function getCategoryId()
@@ -364,8 +343,6 @@ class Blog extends ModelEntity
     }
 
     /**
-     * Set CategoryId
-     *
      * @param int $categoryId
      */
     public function setCategoryId($categoryId)
@@ -374,8 +351,6 @@ class Blog extends ModelEntity
     }
 
     /**
-     * Get Tags
-     *
      * @return ArrayCollection
      */
     public function getTags()
@@ -384,8 +359,6 @@ class Blog extends ModelEntity
     }
 
     /**
-     * Set Tags
-     *
      * @param ArrayCollection $tags
      */
     public function setTags($tags)
@@ -394,8 +367,6 @@ class Blog extends ModelEntity
     }
 
     /**
-     * Get Template
-     *
      * @return string
      */
     public function getTemplate()
@@ -404,8 +375,6 @@ class Blog extends ModelEntity
     }
 
     /**
-     * Set Template
-     *
      * @param string $template
      */
     public function setTemplate($template)
@@ -414,8 +383,6 @@ class Blog extends ModelEntity
     }
 
     /**
-     * Get Media
-     *
      * @return \Doctrine\Common\Collections\ArrayCollection
      */
     public function getMedia()
@@ -424,8 +391,6 @@ class Blog extends ModelEntity
     }
 
     /**
-     * Set Media
-     *
      * @param \Shopware\Models\Blog\Media[]|null $media
      *
      * @return Blog|ModelEntity
@@ -573,5 +538,23 @@ class Blog extends ModelEntity
     public function getMetaTitle()
     {
         return $this->metaTitle;
+    }
+
+    /**
+     * Returns the unexploded shop ids string (ex: |1|2|)
+     */
+    public function getShopIds(): string
+    {
+        return $this->shopIds;
+    }
+
+    /**
+     * Set the unexploded shop ids string (ex: |1|2|)
+     */
+    public function setShopIds(string $shopIds = null): Blog
+    {
+        $this->shopIds = $shopIds;
+
+        return $this;
     }
 }

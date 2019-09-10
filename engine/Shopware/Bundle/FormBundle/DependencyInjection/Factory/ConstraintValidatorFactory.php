@@ -24,7 +24,6 @@
 
 namespace Shopware\Bundle\FormBundle\DependencyInjection\Factory;
 
-use Shopware\Components\DependencyInjection\Container;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\Validator\Constraint;
 use Symfony\Component\Validator\ConstraintValidatorFactoryInterface;
@@ -66,11 +65,6 @@ class ConstraintValidatorFactory implements ConstraintValidatorFactoryInterface
      */
     protected $validators = [];
 
-    /**
-     * Constructor.
-     *
-     * @param ContainerInterface $container The service container
-     */
     public function __construct(ContainerInterface $container, array $validators = [])
     {
         $this->container = $container;
@@ -96,7 +90,7 @@ class ConstraintValidatorFactory implements ConstraintValidatorFactoryInterface
             $this->validators[$name] = $this->container->get($this->validators[$name]);
         }
         if (!$this->validators[$name] instanceof ConstraintValidatorInterface) {
-            throw new UnexpectedTypeException($this->validators[$name], \Symfony\Component\Validator\ConstraintValidatorInterface::class);
+            throw new UnexpectedTypeException($this->validators[$name], ConstraintValidatorInterface::class);
         }
 
         return $this->validators[$name];

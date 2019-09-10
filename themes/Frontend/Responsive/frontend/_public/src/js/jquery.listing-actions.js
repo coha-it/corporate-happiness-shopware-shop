@@ -404,9 +404,9 @@
          */
         disableActiveFilterContainer: function (disabled) {
             var me = this;
-            
+
             $.publish('plugin/swListingActions/disableActiveFilter', [this, disabled]);
-            
+
             if (me.showInstantFilterResult || me.isFilterpanelInSidebar) {
                 return;
             }

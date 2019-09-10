@@ -43,11 +43,6 @@ use Shopware\Bundle\SearchBundleDBAL\QueryBuilderFactoryInterface;
 use Shopware\Bundle\StoreFrontBundle\Struct;
 use Shopware\Bundle\StoreFrontBundle\Struct\ShopContextInterface;
 
-/**
- * @category Shopware
- *
- * @copyright Copyright (c) shopware AG (http://www.shopware.de)
- */
 class ProductAttributeFacetHandler implements PartialFacetHandlerInterface
 {
     /**
@@ -355,7 +350,7 @@ class ProductAttributeFacetHandler implements PartialFacetHandlerInterface
             return null;
         }
 
-        $result = @unserialize($row[$key]);
+        $result = @unserialize($row[$key], ['allowed_classes' => false]);
         if (!$result) {
             return null;
         }

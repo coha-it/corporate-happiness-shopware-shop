@@ -24,6 +24,7 @@
 
 namespace Shopware\Models\Document;
 
+use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\ORM\Mapping as ORM;
 use Shopware\Components\Model\ModelEntity;
 
@@ -139,6 +140,11 @@ class Document extends ModelEntity
      * @ORM\JoinColumn(name="id", referencedColumnName="documentID")
      */
     private $elements;
+
+    public function __construct()
+    {
+        $this->elements = new ArrayCollection();
+    }
 
     /**
      * Getter function for the unique id identifier property
@@ -369,13 +375,13 @@ class Document extends ModelEntity
     /**
      * Sets the form-elements.
      *
-     * @param \Doctrine\Common\Collections\ArrayCollection<\Shopware\Models\Document\Element> $elements
+     * @param \Doctrine\Common\Collections\ArrayCollection<\Shopware\Models\Document\Element>|Element[] $elements
      *
      * @return Document
      */
     public function setElements($elements)
     {
-        $this->elements = $elements;
+        $this->setOneToMany($elements, \Shopware\Models\Document\Element::class, 'elements', 'document');
 
         return $this;
     }

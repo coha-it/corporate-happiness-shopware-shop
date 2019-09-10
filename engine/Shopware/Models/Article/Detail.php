@@ -26,8 +26,8 @@ namespace Shopware\Models\Article;
 
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\ORM\Mapping as ORM;
+use Shopware\Components\Model\DBAL\Constraints as ShopwareAssert;
 use Shopware\Components\Model\ModelEntity;
-use Shopware\Models\Article\Configurator\Option;
 use Shopware\Models\Attribute\Article as ProductAttribute;
 use Symfony\Component\Validator\Constraints as Assert;
 
@@ -148,7 +148,7 @@ class Detail extends ModelEntity
      * @var string
      *
      * @Assert\NotBlank()
-     * @Assert\Regex("/^[a-zA-Z0-9-_.]+$/")
+     * @ShopwareAssert\OrderNumber
      *
      * @ORM\Column(name="ordernumber", type="string", nullable=false, unique=true)
      */
@@ -201,7 +201,7 @@ class Detail extends ModelEntity
      *
      * @ORM\Column(name="laststock", type="boolean", nullable=false)
      */
-    private $lastStock;
+    private $lastStock = false;
 
     /**
      * @var float
@@ -315,20 +315,17 @@ class Detail extends ModelEntity
      */
     private $shippingTime;
 
-    /**
-     * Class constructor. Initials the array collections.
-     */
     public function __construct()
     {
         $this->prices = new ArrayCollection();
         $this->images = new ArrayCollection();
         $this->configuratorOptions = new ArrayCollection();
         $this->notifications = new ArrayCollection();
+        $this->attribute = new \Shopware\Models\Attribute\Article();
+        $this->attribute->setArticleDetail($this);
     }
 
     /**
-     * Get id
-     *
      * @return int
      */
     public function getId()
@@ -337,8 +334,6 @@ class Detail extends ModelEntity
     }
 
     /**
-     * Set number
-     *
      * @param string $number
      *
      * @return Detail
@@ -351,8 +346,6 @@ class Detail extends ModelEntity
     }
 
     /**
-     * Get number
-     *
      * @return string|null
      */
     public function getNumber()
@@ -361,8 +354,6 @@ class Detail extends ModelEntity
     }
 
     /**
-     * Set supplierNumber
-     *
      * @param string $supplierNumber
      *
      * @return Detail
@@ -375,8 +366,6 @@ class Detail extends ModelEntity
     }
 
     /**
-     * Get supplierNumber
-     *
      * @return string
      */
     public function getSupplierNumber()
@@ -385,8 +374,6 @@ class Detail extends ModelEntity
     }
 
     /**
-     * Set kind
-     *
      * @param int $kind
      *
      * @return Detail
@@ -399,8 +386,6 @@ class Detail extends ModelEntity
     }
 
     /**
-     * Get kind
-     *
      * @return int
      */
     public function getKind()
@@ -409,8 +394,6 @@ class Detail extends ModelEntity
     }
 
     /**
-     * Set additionalText
-     *
      * @param string $additionalText
      *
      * @return Detail
@@ -423,8 +406,6 @@ class Detail extends ModelEntity
     }
 
     /**
-     * Get additionalText
-     *
      * @return string
      */
     public function getAdditionalText()
@@ -433,8 +414,6 @@ class Detail extends ModelEntity
     }
 
     /**
-     * Set active
-     *
      * @param int $active
      *
      * @return Detail
@@ -447,8 +426,6 @@ class Detail extends ModelEntity
     }
 
     /**
-     * Get active
-     *
      * @return int
      */
     public function getActive()
@@ -457,8 +434,6 @@ class Detail extends ModelEntity
     }
 
     /**
-     * Set inStock
-     *
      * @param int $inStock
      *
      * @return Detail
@@ -471,8 +446,6 @@ class Detail extends ModelEntity
     }
 
     /**
-     * Get inStock
-     *
      * @return int
      */
     public function getInStock()
@@ -481,8 +454,6 @@ class Detail extends ModelEntity
     }
 
     /**
-     * Set stockMin
-     *
      * @param int $stockMin
      *
      * @return Detail
@@ -495,8 +466,6 @@ class Detail extends ModelEntity
     }
 
     /**
-     * Get stockMin
-     *
      * @return int
      */
     public function getStockMin()
@@ -505,8 +474,6 @@ class Detail extends ModelEntity
     }
 
     /**
-     * Set lastStock
-     *
      * @param int $lastStock
      *
      * @return Detail
@@ -519,8 +486,6 @@ class Detail extends ModelEntity
     }
 
     /**
-     * Get lastStock
-     *
      * @return int
      */
     public function getLastStock()
@@ -529,8 +494,6 @@ class Detail extends ModelEntity
     }
 
     /**
-     * Set weight
-     *
      * @param float $weight
      *
      * @return Detail
@@ -543,8 +506,6 @@ class Detail extends ModelEntity
     }
 
     /**
-     * Get weight
-     *
      * @return float
      */
     public function getWeight()
@@ -553,8 +514,6 @@ class Detail extends ModelEntity
     }
 
     /**
-     * Set position
-     *
      * @param int $position
      *
      * @return Detail
@@ -567,8 +526,6 @@ class Detail extends ModelEntity
     }
 
     /**
-     * Get position
-     *
      * @return int
      */
     public function getPosition()
@@ -751,8 +708,6 @@ class Detail extends ModelEntity
     }
 
     /**
-     * Set shippingFree
-     *
      * @param int $shippingFree
      *
      * @return Detail
@@ -765,8 +720,6 @@ class Detail extends ModelEntity
     }
 
     /**
-     * Get shippingFree
-     *
      * @return int
      */
     public function getShippingFree()
@@ -775,8 +728,6 @@ class Detail extends ModelEntity
     }
 
     /**
-     * Set releaseDate
-     *
      * @param \DateTimeInterface|string|null $releaseDate
      *
      * @return Detail
@@ -793,8 +744,6 @@ class Detail extends ModelEntity
     }
 
     /**
-     * Get releaseDate
-     *
      * @return \DateTimeInterface
      */
     public function getReleaseDate()
@@ -803,8 +752,6 @@ class Detail extends ModelEntity
     }
 
     /**
-     * Set minPurchase
-     *
      * @param int $minPurchase
      *
      * @return Detail
@@ -821,8 +768,6 @@ class Detail extends ModelEntity
     }
 
     /**
-     * Get minPurchase
-     *
      * @return int
      */
     public function getMinPurchase()
@@ -831,8 +776,6 @@ class Detail extends ModelEntity
     }
 
     /**
-     * Set purchaseSteps
-     *
      * @param int $purchaseSteps
      *
      * @return Detail
@@ -845,8 +788,6 @@ class Detail extends ModelEntity
     }
 
     /**
-     * Get purchaseSteps
-     *
      * @return int
      */
     public function getPurchaseSteps()
@@ -855,8 +796,6 @@ class Detail extends ModelEntity
     }
 
     /**
-     * Set maxPurchase
-     *
      * @param int $maxPurchase
      *
      * @return Detail
@@ -869,8 +808,6 @@ class Detail extends ModelEntity
     }
 
     /**
-     * Get maxPurchase
-     *
      * @return int
      */
     public function getMaxPurchase()
@@ -879,8 +816,6 @@ class Detail extends ModelEntity
     }
 
     /**
-     * Set purchaseUnit
-     *
      * @param float $purchaseUnit
      *
      * @return Detail
@@ -893,8 +828,6 @@ class Detail extends ModelEntity
     }
 
     /**
-     * Get purchaseUnit
-     *
      * @return float
      */
     public function getPurchaseUnit()
@@ -903,8 +836,6 @@ class Detail extends ModelEntity
     }
 
     /**
-     * Set referenceUnit
-     *
      * @param float $referenceUnit
      *
      * @return Detail
@@ -917,8 +848,6 @@ class Detail extends ModelEntity
     }
 
     /**
-     * Get referenceUnit
-     *
      * @return float
      */
     public function getReferenceUnit()
@@ -927,8 +856,6 @@ class Detail extends ModelEntity
     }
 
     /**
-     * Set packUnit
-     *
      * @param string $packUnit
      *
      * @return Detail
@@ -941,8 +868,6 @@ class Detail extends ModelEntity
     }
 
     /**
-     * Get packUnit
-     *
      * @return string
      */
     public function getPackUnit()
@@ -954,7 +879,7 @@ class Detail extends ModelEntity
      * OWNING SIDE
      * of the association between articles and unit
      *
-     * @return Unit
+     * @return Unit|null
      */
     public function getUnit()
     {
