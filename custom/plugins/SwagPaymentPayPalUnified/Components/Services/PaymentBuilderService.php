@@ -322,9 +322,9 @@ class PaymentBuilderService implements PaymentBuilderInterface
             return false;
         }
 
-        if (empty($this->userData['shippingaddress']['ustid']) &&
-            !empty($this->userData['billingaddress']['ustid']) &&
-            !empty($this->userData['additional']['country']['taxfree_ustid'])) {
+        if (empty($this->userData['shippingaddress']['ustid'])
+            && !empty($this->userData['billingaddress']['ustid'])
+            && !empty($this->userData['additional']['country']['taxfree_ustid'])) {
             return true;
         }
 
@@ -354,7 +354,7 @@ class PaymentBuilderService implements PaymentBuilderInterface
         $applicationContext->setLocale($this->dependencyProvider->getShop()->getLocale()->getLocale());
         $applicationContext->setLandingPage($this->getLandingPage());
 
-        if ($paymentType === PaymentType::PAYPAL_EXPRESS) {
+        if ($paymentType === PaymentType::PAYPAL_EXPRESS || $paymentType === PaymentType::PAYPAL_SMART_PAYMENT_BUTTONS) {
             $applicationContext->setUserAction('continue');
         }
 
