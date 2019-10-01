@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 /**
  * Shopware 5
  * Copyright (c) shopware AG
@@ -22,18 +22,9 @@
  * our trademarks remain entirely with us.
  */
 
-class Shopware_Controllers_Widgets_Compare extends Enlight_Controller_Action
-{
-    /**
-     * Pre dispatch method
-     */
-    public function preDispatch()
-    {
-        $this->Response()->setHeader('x-robots-tag', 'noindex');
-    }
+namespace Shopware\Bundle\AccountBundle\Service;
 
-    public function indexAction()
-    {
-        $this->View()->assign('sComparisons', Shopware()->Modules()->Articles()->sGetComparisons());
-    }
+interface OptInLoginServiceInterface
+{
+    public function refreshOptInHashForUser(int $userId, int $optInId, \DateTimeInterface $lastSentDate): string;
 }

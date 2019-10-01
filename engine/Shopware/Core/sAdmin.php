@@ -24,6 +24,8 @@
 
 use Doctrine\DBAL\Connection;
 use Shopware\Bundle\AccountBundle\Service\AddressServiceInterface;
+use Shopware\Bundle\AccountBundle\Service\OptInLoginService;
+use Shopware\Bundle\AccountBundle\Service\OptInLoginServiceInterface;
 use Shopware\Bundle\AttributeBundle\Service\CrudService;
 use Shopware\Bundle\StoreFrontBundle;
 use Shopware\Components\Captcha\CaptchaValidator;
@@ -170,6 +172,11 @@ class sAdmin implements \Enlight_Hook
     private $connection;
 
     /**
+     * @var OptInLoginServiceInterface
+     */
+    private $optInLoginService;
+
+    /**
      * @var ConditionalLineItemServiceInterface
      */
     private $conditionalLineItemService;
@@ -197,7 +204,8 @@ class sAdmin implements \Enlight_Hook
         AddressServiceInterface $addressService = null,
         NumberRangeIncrementerInterface $numberRangeIncrementer = null,
         Shopware_Components_Translation $translationComponent = null,
-        Connection $connection = null
+        Connection $connection = null,
+        OptInLoginServiceInterface $optInLoginService = null
     ) {
         $this->db = $db ?: Shopware()->Db();
         $this->eventManager = $eventManager ?: Shopware()->Events();
@@ -221,6 +229,7 @@ class sAdmin implements \Enlight_Hook
         $this->numberRangeIncrementer = $numberRangeIncrementer ?: Shopware()->Container()->get('shopware.number_range_incrementer');
         $this->translationComponent = $translationComponent ?: Shopware()->Container()->get('translation');
         $this->connection = $connection ?: Shopware()->Container()->get('dbal_connection');
+        $this->optInLoginService = $optInLoginService ?: Shopware()->Container()->get(OptInLoginService::class);
         $this->conditionalLineItemService = Shopware()->Container()->get(ConditionalLineItemServiceInterface::class);
     }
 
@@ -681,7 +690,7 @@ class sAdmin implements \Enlight_Hook
         }
 
         $this->session->unsetAll();
-        $this->regenerateSessionId();
+        $this->regenerateSessionId(true);
 
         if ($this->config->get('migrateCartAfterLogin')) {
             Shopware()->Container()->get(CartPersistServiceInterface::class)->persist();
@@ -3276,7 +3285,7 @@ class sAdmin implements \Enlight_Hook
      * Regenerates session id and updates references in the db
      * Used internally by sAdmin::sLogin
      */
-    private function regenerateSessionId()
+    private function regenerateSessionId(bool $ignoreUserTable = false): void
     {
         $oldSessionId = session_id();
 
@@ -3310,9 +3319,12 @@ class sAdmin implements \Enlight_Hook
 
         $sessions = [
             's_order_basket' => 'sessionID',
-            's_user' => 'sessionID',
             's_order_comparisons' => 'sessionID',
         ];
+
+        if (!$ignoreUserTable) {
+            $sessions['s_user'] = 'sessionID';
+        }
 
         foreach ($sessions as $tableName => $column) {
             $this->db->update(
@@ -3494,7 +3506,11 @@ SQL;
 
         // If the verification process is active, the customer has an email sent date, but no confirm date
         if ($getUser['doubleOptinRegister'] && $getUser['doubleOptinEmailSentDate'] !== null && $getUser['doubleOptinConfirmDate'] === null) {
-            $hash = $this->getOptInHash((int) $getUser['register_opt_in_id'], $getUser['doubleOptinEmailSentDate']);
+            $hash = $this->optInLoginService->refreshOptInHashForUser(
+                (int) $getUser['id'],
+                (int) $getUser['register_opt_in_id'],
+                \DateTimeImmutable::createFromFormat('Y-m-d H:i:s', $getUser['doubleOptinEmailSentDate'])
+            );
 
             $userInfo = [
                 'mail' => $getUser['email'],
@@ -3503,7 +3519,6 @@ SQL;
                 'salutation' => $getUser['salutation'],
             ];
 
-            $this->refreshOptinHash($getUser, $hash);
             $this->resendConfirmationMail($userInfo, $hash);
 
             $sErrorMessages[] = $this->snippetManager->getNamespace('frontend/account/internalMessages')
@@ -3558,63 +3573,6 @@ SQL;
         $this->session->offsetUnset('sUserId');
 
         return $sErrorMessages;
-    }
-
-    /**
-     * @param string $hash
-     */
-    private function refreshOptinHash(array $user, $hash)
-    {
-        // Get old optin information
-        $sql = 'SELECT `id`, `data`
-                FROM `s_core_optin`
-                WHERE datum = ?
-                AND type = "swRegister"';
-        $result = $this->db->fetchAll($sql, [$user['doubleOptinEmailSentDate']]);
-
-        $customerId = null;
-
-        // Most times iterates only once
-        foreach ($result as $row) {
-            $data = unserialize($row['data'], ['allowed_classes' => false]);
-            $optInId = $row['id'];
-            $customerId = $data['customerId'];
-            if ($customerId === $user['id']) {
-                break;
-            }
-        }
-
-        $dateString = (new DateTime())->format('Y-m-d H:i:s');
-
-        // Refreshes doubleOptinEmailSentDate + hash to generate a new activation key
-        $this->db->beginTransaction();
-        if (!empty($optInId)) {
-            $sql = 'UPDATE `s_core_optin`
-                    SET `datum` = ?, `hash` = ?
-                    WHERE type = "swRegister"
-                    AND id = ?';
-            $params = [$dateString, $hash, $optInId];
-        } else {
-            $customerId = $user['id'];
-            $storedData = [
-                'customerId' => $customerId,
-                'register' => null,
-            ];
-
-            $sql = 'INSERT INTO `s_core_optin`
-                    (`type`, `datum`, `hash`, `data`)
-                    VALUES
-                    (?, ?, ?, ?)';
-            $params = ['swRegister', $dateString, $hash, serialize($storedData)];
-        }
-        $this->db->executeQuery($sql, $params);
-
-        $sql = 'UPDATE `s_user`
-                SET doubleOptinEmailSentDate = ?
-                WHERE id = ?';
-
-        $this->db->executeQuery($sql, [$dateString, $customerId]);
-        $this->db->commit();
     }
 
     /**
@@ -3855,15 +3813,15 @@ SQL;
      * Helper function for sAdmin::sGetUserData()
      * Gets user billing data
      *
-     * @param int   $userId
-     * @param array $userData
-     *
-     * @return array
+     * @throws Exception
      */
-    private function getUserBillingData($userId, $userData)
+    private function getUserBillingData(int $userId, array $userData): array
     {
         $entityManager = Shopware()->Container()->get('models');
         $customer = $entityManager->find(Customer::class, $userId);
+        if (!$customer) {
+            throw new Exception(sprintf('Customer with id %s not found', $userId));
+        }
         $billing = $this->convertToLegacyAddressArray($customer->getDefaultBillingAddress());
         $billing['attributes'] = $this->attributeLoader->load('s_user_addresses_attributes', $billing['id']);
         $userData['billingaddress'] = $billing;
@@ -3874,13 +3832,8 @@ SQL;
     /**
      * Helper method for sAdmin::sNewsletterSubscription
      * Subscribes the provided email address to the newsletter group
-     *
-     * @param string $email
-     * @param int    $groupID
-     *
-     * @return array|int
      */
-    private function subscribeNewsletter($email, $groupID)
+    private function subscribeNewsletter(string $email, int $groupID): array
     {
         $result = $this->db->fetchAll(
             'SELECT * FROM s_campaigns_mailaddresses WHERE email = ?',
@@ -4296,31 +4249,5 @@ SQL;
             ->groupBy('b.sessionID');
 
         return $queryBuilder;
-    }
-
-    /**
-     * Checks, if the opt-in mail was sent in the previous 15 minutes.
-     */
-    private function getOptInHash(int $optinId, string $sentDate): string
-    {
-        if ($this->isDateInLast15Minutes($sentDate)) {
-            $sql = 'SELECT hash
-                FROM s_core_optin opt
-                WHERE opt.id = :id';
-
-            return $this->connection->fetchColumn($sql, [':id' => $optinId]);
-        }
-
-        return Random::getAlphanumericString(32);
-    }
-
-    private function isDateInLast15Minutes(string $sentDate): bool
-    {
-        $sentDateTimestamp = (\DateTimeImmutable::createFromFormat('Y-m-d H:i:s', $sentDate))->getTimestamp();
-        $nowTimestamp = time();
-
-        $sentDateTimestampPlus15Minutes = $sentDateTimestamp + (15 * 60);
-
-        return $sentDateTimestampPlus15Minutes >= $nowTimestamp;
     }
 }
