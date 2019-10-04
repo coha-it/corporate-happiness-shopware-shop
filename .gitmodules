@@ -1,6 +1,31 @@
 [submodule "custom/plugins/CohaQuoteSlider"]
-	path = custom/plugins/CohaQuoteSlider
-	url = git@github.com:coha-it/CohaQuoteSlider.git
+		path = custom/plugins/CohaQuoteSlider
+		url = git@github.com:coha-it/CohaQuoteSlider.git
 [submodule "custom/plugins/CohaCartButton"]
-	path = custom/plugins/CohaCartButton
-	url = git@github.com:coha-it/CohaCartButton.git
+		path = custom/plugins/CohaCartButton
+		url = git@github.com:coha-it/CohaCartButton.git
+[submodule "custom/plugins/CohaBasketCountFix"]
+		path = custom/plugins/CohaBasketCountFix
+		url = git@github.com:coha-it/CohaBasketCountFix.git
+[submodule "custom/plugins/CohaBeautifulEmotion"]
+        path = custom/plugins/CohaBeautifulEmotion
+        url = git@github.com:coha-it/CohaBeautifulEmotion.git
+[submodule "custom/plugins/CohaBetterNavigation"]
+        path = custom/plugins/CohaBetterNavigation
+        url = git@github.com:coha-it/CohaBetterNavigation.git
+[submodule "custom/plugins/CohaHideNotepad"]
+        path = custom/plugins/CohaHideNotepad
+        url = git@github.com:coha-it/CohaHideNotepad.git
+[submodule "custom/plugins/CohaHideSearchBar"]
+        path = custom/plugins/CohaHideSearchBar
+        url = git@github.com:coha-it/CohaHideSearchBar.git
+[submodule "custom/plugins/CohaSidebarAlwaysMain"]
+        path = custom/plugins/CohaSidebarAlwaysMain
+        url = git@github.com:coha-it/CohaSidebarAlwaysMain.git
+[submodule "custom/plugins/SwagTinyMceCustomFont"]
+        path = custom/plugins/SwagTinyMceCustomFont
+        url = git@github.com:coha-it/SwagTinyMceCustomFont.git
+[submodule "themes/Frontend/CohaHappyFeelsTheme"]
+        path = themes/Frontend/CohaHappyFeelsTheme
+        url = git@github.com:coha-it/CohaHappyFeelsTheme.git
+
