@@ -1,3 +1,6 @@
 [submodule "custom/plugins/CohaQuoteSlider"]
 	path = custom/plugins/CohaQuoteSlider
 	url = git@github.com:coha-it/CohaQuoteSlider.git
+[submodule "custom/plugins/CohaCartButton"]
+	path = custom/plugins/CohaCartButton
+	url = git@github.com:coha-it/CohaCartButton.git
