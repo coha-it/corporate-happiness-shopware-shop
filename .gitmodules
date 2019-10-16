@@ -4,6 +4,9 @@
 [submodule "custom/plugins/CohaCartButton"]
 		path = custom/plugins/CohaCartButton
 		url = git@github.com:coha-it/CohaCartButton.git
+[submodule "custom/plugins/CohaAdvancedShop"]
+	path = custom/plugins/CohaAdvancedShop
+	url = git@github.com:coha-it/CohaAdvancedShop.git
 [submodule "custom/plugins/CohaBasketCountFix"]
 		path = custom/plugins/CohaBasketCountFix
 		url = git@github.com:coha-it/CohaBasketCountFix.git
