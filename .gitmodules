@@ -29,6 +29,5 @@
         path = custom/plugins/SwagTinyMceCustomFont
         url = git@github.com:coha-it/SwagTinyMceCustomFont.git
 [submodule "themes/Frontend/CohaHappyFeelsTheme"]
-        path = themes/Frontend/CohaHappyFeelsTheme
-        url = git@github.com:coha-it/CohaHappyFeelsTheme.git
-
+	path = themes/Frontend/CohaHappyFeelsTheme
+	url = git@github.com:coha-it/happy-feels-shopware-theme.git
