@@ -2,8 +2,6 @@
 
     {foreach $sEmotions as $emotion}
 
-        {$emotion.attributes.core.url|@var_dump}
-
         {block name="widgets/emotion/index/container"}
 
             {* Config block for overriding configuration variables of the shopping world *}
