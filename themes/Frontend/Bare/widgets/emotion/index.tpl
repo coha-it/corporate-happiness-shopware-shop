@@ -1,5 +1,8 @@
 {if $sEmotions|@count > 0}
+
     {foreach $sEmotions as $emotion}
+
+        {$emotion.attributes.core.url|@var_dump}
 
         {block name="widgets/emotion/index/container"}
 
