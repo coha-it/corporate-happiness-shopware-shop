@@ -31,3 +31,6 @@
 [submodule "themes/Frontend/CohaHappyFeelsTheme"]
 	path = themes/Frontend/CohaHappyFeelsTheme
 	url = git@github.com:coha-it/happy-feels-shopware-theme.git
+[submodule "custom/plugins/CohaBadges"]
+	path = custom/plugins/CohaBadges
+	url = git@github.com:coha-it/CohaBadges.git
