@@ -51,23 +51,23 @@ Ext.define('Shopware.apps.PaypalUnified.controller.Main', {
 
         me.control({
             'paypal-unified-overview-grid': {
-                'select': me.onSelectGridRecord
+                select: me.onSelectGridRecord
             },
             'paypal-unified-sidebar-history-refund-button': {
-                'click': me.onRefundButtonClick
+                click: me.onRefundButtonClick
             },
             'paypal-unified-refund-sale-window': {
-                'refundSale': me.onRefundSale
+                refundSale: me.onRefundSale
             },
             'paypal-unified-capture-authorize': {
-                'authorizePayment': me.onAuthorizePayment
+                authorizePayment: me.onAuthorizePayment
             },
             'paypal-unified-refund-capture-window': {
-                'refundCapture': me.onRefundCapture
+                refundCapture: me.onRefundCapture
             },
             'paypal-unified-sidebar-order-actions': {
-                'voidAuthorization': me.onVoidAuthorization,
-                'voidOrder': me.onVoidOrder
+                voidAuthorization: me.onVoidAuthorization,
+                voidOrder: me.onVoidOrder
             }
         });
     },
@@ -166,10 +166,11 @@ Ext.define('Shopware.apps.PaypalUnified.controller.Main', {
 
             me.loadDetails(me.record);
         } else {
-            Shopware.Notification.createGrowlMessage('{s name=growl/title}PayPal{/s}', responseObject.message, me.window.title);
+            Shopware.Notification.createStickyGrowlMessage({ title: '{s name=growl/title}PayPal{/s}', text: responseObject.message }, me.window.title);
         }
 
         me.getSidebar().setLoading(false);
+        me.getGrid().getStore().reload();
     },
 
     voidCallback: function(options, success, response) {
@@ -181,10 +182,11 @@ Ext.define('Shopware.apps.PaypalUnified.controller.Main', {
 
             me.loadDetails(me.record);
         } else {
-            Shopware.Notification.createGrowlMessage('{s name=growl/title}PayPal{/s}', responseObject.message, me.window.title);
+            Shopware.Notification.createStickyGrowlMessage({ title: '{s name=growl/title}PayPal{/s}', text: responseObject.message }, me.window.title);
         }
 
         me.getSidebar().setLoading(false);
+        me.getGrid().getStore().reload();
     },
 
     /**
@@ -198,7 +200,7 @@ Ext.define('Shopware.apps.PaypalUnified.controller.Main', {
             details = Ext.JSON.decode(response.responseText);
 
         if (!Ext.isDefined(details) || !details.success) {
-            Shopware.Notification.createGrowlMessage('{s name=growl/title}PayPal{/s}', details.message, me.window.title);
+            Shopware.Notification.createStickyGrowlMessage({ title: '{s name=growl/title}PayPal{/s}', text: details.message }, me.window.title);
 
             sidebar.setLoading(false);
             sidebar.disable();
@@ -273,7 +275,7 @@ Ext.define('Shopware.apps.PaypalUnified.controller.Main', {
 
             Shopware.Notification.createGrowlMessage('{s name=growl/title}PayPal{/s}', '{s name=growl/refundSuccess}The refund was successful{/s}', me.window.title);
         } else {
-            Shopware.Notification.createGrowlMessage('{s name=growl/title}PayPal{/s}', details.message, me.window.title);
+            Shopware.Notification.createStickyGrowlMessage({ title: '{s name=growl/title}PayPal{/s}', text: details.message }, me.window.title);
         }
 
         me.getSidebar().setLoading(false);
@@ -460,10 +462,11 @@ Ext.define('Shopware.apps.PaypalUnified.controller.Main', {
         var me = this,
             refundButton = me.getSidebar().historyTab.down('#refundButton'),
             toolbar = me.getSidebar().toolbar,
-            payment = me.details.payment;
+            payment = me.details.payment,
+            maxRefundableAmount = me.details.history.maxRefundableAmount;
 
-        refundButton.enable();
-        toolbar.updateToolbar(payment.intent, me.details.history.maxRefundableAmount, false);
+        refundButton.setDisabled(maxRefundableAmount === 0);
+        toolbar.updateToolbar(payment.intent, maxRefundableAmount, false);
     },
 
     /**
@@ -489,20 +492,24 @@ Ext.define('Shopware.apps.PaypalUnified.controller.Main', {
             refundButton = me.getSidebar().historyTab.down('#refundButton'),
             toolbar = me.getSidebar().toolbar,
             payment = me.details.payment,
-            authorization = me.details.authorization;
+            intent = payment.intent,
+            authorization = me.details.authorization,
+            state = authorization.state,
+            maxRefundableAmount = me.details.history.maxRefundableAmount,
+            maxAuthorizableAmount = me.details.history.maxAuthorizableAmount;
 
-        if (authorization.state === 'authorized') {
+        if (state === 'authorized') {
             refundButton.disable();
-            toolbar.updateToolbar(payment.intent, me.details.history.maxAuthorizableAmount, true);
-        } else if (authorization.state === 'partially_captured') {
-            refundButton.enable();
-            toolbar.updateToolbar(payment.intent, me.details.history.maxAuthorizableAmount, false);
-        } else if (authorization.state === 'captured') {
-            refundButton.enable();
-            toolbar.updateToolbar(payment.intent, 0, false);
-        } else if (authorization.state === 'voided') {
+            toolbar.updateToolbar(intent, maxAuthorizableAmount, true);
+        } else if (state === 'partially_captured') {
+            refundButton.setDisabled(maxRefundableAmount === 0);
+            toolbar.updateToolbar(intent, maxAuthorizableAmount, false);
+        } else if (state === 'captured') {
+            refundButton.setDisabled(maxRefundableAmount === 0);
+            toolbar.updateToolbar(intent, 0, false);
+        } else if (state === 'voided') {
             refundButton.disable();
-            toolbar.updateToolbar(payment.intent, 0, false);
+            toolbar.updateToolbar(intent, 0, false);
         }
     },
 
@@ -526,17 +533,20 @@ Ext.define('Shopware.apps.PaypalUnified.controller.Main', {
             refundButton = me.getSidebar().historyTab.down('#refundButton'),
             toolbar = me.getSidebar().toolbar,
             payment = me.details.payment,
-            order = me.details.order;
+            intent = payment.intent,
+            order = me.details.order,
+            state = order.state,
+            maxAuthorizableAmount = me.details.history.maxAuthorizableAmount;
 
-        if (order.state === 'PENDING') {
+        if (state === 'PENDING') {
             refundButton.disable();
-            toolbar.updateToolbar(payment.intent, me.details.history.maxAuthorizableAmount, true);
-        } else if (order.state === 'CAPTURE') {
-            refundButton.enable();
-            toolbar.updateToolbar(payment.intent, me.details.history.maxAuthorizableAmount, false);
-        } else if (order.state === 'VOIDED') {
+            toolbar.updateToolbar(intent, maxAuthorizableAmount, true);
+        } else if (state === 'CAPTURE') {
+            refundButton.setDisabled(me.details.history.maxRefundableAmount === 0);
+            toolbar.updateToolbar(intent, maxAuthorizableAmount, false);
+        } else if (state === 'VOIDED') {
             refundButton.disable();
-            toolbar.updateToolbar(payment.intent, 0, false);
+            toolbar.updateToolbar(intent, 0, false);
         }
     },
 
@@ -582,8 +592,7 @@ Ext.define('Shopware.apps.PaypalUnified.controller.Main', {
      * @returns { Ext.data.Model }
      */
     getRecord: function() {
-        var me = this;
-        return me.record;
+        return this.record;
     },
 
     /**
@@ -592,8 +601,7 @@ Ext.define('Shopware.apps.PaypalUnified.controller.Main', {
      * @returns { Object }
      */
     getDetails: function() {
-        var me = this;
-        return me.details;
+        return this.details;
     }
 });
 // {/block}

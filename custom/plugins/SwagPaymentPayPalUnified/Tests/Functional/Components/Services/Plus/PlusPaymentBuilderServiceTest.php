@@ -14,7 +14,7 @@ use SwagPaymentPayPalUnified\Components\Services\Plus\PlusPaymentBuilderService;
 use SwagPaymentPayPalUnified\Components\Services\Validation\BasketIdWhitelist;
 use SwagPaymentPayPalUnified\PayPalBundle\Components\SettingsServiceInterface;
 use SwagPaymentPayPalUnified\PayPalBundle\Structs\Payment;
-use SwagPaymentPayPalUnified\Tests\Functional\Components\Services\SettingsServicePaymentBuilderServiceMock;
+use SwagPaymentPayPalUnified\Tests\Functional\Components\Services\Mock\SettingsServicePaymentBuilderServiceMock;
 
 class PlusPaymentBuilderServiceTest extends TestCase
 {
@@ -28,7 +28,10 @@ class PlusPaymentBuilderServiceTest extends TestCase
     {
         $request = $this->getRequestData();
 
-        static::assertStringEndsWith('basketId/' . BasketIdWhitelist::WHITELIST_IDS['PayPalPlus'], $request->getRedirectUrls()->getReturnUrl());
+        static::assertContains(
+            '/PaypalUnified/return/plus/1/basketId/' . BasketIdWhitelist::WHITELIST_IDS['PayPalPlus'],
+            $request->getRedirectUrls()->getReturnUrl()
+        );
     }
 
     public function test_estimated_delivery_date_attribute_exists_but_not_set()
