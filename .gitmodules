@@ -37,3 +37,6 @@
 [submodule "custom/plugins/CohaPriceWithQuantity"]
 	path = custom/plugins/CohaPriceWithQuantity
 	url = git@github.com:coha-it/CohaPriceWithQuantity.git
+[submodule "custom/plugins/CohaYoutubeLazyLoad"]
+	path = custom/plugins/CohaYoutubeLazyLoad
+	url = git@github.com:coha-it/CohaYoutubeLazyLoad.git
