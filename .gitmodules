@@ -34,3 +34,6 @@
 [submodule "custom/plugins/CohaBadges"]
 	path = custom/plugins/CohaBadges
 	url = git@github.com:coha-it/CohaBadges.git
+[submodule "custom/plugins/CohaPriceWithQuantity"]
+	path = custom/plugins/CohaPriceWithQuantity
+	url = git@github.com:coha-it/CohaPriceWithQuantity.git
