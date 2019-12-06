@@ -1,5 +1,4 @@
 {if $sEmotions|@count > 0}
-
     {foreach $sEmotions as $emotion}
 
         {block name="widgets/emotion/index/container"}

@@ -37,6 +37,7 @@ use Shopware\Bundle\ContentTypeBundle\DependencyInjection\RegisterTypeRepositori
 use Shopware\Bundle\ControllerBundle\ControllerBundle;
 use Shopware\Bundle\ControllerBundle\DependencyInjection\Compiler\ControllerCompilerPass;
 use Shopware\Bundle\ControllerBundle\DependencyInjection\Compiler\RegisterControllerCompilerPass;
+use Shopware\Bundle\CookieBundle\CookieBundle;
 use Shopware\Bundle\CustomerSearchBundleDBAL\CustomerSearchBundleDBALBundle;
 use Shopware\Bundle\EmotionBundle\EmotionBundle;
 use Shopware\Bundle\EsBackendBundle\EsBackendBundle;
@@ -95,9 +96,9 @@ class Kernel extends SymfonyKernel
      * Is available in the DIC as parameter 'shopware.release.*' or a Struct containing all the parameters below.
      */
     protected $release = [
-        'version' => '5.6.2',
+        'version' => '5.6.3',
         'version_text' => '',
-        'revision' => '201909250854',
+        'revision' => '201911280851',
     ];
 
     /**
@@ -208,7 +209,11 @@ class Kernel extends SymfonyKernel
         // Overwrite superglobals with state of the SymfonyRequest
         $request->overrideGlobals();
 
-        return EnlightRequest::createFromGlobals();
+        $enlightRequest = EnlightRequest::createFromGlobals();
+        $enlightRequest->setContent($request->getContent());
+        $enlightRequest->setFiles($request->files->all());
+
+        return $enlightRequest;
     }
 
     /**
@@ -446,6 +451,7 @@ class Kernel extends SymfonyKernel
             new AccountBundle(),
             new AttributeBundle(),
             new BenchmarkBundle(),
+            new CookieBundle(),
             new ContentTypeBundle(),
             new ControllerBundle(),
             new CustomerSearchBundleDBALBundle(),

@@ -26,7 +26,7 @@ use Doctrine\DBAL\Connection;
 use Shopware\Bundle\AccountBundle\Service\AddressServiceInterface;
 use Shopware\Bundle\AccountBundle\Service\OptInLoginService;
 use Shopware\Bundle\AccountBundle\Service\OptInLoginServiceInterface;
-use Shopware\Bundle\AttributeBundle\Service\CrudService;
+use Shopware\Bundle\AttributeBundle\Service\CrudServiceInterface;
 use Shopware\Bundle\StoreFrontBundle;
 use Shopware\Components\Captcha\CaptchaValidator;
 use Shopware\Components\Cart\CartPersistServiceInterface;
@@ -152,12 +152,12 @@ class sAdmin implements \Enlight_Hook
     private $numberRangeIncrementer;
 
     /**
-     * @var Shopware\Bundle\AttributeBundle\Service\DataLoader
+     * @var Shopware\Bundle\AttributeBundle\Service\DataLoaderInterface
      */
     private $attributeLoader;
 
     /**
-     * @var Shopware\Bundle\AttributeBundle\Service\DataPersister
+     * @var Shopware\Bundle\AttributeBundle\Service\DataPersisterInterface
      */
     private $attributePersister;
 
@@ -1099,10 +1099,9 @@ class sAdmin implements \Enlight_Hook
         $countryList = Shopware()->Container()->get('legacy_struct_converter')->convertCountryStructList($countryList);
 
         $countryList = array_map(function ($country) {
-            $country['flag'] =
-                ($this->front->Request()->getPost('country') == $country['id']
-                    || $this->front->Request()->getPost('countryID') == $country['id']
-                );
+            $request = $this->front->Request();
+            $countryId = (int) $country['id'];
+            $country['flag'] = ((int) $request->getPost('country') === $countryId || (int) $request->getPost('countryID') === $countryId);
 
             return $country;
         }, $countryList);
@@ -1890,47 +1889,18 @@ class sAdmin implements \Enlight_Hook
      * @param array $order Order data
      * @param mixed $value Value to compare against
      *
-     * @return bool Rule validation result
+     * @return bool|void Rule validation result
      */
     public function sRiskATTRIS($user, $order, $value)
     {
         if (!empty($order['content'])) {
             $value = explode('|', $value);
-            if (!empty($value[0]) && isset($value[1])) {
-                $number = (int) str_ireplace('attr', '', $value[0]);
 
-                $sqlProductOrderNumber = $this->connection->createQueryBuilder()
-                   ->select(['s_articles_attributes.id'])
-                   ->from('s_order_basket, s_articles_attributes, s_articles_details')
-                   ->where('s_order_basket.sessionID = :sessionID')
-                   ->andWhere('s_order_basket.modus = 0')
-                   ->andWhere('s_order_basket.ordernumber = s_articles_details.ordernumber')
-                   ->andWhere('s_articles_details.id = s_articles_attributes.articledetailsID')
-                   ->andWhere('s_articles_attributes.attr' . $number . ' = :attrValue')
-                   ->setParameters([
-                       'attrValue' => $value[1],
-                       'sessionID' => $this->session->offsetGet('sessionId'),
-                   ])
-                   ->execute()->fetch(\PDO::FETCH_ASSOC);
-
-                $sqlProductId = $this->connection->createQueryBuilder()
-                  ->select(['s_articles_attributes.id'])
-                  ->from('s_order_basket, s_articles_attributes, s_articles_details')
-                  ->where('s_order_basket.sessionID = :sessionID')
-                  ->andWhere('s_order_basket.modus = 0')
-                  ->andWhere('s_order_basket.articleID = s_articles_details.articleID AND s_articles_details.kind = 1')
-                  ->andWhere('s_articles_details.id = s_articles_attributes.articledetailsID')
-                  ->andWhere('s_articles_attributes.attr' . $number . ' = :attrValue')
-                  ->setParameters([
-                      'attrValue' => $value[1],
-                      'sessionID' => $this->session->offsetGet('sessionId'),
-                  ])
-                  ->execute()->fetch(\PDO::FETCH_ASSOC);
-
-                return (bool) $sqlProductOrderNumber || (bool) $sqlProductId;
+            if (!isset($value[0], $value[1])) {
+                return;
             }
 
-            return false;
+            return $this->hasProductAttributeMatch($value[0], $value[1], '=');
         }
     }
 
@@ -1941,48 +1911,71 @@ class sAdmin implements \Enlight_Hook
      * @param array $order Order data
      * @param mixed $value Value to compare against
      *
-     * @return bool Rule validation result
+     * @return bool|void Rule validation result
      */
     public function sRiskATTRISNOT($user, $order, $value)
     {
         if (!empty($order['content'])) {
             $value = explode('|', $value);
-            if (!empty($value[0]) && isset($value[1])) {
-                $number = (int) str_ireplace('attr', '', $value[0]);
 
-                $sqlProductOrderNumber = $this->connection->createQueryBuilder()
-                   ->select(['s_articles_attributes.id'])
-                   ->from('s_order_basket, s_articles_attributes, s_articles_details')
-                   ->where('s_order_basket.sessionID = :sessionID')
-                   ->andWhere('s_order_basket.modus = 0')
-                   ->andWhere('s_order_basket.ordernumber = s_articles_details.ordernumber')
-                   ->andWhere('s_articles_details.id = s_articles_attributes.articledetailsID')
-                   ->andWhere('s_articles_attributes.attr' . $number . ' != :attrValue')
-                   ->setParameters([
-                       'attrValue' => $value[1],
-                       'sessionID' => $this->session->offsetGet('sessionId'),
-                   ])
-                   ->execute()->fetch(\PDO::FETCH_ASSOC);
-
-                $sqlProductId = $this->connection->createQueryBuilder()
-                  ->select(['s_articles_attributes.id'])
-                  ->from('s_order_basket, s_articles_attributes, s_articles_details')
-                  ->where('s_order_basket.sessionID = :sessionID')
-                  ->andWhere('s_order_basket.modus = 0')
-                  ->andWhere('s_order_basket.articleID = s_articles_details.articleID AND s_articles_details.kind = 1')
-                  ->andWhere('s_articles_details.id = s_articles_attributes.articledetailsID')
-                  ->andWhere('s_articles_attributes.attr' . $number . ' != :attrValue')
-                  ->setParameters([
-                      'attrValue' => $value[1],
-                      'sessionID' => $this->session->offsetGet('sessionId'),
-                  ])
-                  ->execute()->fetch(\PDO::FETCH_ASSOC);
-
-                return (bool) $sqlProductOrderNumber || (bool) $sqlProductId;
+            if (!isset($value[0], $value[1])) {
+                return;
             }
 
-            return false;
+            return $this->hasProductAttributeMatch($value[0], $value[1], '!=');
         }
+    }
+
+    /**
+     * @param bool|array $user
+     *
+     * @return bool|void
+     */
+    public function sRiskCUSTOMERATTRIS($user, array $order, string $value)
+    {
+        if (!isset($user['additional']['user'])) {
+            return;
+        }
+
+        $values = explode('|', $value);
+        if (!isset($values[0], $values[1])) {
+            return;
+        }
+
+        $attribute = $values[0];
+        $value = $values[1];
+
+        if (!isset($user['additional']['user'][$attribute])) {
+            return;
+        }
+
+        return $user['additional']['user'][$attribute] === $value;
+    }
+
+    /**
+     * @param bool|array $user
+     *
+     * @return bool|void
+     */
+    public function sRiskCUSTOMERATTRISNOT($user, array $order, string $value)
+    {
+        if (!isset($user['additional']['user'])) {
+            return;
+        }
+
+        $values = explode('|', $value);
+        if (!isset($values[0], $values[1])) {
+            return;
+        }
+
+        $attribute = $values[0];
+        $value = $values[1];
+
+        if (!isset($user['additional']['user'][$attribute])) {
+            return;
+        }
+
+        return $user['additional']['user'][$attribute] !== $value;
     }
 
     /**
@@ -2850,7 +2843,7 @@ class sAdmin implements \Enlight_Hook
                 );
 
                 foreach ($translationData as $key => $attribute) {
-                    $key = str_replace(CrudService::EXT_JS_PREFIX, '', $key);
+                    $key = str_replace(CrudServiceInterface::EXT_JS_PREFIX, '', $key);
                     $dispatch['attribute'][$key] = $attribute;
                 }
             }
@@ -2932,7 +2925,7 @@ class sAdmin implements \Enlight_Hook
             LEFT JOIN s_user_addresses as ub
                 ON ub.user_id = u.id
                 AND ub.id = :billingAddressId
-              
+
             LEFT JOIN s_user_addresses as us
                 ON us.user_id = u.id
                 AND us.id = :shippingAddressId
@@ -3043,12 +3036,11 @@ class sAdmin implements \Enlight_Hook
             return false;
         }
 
-        $amount = (float) $this->db->fetchOne('
-                SELECT SUM((CAST(price AS DECIMAL(10,2))*quantity)/currencyFactor) AS amount
-                FROM s_order_basket
-                WHERE sessionID = ?
-                GROUP BY sessionID
-            ',
+        $amount = (float) $this->db->fetchOne(
+            'SELECT SUM((CAST(price AS DECIMAL(10,2))*quantity)/currencyFactor) AS amount
+             FROM s_order_basket
+             WHERE sessionID = ?
+             GROUP BY sessionID',
             [$this->session->offsetGet('sessionId')]
         );
 
@@ -3120,13 +3112,13 @@ class sAdmin implements \Enlight_Hook
         } else {
             return false;
         }
-        $result = $this->db->fetchRow('
-            SELECT `value` , `factor`
-            FROM `s_premium_shippingcosts`
-            WHERE `from` <= ?
-            AND `dispatchID` = ?
-            ORDER BY `from` DESC
-            LIMIT 1',
+        $result = $this->db->fetchRow(
+            'SELECT `value` , `factor`
+             FROM `s_premium_shippingcosts`
+             WHERE `from` <= ?
+             AND `dispatchID` = ?
+             ORDER BY `from` DESC
+             LIMIT 1',
             [$from, $dispatch['id']]
         );
         if ($result === false) {
@@ -3224,9 +3216,10 @@ class sAdmin implements \Enlight_Hook
             $newHash = $this->passwordEncoder->reencodePassword($plaintext, $hash, $encoderName);
         }
 
+        $userId = (int) $getUser['id'];
+
         if (!empty($newHash) && $newHash !== $hash) {
             $hash = $newHash;
-            $userId = (int) $getUser['id'];
             $this->db->update(
                 's_user',
                 [
@@ -3237,9 +3230,25 @@ class sAdmin implements \Enlight_Hook
             );
         }
 
+        // Update note userID
+        $uniqueId = $this->front->Request()->getCookie('sUniqueID');
+        if (!empty($uniqueId)) {
+            $this->connection->executeQuery(
+                'UPDATE s_order_notes SET userID = :userId, sUniqueID = NULL WHERE sUniqueID = :uniqueId AND userID = 0',
+                [
+                    'userId' => $userId,
+                    'uniqueId' => $uniqueId,
+                ]
+            );
+
+            //destroy cookie
+            $this->front->Response()->setCookie('sUniqueID');
+        }
+
         $this->session->offsetSet('sUserMail', $email);
         $this->session->offsetSet('sUserPassword', $hash);
-        $this->session->offsetSet('sUserId', $getUser['id']);
+        $this->session->offsetSet('sUserId', $userId);
+        $this->session->offsetSet('sNotesQuantity', $this->moduleManager->Basket()->sCountNotes());
 
         if (!$this->sCheckUser()) {
             return;
@@ -3248,6 +3257,51 @@ class sAdmin implements \Enlight_Hook
         if ($this->config->get('migrateCartAfterLogin')) {
             Shopware()->Container()->get('shopware.components.cart.cart_migration')->migrate();
         }
+    }
+
+    private function hasProductAttributeMatch(string $attribute, string $value, string $operator): bool
+    {
+        $crudService = Shopware()->Container()->get('shopware_attribute.crud_service');
+        $columnData = $crudService->get('s_articles_attributes', $attribute);
+
+        if ($columnData === null && is_numeric($attribute)) {
+            $columnData = $crudService->get('s_articles_attributes', 'attr' . $attribute);
+            $attribute = 'attr' . $attribute;
+        }
+
+        if ($columnData !== null && !empty($attribute)) {
+            $sqlProductOrderNumber = $this->connection->createQueryBuilder()
+                ->select(['s_articles_attributes.id'])
+                ->from('s_order_basket, s_articles_attributes, s_articles_details')
+                ->where('s_order_basket.sessionID = :sessionID')
+                ->andWhere('s_order_basket.modus = 0')
+                ->andWhere('s_order_basket.ordernumber = s_articles_details.ordernumber')
+                ->andWhere('s_articles_details.id = s_articles_attributes.articledetailsID')
+                ->andWhere('s_articles_attributes.' . $attribute . ' ' . $operator . ' :attrValue')
+                ->setParameters([
+                    'attrValue' => $value,
+                    'sessionID' => $this->session->offsetGet('sessionId'),
+                ])
+                ->execute()->fetch(\PDO::FETCH_ASSOC);
+
+            $sqlProductId = $this->connection->createQueryBuilder()
+                ->select(['s_articles_attributes.id'])
+                ->from('s_order_basket, s_articles_attributes, s_articles_details')
+                ->where('s_order_basket.sessionID = :sessionID')
+                ->andWhere('s_order_basket.modus = 0')
+                ->andWhere('s_order_basket.articleID = s_articles_details.articleID AND s_articles_details.kind = 1')
+                ->andWhere('s_articles_details.id = s_articles_attributes.articledetailsID')
+                ->andWhere('s_articles_attributes.' . $attribute . ' ' . $operator . ' :attrValue')
+                ->setParameters([
+                    'attrValue' => $value,
+                    'sessionID' => $this->session->offsetGet('sessionId'),
+                ])
+                ->execute()->fetch(\PDO::FETCH_ASSOC);
+
+            return (bool) $sqlProductOrderNumber || (bool) $sqlProductId;
+        }
+
+        return false;
     }
 
     /**
@@ -4134,9 +4188,9 @@ SQL;
             return false;
         }
 
-        $checkOrder = $this->db->fetchRow('
-            SELECT id FROM s_order
-            WHERE cleared = ? AND userID = ?',
+        $checkOrder = $this->db->fetchRow(
+            'SELECT id FROM s_order
+             WHERE cleared = ? AND userID = ?',
             [
                 $cleared,
                 $this->session->offsetGet('sUserId'),
@@ -4173,9 +4227,9 @@ SQL;
         }
         $dbal = Shopware()->Container()->get('dbal_connection');
 
-        return (int) $dbal->fetchColumn('
-            SELECT default_billing_address_id 
-            FROM s_user WHERE id = :id
+        return (int) $dbal->fetchColumn(
+            'SELECT default_billing_address_id
+             FROM s_user WHERE id = :id
             ',
             ['id' => $this->session->offsetGet('sUserId')]
         );
@@ -4194,9 +4248,9 @@ SQL;
         }
         $dbal = Shopware()->Container()->get('dbal_connection');
 
-        return (int) $dbal->fetchColumn('
-            SELECT default_shipping_address_id 
-            FROM s_user WHERE id = :id
+        return (int) $dbal->fetchColumn(
+            'SELECT default_shipping_address_id
+             FROM s_user WHERE id = :id
             ',
             ['id' => $this->session->offsetGet('sUserId')]
         );

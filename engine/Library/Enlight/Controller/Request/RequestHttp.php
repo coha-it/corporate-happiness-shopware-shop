@@ -897,4 +897,25 @@ class Enlight_Controller_Request_RequestHttp extends Request implements Enlight_
 
         return $name . ':' . $port;
     }
+
+    public function setContent(string $content): void
+    {
+        $this->content = $content;
+    }
+
+    /**
+     * Sets files. Removes empty values from files array.
+     *
+     * @param array $files
+     */
+    public function setFiles(array $files): void
+    {
+        foreach ($files as $idx => $file) {
+            if (empty($file)) {
+                unset($files[$idx]);
+            }
+        }
+
+        $this->files->replace($files);
+    }
 }
