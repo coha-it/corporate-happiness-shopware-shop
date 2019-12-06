@@ -329,6 +329,10 @@ class PaymentBuilderService implements PaymentBuilderInterface
             return false;
         }
 
+        if (!$this->userData[self::CUSTOMER_GROUP_USE_GROSS_PRICES]) {
+            return true;
+        }
+
         if (empty($this->userData['shippingaddress']['ustid'])
             && !empty($this->userData['billingaddress']['ustid'])
             && !empty($this->userData['additional']['country']['taxfree_ustid'])) {
