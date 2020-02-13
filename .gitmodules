@@ -40,3 +40,6 @@
 [submodule "custom/plugins/CohaYoutubeLazyLoad"]
 	path = custom/plugins/CohaYoutubeLazyLoad
 	url = git@github.com:coha-it/CohaYoutubeLazyLoad.git
+[submodule "custom/plugins/CohaOrdPosCom"]
+	path = custom/plugins/CohaOrdPosCom
+	url = git@github.com:coha-it/CohaOrdPosCom.git
