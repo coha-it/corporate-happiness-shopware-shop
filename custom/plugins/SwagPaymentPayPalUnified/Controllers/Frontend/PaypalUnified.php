@@ -387,14 +387,20 @@ class Shopware_Controllers_Frontend_PaypalUnified extends Shopware_Controllers_F
         $requestParams = new PaymentBuilderParameters();
         $requestParams->setBasketData($basketData);
         $requestParams->setUserData($userData);
+        $requestParams->setPaymentType(PaymentType::PAYPAL_PLUS);
         $paymentStruct = $this->get('paypal_unified.plus.payment_builder_service')->getPayment($requestParams);
 
         $amountPatch = new PaymentAmountPatch($paymentStruct->getTransactions()->getAmount());
-        $itemsPatch = new PaymentItemsPatch($paymentStruct->getTransactions()->getItemList()->getItems());
+        $patches = [$addressPatch, $payerInfoPatch, $amountPatch];
+
+        $itemList = $paymentStruct->getTransactions()->getItemList();
+        if ($itemList !== null) {
+            $patches[] = new PaymentItemsPatch($itemList->getItems());
+        }
 
         try {
             $this->client->setPartnerAttributionId(PartnerAttributionId::PAYPAL_PLUS);
-            $this->paymentResource->patch($paymentId, [$addressPatch, $payerInfoPatch, $itemsPatch, $amountPatch]);
+            $this->paymentResource->patch($paymentId, $patches);
         } catch (Exception $exception) {
             $response = $this->get('paypal_unified.exception_handler_service')->handle(
                 $exception,

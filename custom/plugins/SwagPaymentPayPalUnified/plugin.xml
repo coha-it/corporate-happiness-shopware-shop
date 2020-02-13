@@ -5,12 +5,43 @@
     <label lang="de">PayPal</label>
     <label lang="en">PayPal</label>
 
-    <version>2.5.2</version>
+    <version>2.6.4</version>
     <copyright>(c) by shopware AG</copyright>
     <license>MIT</license>
     <link>http://store.shopware.com</link>
     <author>shopware AG</author>
     <compatibility minVersion="5.2.0" maxVersion="5.99.99"/>
+
+    <changelog version="2.6.4">
+        <changes lang="de">PT-11190 - Kompatibilität mit älteren Shopware-Versionen wiederhergestellt;</changes>
+        <changes lang="en">PT-11190 - Restore compatibility with older Shopware versions;</changes>
+    </changelog>
+
+    <changelog version="2.6.3">
+        <changes lang="de">PT-11166 - Express Checkout unterstützt nun wieder korrekt die "Warenkorb übertragen" Option;</changes>
+        <changes lang="en">PT-11166 - Express Checkout correctly considers the "Submit cart" configuration again;</changes>
+    </changelog>
+
+    <changelog version="2.6.2">
+        <changes lang="de">PT-11003 - Fehler im Javascript behoben;</changes>
+        <changes lang="en">PT-11003 - Fix error in Javascript;</changes>
+    </changelog>
+
+    <changelog version="2.6.1">
+        <changes lang="de">PT-11003 - Fehler beim Update behoben;</changes>
+        <changes lang="en">PT-11003 - Fix error on update;</changes>
+    </changelog>
+
+    <changelog version="2.6.0">
+        <changes lang="de">
+            PT-11003 - Neue Option für das Bewerben von Ratenzahlung;
+            PT-11082 - Umsatzsteuer-ID wird nun wieder korrekt berücksichtigt;
+        </changes>
+        <changes lang="en">
+            PT-11003 - New option for advertising installment payment;
+            PT-11082 - VAT ID is now correctly considered again;
+        </changes>
+    </changelog>
 
     <changelog version="2.5.2">
         <changes lang="de">PT-11021 - Fehler im Express Checkout behoben;</changes>
