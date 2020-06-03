@@ -43,6 +43,7 @@
             <argument type="service" id="dbal_connection"/>
             <argument type="service" id="snippets"/>
             <argument type="service" id="translation" on-invalid="null"/>
+            <argument type="service" id="template"/>
             <tag name="shopware.event_subscriber"/>
         </service>
 
@@ -66,6 +67,13 @@
                  class="SwagPaymentPayPalUnified\Subscriber\BackendOrder"
                  public="true">
             <argument type="service" id="dbal_connection"/>
+            <tag name="shopware.event_subscriber"/>
+        </service>
+
+        <service id="paypal_unified.subscriber.cookie_consent"
+                 class="SwagPaymentPayPalUnified\Subscriber\CookieConsent"
+                 public="true">
+            <argument type="service" id="snippets"/>
             <tag name="shopware.event_subscriber"/>
         </service>
 
