@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 /**
  * Shopware 5
  * Copyright (c) shopware AG
@@ -22,26 +22,14 @@
  * our trademarks remain entirely with us.
  */
 
-namespace Shopware\Components\License\Service\Exceptions;
+namespace Shopware\Controllers\Widgets;
 
-use Shopware\Components\License\Struct\LicenseInformation;
-
-class LicenseHostException extends \RuntimeException
+class Blog extends \Enlight_Controller_Action
 {
-    /** @var LicenseInformation */
-    private $licenseInformation;
-
-    public function __construct(LicenseInformation $licenseInformation, $message = '')
+    public function formAction(): void
     {
-        parent::__construct($message);
-        $this->licenseInformation = $licenseInformation;
-    }
-
-    /**
-     * @return LicenseInformation
-     */
-    public function getLicenseInformation()
-    {
-        return $this->licenseInformation;
+        $this->Response()->headers->set('cache-control', 'private');
+        $this->View()->assign('sFormData', $this->Request()->getParam('formData'));
+        $this->View()->assign('sErrorFlag', $this->Request()->getParam('errorFlags'));
     }
 }
