@@ -1,0 +1,341 @@
+<?xml version="1.0" encoding="utf-8"?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+		xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/shopware/shopware/5.3/engine/Shopware/Components/Plugin/schema/config.xsd">
+	<elements>
+
+	<element type="button" scope="locale">
+		<name>uvemvpluginhandling</name>
+		<label lang="de">Plugin Handling</label>
+		<label lang="en">Plugin Handling</label>
+		<value>1</value>
+	</element>
+
+	<element type="select" required="true" scope="locale">
+		<name>uvemvSettingGlobalSubShopFunctions</name>
+		<label lang="de">Subshop Funktion aktivieren?</label>
+		<label lang="en">Activate subshop function?</label>
+		<value>0</value>
+		<description lang="de">Hier kann festgelegt werden ob dieses Plugin die Einstellungen NUR vom Hauptshop verwendet oder ob die Konfigurationen von den Subshops beachtet werden.</description>
+		<description lang="en">Here you can specify whether this plugin uses the settings ONLY from the main shop or whether the configurations are taken into account by the subshops.</description>
+		<store>
+			<option>
+				<value>0</value>
+				<label lang="de">Einstellungen NUR vom Hauptshop verwenden (Konfigurationen der Subshops werden ignoriert!)</label>
+				<label lang="en">Use settings ONLY from the main shop (configurations of sub-shops are ignored!)</label>
+			</option>
+			<option>
+				<value>1</value>
+				<label lang="de">Einstellungen der Subshops beachten</label>
+				<label lang="en">Note the settings of the sub-shops</label>
+			</option>
+		</store>
+	</element>
+
+	<element type="button" scope="locale">
+		<name>uvemvtopsettings</name>
+		<label lang="de">Einstellungen</label>
+		<label lang="en">Settings</label>
+		<value>1</value>
+	</element>
+
+	<element type="select" required="true" scope="shop">
+		<name>uvalaTargetEMVTOPactivateJqueryResizer</name>
+		<label lang="de">JQuery IFrame Resizer</label>
+		<label lang="en">JQuery IFrame Resizer</label>
+		<value>1</value>
+		<description lang="de">Diese Einstellung aktiviert eine JQuery Neuberechnungsfunktion für das eingebettete IFrame, damit kann die Größe besser an Handys und co. angepasst werden.</description>
+		<description lang="en">This setting enables a JQuery recalculation function for the embedded IFrame, so that the size can be better matched to mobile phones and co. be adjusted.</description>
+		<store>
+			<option>
+				<value>0</value>
+				<label lang="de">Nein</label>
+				<label lang="en">no</label>
+			</option>
+			<option>
+				<value>1</value>
+				<label lang="de">Ja</label>
+				<label lang="en">yes</label>
+			</option>
+		</store>
+	</element>
+
+	<element type="select" required="true" scope="shop">
+		<name>uvalaTargetEMVTOPICViewportWatcher</name>
+		<label lang="de">JQuery Viewport-watcher</label>
+		<label lang="en">JQuery Viewport-watcher</label>
+		<value>2</value>
+		<description lang="de">Diese Einstellung aktiviert eine JQuery Viewport-watcher welcher von UVALASoft als Plattformübergreifende Lösung entwickelt wurde. Hiermit kann der User durch reines scrollen oder klicken auf ein Artikel-Bild, das Abspielen eines Videos beenden.</description>
+		<description lang="en">This setting enables a JQuery Viewport watcher developed by UVALASoft as a cross-platform solution. With this, the user can scroll or click on an article image to stop playing a video.</description>
+		<store>
+			<option>
+				<value>0</value>
+				<label lang="de">Deaktiviert</label>
+				<label lang="en">disabled</label>
+			</option>
+			<option>
+				<value>1</value>
+				<label lang="de">Bilderwechsel - Das Video wird gestoppt, sobald der User ein anderes Bild anklickt</label>
+				<label lang="en">Picture change - The video is stopped as soon as the user clicks on another picture</label>
+			</option>
+			<option>
+				<value>2</value>
+				<label lang="de">Bilderwechsel UND Scrollen (Das Video auch gestoppt, sobald der User das Video aus der Seite Scrollt)</label>
+				<label lang="en">Picture change AND scrolling (the video also stopped as soon as the user scrolls the video from the page)</label>
+			</option>
+		</store>
+	</element>
+
+	<element type="select" required="true" scope="shop">
+		<name>uvalaTargetEMVTOPICShowVideoButtons</name>
+		<label lang="de">Pfeile für Video/Bild-Wechsel (>750px)</label>
+		<label lang="en">Arrows for video / image change (>750px)</label>
+		<value>0</value>
+		<description lang="de">Zeigt links und rechts neben dem Video sowie Bilder die typischen Pfeile zum Weiterschalten der Bilder bzw. des Videos an. Die Pfeile werden unterhalb von 750px Breite normalerweise ausgeblendet, mit dieser Option werden die Pfeile immer angezeigt.</description>
+		<description lang="en">Shows to the left and right of the video as well as pictures the typical arrows to advance the pictures or the video. The arrows will normally be hidden below 750px width, with this option the arrows will always be displayed.</description>
+		<store>
+			<option>
+				<value>0</value>
+				<label lang="de">Deaktiviert</label>
+				<label lang="en">Disabled</label>
+			</option>
+			<option>
+				<value>1</value>
+				<label lang="de">Aktiviert - Pfeile als Overlay in der Produktdetailansicht anzeigen</label>
+				<label lang="en">Enabled - Show arrows as an overlay in the product detail view</label>
+			</option>
+		</store>
+	</element>
+
+	<element type="select" required="true" scope="shop">
+		<name>uvalaTargetShowMovieBadge</name>
+		<label lang="de">Badge im Listing anzeigen</label>
+		<label lang="en">Show badge in listing</label>
+		<value>1</value>
+		<description lang="de">Zeigt das Badge in der Produktübersicht an, sofern das betreffende Produkt min. ein Video enthält.</description>
+		<description lang="en">Displays the badge in the product overview if the product in question is min. contains a video.</description>
+		<store>
+			<option>
+				<value>0</value>
+				<label lang="de">Nein</label>
+				<label lang="en">no</label>
+			</option>
+			<option>
+				<value>1</value>
+				<label lang="de">Ja</label>
+				<label lang="en">yes</label>
+			</option>
+		</store>
+	</element>
+
+	<element type="select" required="true" scope="shop">
+		<name>uvalaTargetShowMovieOverlayPlayButton</name>
+		<label lang="de">Overlay Play Button über Thumbnails anzeigen</label>
+		<label lang="en">Show overlay play button via thumbnails</label>
+		<value>1</value>
+		<description lang="de">Zeigt ein Play Button überhalb eines Thumbnails (als Overlay) in der Produkt-Detailansicht an.</description>
+		<description lang="en">Displays a play button above a thumbnail (as an overlay) in the product detail view.</description>
+		<store>
+			<option>
+				<value>0</value>
+				<label lang="de">Nein - Play Button NICHT über dem Thumbnail anzeigen</label>
+				<label lang="en">No - DO NOT show the play button above the thumbnail</label>
+			</option>
+			<option>
+				<value>1</value>
+				<label lang="de">Ja (-Default-)</label>
+				<label lang="en">yes (-Default-)</label>
+			</option>
+		</store>
+	</element>
+
+	<element type="button" scope="locale">
+		<name>uvemvtopAddendPopupButtonSetting</name>
+		<label lang="de">Zusätzlicher Popup Button</label>
+		<label lang="en">Additional popup button</label>
+		<value>1</value>
+	</element>
+
+	<element type="select" required="true" scope="shop">
+		<name>uvalaTargetEMVTOPICPopupButtonStatus</name>
+		<label lang="de">Popup Button anzeigen</label>
+		<label lang="en">Show popup button</label>
+		<value>0</value>
+		<description lang="de">Zeigt einen zusätzlichen Popup Button zu dem Video an, damit auch das Popup beim Abspielen des Videos erreichbar ist.</description>
+		<description lang="en">Shows an additional popup button for the video, so that the popup can be reached when playing the video.</description>
+		<store>
+			<option>
+				<value>0</value>
+				<label lang="de">Nein</label>
+				<label lang="en">no</label>
+			</option>
+			<option>
+				<value>1</value>
+				<label lang="de">Ja - Orientierung am äußeren Rahmen</label>
+				<label lang="en">Yes - orientation on the outer frame</label>
+			</option>
+			<option>
+				<value>2</value>
+				<label lang="de">Ja - Orientierung am IFrame (Funktioniert nur mit aktiviertem JQuery IFrame Resizer!)</label>
+				<label lang="en">Yes - Orientation to IFrame (Works only with activated JQuery IFrame Resizer!)</label>
+			</option>
+		</store>
+	</element>
+
+	<element type="select" required="true" scope="shop">
+		<name>uvalaTargetEMVTOPICPopupButtonPosition</name>
+		<label lang="de">Popup Button Position</label>
+		<label lang="en">Show popup positon</label>
+		<value>1</value>
+		<description lang="de">Legt fest, an welche Position des Videos der Button angezeigt wird.</description>
+		<description lang="en">Defines to which position of the video the button is displayed.</description>
+		<store>
+			<option>
+				<value>0</value>
+				<label lang="de">Oben rechts</label>
+				<label lang="en">Top right</label>
+			</option>
+			<option>
+				<value>1</value>
+				<label lang="de">Oben links</label>
+				<label lang="en">Top left</label>
+			</option>
+			<option>
+				<value>2</value>
+				<label lang="de">Unten rechts</label>
+				<label lang="en">Bottom right</label>
+			</option>
+			<option>
+				<value>3</value>
+				<label lang="de">Unten links</label>
+				<label lang="en">Bottom left</label>
+			</option>
+		</store>
+	</element>
+
+	<element type="button" scope="locale">
+		<name>uvemvtopyoutube</name>
+		<label lang="de">Youtube Ausgabeschema</label>
+		<label lang="en">Youtube output schema</label>
+		<value>1</value>
+	</element>
+
+	<element type="textarea" required="false" scope="shop">
+		<name>uvalaTargetIframeCodeOne</name>
+		<label lang="de">Video</label>
+		<label lang="en">Video</label>
+		<value>&lt;iframe src="##url_to_replace##" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen&gt;&lt;/iframe&gt;</value>
+		<description lang="de">Ausgabeschema für Youtube Videos. Die URL wird mittels ##url_to_replace## Platzhalter ersetzt!</description>
+		<description lang="en">Output scheme for Youtube videos. The URL is replaced by ##url_to_replace## placeholders!</description>
+	</element>
+
+	<element type="textarea" required="false" scope="shop">
+		<name>uvalaTargetThumbnailCodeOne</name>
+		<label lang="de">Thumbnail</label>
+		<label lang="en">Thumbnail</label>
+		<value>##thumbnail_to_replace##</value>
+		<description lang="de">Ausgabeschema für Youtube Thumbnails. Die URL wird mittels ##thumbnail_to_replace## ersetzt und in das SRC Attribut des IMG Tags eingefügt (Artikel-Listing und Thumbnail)!</description>
+		<description lang="en">Output scheme for Youtube thumbnails. The URL is replaced with ##thumbnail_to_replace## and inserted into the SRC attribute of the IMG tag (article listing and thumbnail)!</description>
+	</element>
+
+	<element type="button" scope="locale">
+		<name>uvemvtopvimeo</name>
+		<label lang="de">Vimeo Ausgabeschema</label>
+		<label lang="en">Vimeo output schema</label>
+		<value>1</value>
+	</element>
+
+	<element type="textarea" required="false" scope="shop">
+		<name>uvalaTargetIframeCodeTwo</name>
+		<label lang="de">Video</label>
+		<label lang="en">Video</label>
+		<value>&lt;iframe src="##url_to_replace##" frameborder="0" webkitallowfullscreen mozallowfullscreen allowfullscreen&gt;&lt;/iframe&gt;</value>
+		<description lang="de">Ausgabeschema für Vimeo Videos. Die URL wird mittels ##url_to_replace## Platzhalter ersetzt!</description>
+		<description lang="en">Output scheme for Vimeo videos. The URL is replaced by ##url_to_replace## placeholders!</description>
+	</element>
+
+	<element type="textarea" required="false" scope="shop">
+		<name>uvalaTargetThumbnailCodeTwo</name>
+		<label lang="de">Thumbnail</label>
+		<label lang="en">Thumbnail</label>
+		<value>##thumbnail_to_replace##</value>
+		<description lang="de">Ausgabeschema für Vimeo Thumbnails. Die URL wird mittels ##thumbnail_to_replace## ersetzt und in das SRC Attribut des IMG Tags eingefügt (Artikel-Listing und Thumbnail)!</description>
+		<description lang="en">Output scheme for Vimeo thumbnails. The URL is replaced with ##thumbnail_to_replace## and inserted into the SRC attribute of the IMG tag (article listing and thumbnail)!</description>
+	</element>
+
+	<element type="button" scope="locale">
+		<name>uvemvtopfacebook</name>
+		<label lang="de">Facebook Ausgabeschema</label>
+		<label lang="en">Facebook output schema</label>
+		<value>1</value>
+	</element>
+
+	<element type="textarea" required="false" scope="shop">
+		<name>uvalaTargetIframeCodeThree</name>
+		<label lang="de">Video</label>
+		<label lang="en">Video</label>
+		<value>&lt;iframe src="##url_to_replace##" style="border:none;overflow:hidden" scrolling="no" frameborder="0" allowTransparency="true" allowFullScreen="true"&gt;&lt;/iframe&gt;</value>
+		<description lang="de">Ausgabeschema für Facebook Videos. Die URL wird mittels ##url_to_replace## Platzhalter ersetzt!</description>
+		<description lang="en">Output scheme for Facebook videos. The URL is replaced by ##url_to_replace## placeholders!</description>
+	</element>
+
+	<element type="textarea" required="false" scope="shop">
+		<name>uvalaTargetThumbnailCodeThree</name>
+		<label lang="de">Thumbnail</label>
+		<label lang="en">Thumbnail</label>
+		<value>##thumbnail_to_replace##</value>
+		<description lang="de">Ausgabeschema für Facebook Thumbnails. Die URL wird mittels ##thumbnail_to_replace## ersetzt und in das SRC Attribut des IMG Tags eingefügt (Artikel-Listing und Thumbnail)!</description>
+		<description lang="en">Output scheme for Facebook thumbnails. The URL is replaced with ##thumbnail_to_replace## and inserted into the SRC attribute of the IMG tag (article listing and thumbnail)!</description>
+	</element>
+
+	<element type="button" scope="locale">
+		<name>uvemvtopfreeone</name>
+		<label lang="de">Feies Ausgabeschema 1</label>
+		<label lang="en">free output scheme 1</label>
+		<value>1</value>
+	</element>
+
+	<element type="textarea" required="false" scope="shop">
+		<name>uvalaTargetIframeCodeFour</name>
+		<label lang="de">Video</label>
+		<label lang="en">Video</label>
+		<value></value>
+		<description lang="de">Freies Ausgabeschmea. Die URL wird mittels ##url_to_replace## Platzhalter ersetzt!</description>
+		<description lang="en">free output scheme. The URL is replaced by ##url_to_replace## placeholders!</description>
+	</element>
+
+	<element type="textarea" required="false" scope="shop">
+		<name>uvalaTargetThumbnailCodeFour</name>
+		<label lang="de">Thumbnail</label>
+		<label lang="en">Thumbnail</label>
+		<value>##thumbnail_to_replace##</value>
+		<description lang="de">Freies Ausgabeschema für Thumbnails. Die URL wird mittels ##thumbnail_to_replace## ersetzt und in das SRC Attribut des IMG Tags eingefügt (Artikel-Listing und Thumbnail)!</description>
+		<description lang="en">free Output scheme for thumbnails. The URL is replaced with ##thumbnail_to_replace## and inserted into the SRC attribute of the IMG tag (article listing and thumbnail)!</description>
+	</element>
+
+	<element type="button" scope="locale">
+		<name>uvemvtopfreetwo</name>
+		<label lang="de">Feies Ausgabeschema 2</label>
+		<label lang="en">free output scheme 2</label>
+		<value>1</value>
+	</element>
+
+	<element type="textarea" required="false" scope="shop">
+		<name>uvalaTargetIframeCodeFive</name>
+		<label lang="de">Video</label>
+		<label lang="en">Video</label>
+		<value></value>
+		<description lang="de">Freies Ausgabeschmea. Die URL wird mittels ##url_to_replace## Platzhalter ersetzt!</description>
+		<description lang="en">free output scheme. The URL is replaced by ##url_to_replace## placeholders!</description>
+	</element>
+
+	<element type="textarea" required="false" scope="shop">
+		<name>uvalaTargetThumbnailCodeFive</name>
+		<label lang="de">Thumbnail</label>
+		<label lang="en">Thumbnail</label>
+		<value>##thumbnail_to_replace##</value>
+		<description lang="de">Freies Ausgabeschema für Thumbnails. Die URL wird mittels ##thumbnail_to_replace## ersetzt und in das SRC Attribut des IMG Tags eingefügt (Artikel-Listing und Thumbnail)!</description>
+		<description lang="en">free Output scheme for thumbnails. The URL is replaced with ##thumbnail_to_replace## and inserted into the SRC attribute of the IMG tag (article listing and thumbnail)!</description>
+	</element>
+
+	</elements>
+</config>

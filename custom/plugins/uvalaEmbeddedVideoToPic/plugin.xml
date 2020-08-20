@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8"?>
+<plugin xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/shopware/shopware/5.3/engine/Shopware/Components/Plugin/schema/plugin.xsd">
+	<label lang="de">Videos der Artikelbilderverwaltung hinzufügen von Youtube, Vimeo, Facebook etc.</label>
+	<label lang="en">Add videos to product image management from Youtube, Vimeo, Facebook etc.</label>
+
+	<version>1.4.5</version>
+	<copyright>(c) UVALASoft</copyright>
+	<license>proprietary</license>
+	<link>https://www.uvalasoft.de/produkte/shopware_5_plugins/shopwaremodul_videos_in_artikel_bilder_anzeigen</link>
+	<author>UVALASoft</author>
+	<description lang="de">Diese Funktion erweitert die Bilderverwaltung der Artikel, sodass Videos von Youtube und anderen Plattformen, statt der Bilder im Shop angezeigt werden. &lt;a href="https://www.uvalasoft.de/produkte/shopware_5_plugins/shopwaremodul_videos_in_artikel_bilder_anzeigen" target="_blank" style="text-decoration:none;border-radius:4px;padding:2px 8px;background:linear-gradient(#dfe0ff, #c2ceff, #dfe0ff);color:#2c2d5f;"&gt;Konfigurationsanleitung öffnen&lt;/a&gt;
+	&lt;br&gt;&lt;br&gt;
+	Cache leeren: Bitte denken Sie daran bei allen Änderungen der Grundeinstellungen sowie Textbausteinen den Cache zu leeren!&lt;br&gt;Einstellungen -&gt; Caches/Performance -&gt; Shop cache leeren (oder: STRG + ALT + X)
+	&lt;br&gt;&lt;br&gt;
+	Den Play-Badge und das Symbol für den Popup Button können Sie über die Textbausteine ändern.&lt;br&gt;(Einstellungen -&gt; Textbausteine -&gt; frontend selektieren -&gt; In der Suche eingeben: playbadge oder: popup_button)
+	</description>
+	<description lang="en">
+	This feature enhances the image management of the articles so that videos from Youtube and other platforms are displayed instead of images in the shop.
+	&lt;br&gt;&lt;br&gt;
+	Empty the cache: Please remember to clear the cache for all changes to the basic settings and text modules! &lt;br&gt; Settings - &gt; Caches / Performance - &gt; Clear shop cache (or CTRL + ALT + X)
+	&lt;br&gt;&lt;br&gt;
+	You can change the play badge and the pop-up button icon using the text modules: &lt;br&gt; (Settings -&gt; Text Modules -&gt; select frontend -&gt; enter in the search: playbadge or: popup_button)
+	</description>
+	<compatibility minVersion="5.3.0"/>
+
+	<changelog version="1.4.5">
+		<changes lang="de">Neues Feature: Das Playbutton Overlay in der Produkt-Detailansicht kann nun deaktiviert werden.</changes>
+		<changes lang="en">New feature: The play button overlay in the product detail view can now be deactivated.</changes>
+	</changelog>
+
+	<changelog version="1.4.4">
+		<changes lang="de">Allgemeine Fehlerbehebung</changes>
+		<changes lang="en">General troubleshooting</changes>
+	</changelog>
+
+	<changelog version="1.4.3">
+		<changes lang="de">Multishop-Funktion hinzugefügt mit der Möglichkeit diese zu deaktivieren.</changes>
+		<changes lang="en">Added multishop feature with the ability to disable them.</changes>
+	</changelog>
+
+	<changelog version="1.4.2">
+		<changes lang="de">Neue Funktionen: Pfeilbuttons neben Videos können aktiviert werden, damit dem Shopbesucher das Weiterschalten der Bilder ermöglicht wird. Videos können jetzt pro Sprache hinterlegt werden, hierdurch erhält der Shopbesucher die Videos immer in seiner Wunschsprache.</changes>
+		<changes lang="en">New functions: Arrow buttons next to videos can be activated so that the shop visitor can continue to switch pictures. Videos can now be deposited per language, thus the shop visitor always receives the videos in his desired language.</changes>
+	</changelog>
+
+	<changelog version="1.4.1">
+		<changes lang="de">Bugfix und Performance Verbesserung, beim Beenden der Videos durch das scrollen der Seite. Das entsprechende Video wird nun nur noch beim Überschreiten des Video-Bereiches beendet.</changes>
+		<changes lang="en">Bugfix and performance improvement, when you quit the videos by scrolling the page. The corresponding video is now only ended when the video area is exceeded.</changes>
+	</changelog>
+
+	<changelog version="1.4.0">
+		<changes lang="de">Neue Funktionen: Vergrößern-Button als Overlay für das Video, Position kann bestimmt werden. Viewport-watcher für das Stoppen der Videos beim Scrollen oder Klick auf ein Bild, wurde eingefügt. Die Konfiguration wurde um drei neue Punkte erweitert, damit können alle neuen Funktionen getrennt definiert werden.</changes>
+		<changes lang="en">New features: Zoom in button as overlay for the video, position can be determined. Viewport watcher for stopping videos when scrolling or clicking on an image has been added. The configuration has been extended by three new points, so that all new functions can be defined separately.</changes>
+	</changelog>
+
+	<changelog version="1.3.2">
+		<changes lang="de">Feinabstimmung der JQuery Funktion (zum Berechnen des IFrames) verbessert.</changes>
+		<changes lang="en">Fine-tune the JQuery function (to calculate the IFrame).</changes>
+	</changelog>
+
+	<changelog version="1.3">
+		<changes lang="de">JQuery Funktion zum nachträglichen berechnen der IFrame Größe und Feinjustierung der Positionierung des IFrames eingefügt.</changes>
+		<changes lang="en">JQuery function for subsequently calculating the IFrame size and fine adjustment of the positioning of the IFrames inserted.</changes>
+	</changelog>
+
+	<changelog version="1.2">
+		<changes lang="de">Bugfix: Play-Badge tauchte bei nachgeladenen Produkten nicht auf.</changes>
+		<changes lang="en">Bugfix: Play badge did not show up on reloaded products.</changes>
+	</changelog>
+
+	<changelog version="1.1">
+		<changes lang="de">Initialisierungsroutine der Templatedateien verändert und Schema zum Einbinden externer Thumbnails eingefügt (z.B. Youtube Thumbnail).</changes>
+		<changes lang="en">Altered initialization routine of the template files and inserted schema for integrating external thumbnails (eg Youtube Thumbnail).</changes>
+	</changelog>
+
+	<changelog version="1.0">
+		<changes lang="de">Plugin erstellt</changes>
+		<changes lang="en">Plugin created</changes>
+	</changelog>
+
+</plugin>
