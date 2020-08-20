@@ -43,3 +43,6 @@
 [submodule "custom/plugins/CohaOrdPosCom"]
 	path = custom/plugins/CohaOrdPosCom
 	url = git@github.com:coha-it/CohaOrdPosCom.git
+[submodule "custom/plugins/CohaCrmApi"]
+	path = custom/plugins/CohaCrmApi
+	url = git@github.com:coha-it/CohaCrmApi.git
