@@ -54,7 +54,7 @@ class PaymentBuilderService implements PaymentBuilderInterface
      */
     private $basketData;
 
-    /*
+    /**
      * @var array
      */
     private $userData;
@@ -92,8 +92,6 @@ class PaymentBuilderService implements PaymentBuilderInterface
 
         if ($paymentType === PaymentType::PAYPAL_EXPRESS || $paymentType === PaymentType::PAYPAL_CLASSIC) {
             $requestParameters->setIntent($this->getIntentAsString((int) $this->settings->get('intent', SettingsTable::EXPRESS_CHECKOUT)));
-        } elseif ($paymentType === PaymentType::PAYPAL_INSTALLMENTS) {
-            $requestParameters->setIntent($this->getIntentAsString((int) $this->settings->get('intent', SettingsTable::INSTALLMENTS)));
         } else {
             $requestParameters->setIntent('sale');
         }

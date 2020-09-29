@@ -41,7 +41,7 @@ class Invoice implements SubscriberInterface
     private $translation;
 
     /**
-     * @var Enlight_Template_ManagerTemplate
+     * @var Template
      */
     private $templateManager;
 
@@ -113,7 +113,7 @@ class Invoice implements SubscriberInterface
     {
         $vars = $eventArgs->getReturn();
 
-        if ($vars['additional']['payment']['name'] !== 'SwagPaymentPayPalUnified') {
+        if ($vars['additional']['payment']['name'] !== PaymentMethodProvider::PAYPAL_UNIFIED_PAYMENT_METHOD_NAME) {
             return $vars;
         }
 
