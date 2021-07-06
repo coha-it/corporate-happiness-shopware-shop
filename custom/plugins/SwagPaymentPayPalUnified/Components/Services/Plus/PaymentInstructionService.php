@@ -14,6 +14,8 @@ use SwagPaymentPayPalUnified\PayPalBundle\Structs\Payment\PaymentInstruction;
 
 class PaymentInstructionService
 {
+    const INVOICE_INSTRUCTION_DESCRIPTION = 'Pay Upon Invoice Payment Instructions';
+
     /**
      * @var ModelManager
      */
@@ -85,8 +87,8 @@ class PaymentInstructionService
     {
         $modelArray = $model->toArray();
         unset($modelArray['id'], $modelArray['order']);
-        $modelArray = ['jsonDescription' => 'Pay Upon Invoice Payment Instructions'] + $modelArray;
-        $instructionsJson = json_encode($modelArray);
+        $modelArray = ['jsonDescription' => self::INVOICE_INSTRUCTION_DESCRIPTION] + $modelArray;
+        $instructionsJson = \json_encode($modelArray);
 
         return "\n" . $instructionsJson . "\n";
     }

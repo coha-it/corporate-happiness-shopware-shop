@@ -18,12 +18,12 @@ class LoggerServiceTest extends TestCase
     use DatabaseTestCaseTrait;
     use SettingsHelperTrait;
 
-    public function test_warning_returns_without_settings()
+    public function testWarningReturnsWithoutSettings()
     {
         $fileName = $this->getLogfile();
 
         //Reset the logfile
-        file_put_contents($fileName, '');
+        \file_put_contents($fileName, '');
 
         /** @var LoggerServiceInterface $loggerService */
         $loggerService = Shopware()->Container()->get('paypal_unified.logger_service');
@@ -34,12 +34,12 @@ class LoggerServiceTest extends TestCase
         static::assertEmpty($lastLine);
     }
 
-    public function test_warning_returns_without_required_log_level()
+    public function testWarningReturnsWithoutRequiredLogLevel()
     {
         $fileName = $this->getLogfile();
 
         //Reset the logfile
-        file_put_contents($fileName, '');
+        \file_put_contents($fileName, '');
 
         /** @var LoggerServiceInterface $loggerService */
         $loggerService = Shopware()->Container()->get('paypal_unified.logger_service');
@@ -52,12 +52,12 @@ class LoggerServiceTest extends TestCase
         static::assertEmpty($lastLine);
     }
 
-    public function test_warning_adds_line()
+    public function testWarningAddsLine()
     {
         $fileName = $this->getLogfile();
 
         //Reset the logfile
-        file_put_contents($fileName, '');
+        \file_put_contents($fileName, '');
 
         /** @var LoggerServiceInterface $loggerService */
         $loggerService = Shopware()->Container()->get('paypal_unified.logger_service');
@@ -68,7 +68,7 @@ class LoggerServiceTest extends TestCase
 
         $lastLine = $this->getLastLine($fileName);
 
-        if (method_exists($this, 'assertStringContainsString')) {
+        if (\method_exists($this, 'assertStringContainsString')) {
             static::assertStringContainsString('Test message', $lastLine);
 
             return;
@@ -76,12 +76,12 @@ class LoggerServiceTest extends TestCase
         static::assertContains('Test message', $lastLine);
     }
 
-    public function test_notify_returns_without_settings()
+    public function testNotifyReturnsWithoutSettings()
     {
         $fileName = $this->getLogfile();
 
         //Reset the logfile
-        file_put_contents($fileName, '');
+        \file_put_contents($fileName, '');
 
         /** @var LoggerServiceInterface $loggerService */
         $loggerService = Shopware()->Container()->get('paypal_unified.logger_service');
@@ -92,12 +92,12 @@ class LoggerServiceTest extends TestCase
         static::assertEmpty($lastLine);
     }
 
-    public function test_notify_returns_without_required_log_level()
+    public function testNotifyReturnsWithoutRequiredLogLevel()
     {
         $fileName = $this->getLogfile();
 
         //Reset the logfile
-        file_put_contents($fileName, '');
+        \file_put_contents($fileName, '');
 
         /** @var LoggerServiceInterface $loggerService */
         $loggerService = Shopware()->Container()->get('paypal_unified.logger_service');
@@ -110,12 +110,12 @@ class LoggerServiceTest extends TestCase
         static::assertEmpty($lastLine);
     }
 
-    public function test_notify_adds_line()
+    public function testNotifyAddsLine()
     {
         $fileName = $this->getLogfile();
 
         //Reset the logfile
-        file_put_contents($fileName, '');
+        \file_put_contents($fileName, '');
 
         /** @var LoggerServiceInterface $loggerService */
         $loggerService = Shopware()->Container()->get('paypal_unified.logger_service');
@@ -126,7 +126,7 @@ class LoggerServiceTest extends TestCase
 
         $lastLine = $this->getLastLine($fileName);
 
-        if (method_exists($this, 'assertStringContainsString')) {
+        if (\method_exists($this, 'assertStringContainsString')) {
             static::assertStringContainsString('Test message', $lastLine);
 
             return;
@@ -134,12 +134,12 @@ class LoggerServiceTest extends TestCase
         static::assertContains('Test message', $lastLine);
     }
 
-    public function test_error_adds_line()
+    public function testErrorAddsLine()
     {
         $fileName = $this->getLogfile();
 
         //Reset the logfile
-        file_put_contents($fileName, '');
+        \file_put_contents($fileName, '');
 
         /** @var LoggerServiceInterface $loggerService */
         $loggerService = Shopware()->Container()->get('paypal_unified.logger_service');
@@ -148,7 +148,7 @@ class LoggerServiceTest extends TestCase
 
         $lastLine = $this->getLastLine($fileName);
 
-        if (method_exists($this, 'assertStringContainsString')) {
+        if (\method_exists($this, 'assertStringContainsString')) {
             static::assertStringContainsString('A very fatal error', $lastLine);
 
             return;
@@ -174,7 +174,7 @@ class LoggerServiceTest extends TestCase
     {
         $env = Shopware()->Container()->getParameter('kernel.environment');
 
-        $fileName = __DIR__ . '/../../../../../../../var/log/plugin_' . $env . '-' . date('Y-m-d') . '.log';
+        $fileName = __DIR__ . '/../../../../../../../var/log/plugin_' . $env . '-' . \date('Y-m-d') . '.log';
 
         return $fileName;
     }
@@ -186,8 +186,8 @@ class LoggerServiceTest extends TestCase
      */
     private function getLastLine($file)
     {
-        $lines = explode("\n", file_get_contents($file));
-        $lineCount = count($lines);
+        $lines = \explode("\n", \file_get_contents($file));
+        $lineCount = \count($lines);
 
         return $lines[$lineCount - 2]; //the actual last line is blank
     }

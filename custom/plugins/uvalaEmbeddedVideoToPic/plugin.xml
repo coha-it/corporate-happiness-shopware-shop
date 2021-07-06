@@ -4,25 +4,19 @@
 	<label lang="de">Videos der Artikelbilderverwaltung hinzufügen von Youtube, Vimeo, Facebook etc.</label>
 	<label lang="en">Add videos to product image management from Youtube, Vimeo, Facebook etc.</label>
 
-	<version>1.4.5</version>
+	<version>1.4.6</version>
 	<copyright>(c) UVALASoft</copyright>
 	<license>proprietary</license>
 	<link>https://www.uvalasoft.de/produkte/shopware_5_plugins/shopwaremodul_videos_in_artikel_bilder_anzeigen</link>
 	<author>UVALASoft</author>
-	<description lang="de">Diese Funktion erweitert die Bilderverwaltung der Artikel, sodass Videos von Youtube und anderen Plattformen, statt der Bilder im Shop angezeigt werden. &lt;a href="https://www.uvalasoft.de/produkte/shopware_5_plugins/shopwaremodul_videos_in_artikel_bilder_anzeigen" target="_blank" style="text-decoration:none;border-radius:4px;padding:2px 8px;background:linear-gradient(#dfe0ff, #c2ceff, #dfe0ff);color:#2c2d5f;"&gt;Konfigurationsanleitung öffnen&lt;/a&gt;
-	&lt;br&gt;&lt;br&gt;
-	Cache leeren: Bitte denken Sie daran bei allen Änderungen der Grundeinstellungen sowie Textbausteinen den Cache zu leeren!&lt;br&gt;Einstellungen -&gt; Caches/Performance -&gt; Shop cache leeren (oder: STRG + ALT + X)
-	&lt;br&gt;&lt;br&gt;
-	Den Play-Badge und das Symbol für den Popup Button können Sie über die Textbausteine ändern.&lt;br&gt;(Einstellungen -&gt; Textbausteine -&gt; frontend selektieren -&gt; In der Suche eingeben: playbadge oder: popup_button)
-	</description>
-	<description lang="en">
-	This feature enhances the image management of the articles so that videos from Youtube and other platforms are displayed instead of images in the shop.
-	&lt;br&gt;&lt;br&gt;
-	Empty the cache: Please remember to clear the cache for all changes to the basic settings and text modules! &lt;br&gt; Settings - &gt; Caches / Performance - &gt; Clear shop cache (or CTRL + ALT + X)
-	&lt;br&gt;&lt;br&gt;
-	You can change the play badge and the pop-up button icon using the text modules: &lt;br&gt; (Settings -&gt; Text Modules -&gt; select frontend -&gt; enter in the search: playbadge or: popup_button)
-	</description>
+	<description lang="de">Videos von z.B. YouTube können mit diesem Plugin ganz bequem über die Bilderverwaltung eines Artikels eingefügt werden. Änderung der Position oder eigenes Thumbnail sind kein Problem!</description>
+	<description lang="en">Videos of e.g. YouTube can be easily inserted with this plugin via the image management of an article. Change of position or own thumbnail are no problem!</description>
 	<compatibility minVersion="5.3.0"/>
+
+    <changelog version="1.4.6">
+        <changes lang="de">Bugfix: Facebook Iframe Konfiguration wurde angepasst.</changes>
+        <changes lang="en">Bugfix: Facebook Iframe configuration updated</changes>
+    </changelog>
 
 	<changelog version="1.4.5">
 		<changes lang="de">Neues Feature: Das Playbutton Overlay in der Produkt-Detailansicht kann nun deaktiviert werden.</changes>

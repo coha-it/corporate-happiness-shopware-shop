@@ -11,7 +11,10 @@ namespace SwagPaymentPayPalUnified\Setup;
 use Doctrine\DBAL\Connection;
 use Shopware\Bundle\AttributeBundle\Service\CrudService;
 use Shopware\Components\Model\ModelManager;
+use SwagPaymentPayPalUnified\Components\PaymentMethodProvider;
+use SwagPaymentPayPalUnified\Components\Services\Plus\PaymentInstructionService;
 use SwagPaymentPayPalUnified\Models\Settings\General as GeneralSettingsModel;
+use SwagPaymentPayPalUnified\PayPalBundle\PaymentType;
 
 class Updater
 {
@@ -42,48 +45,56 @@ class Updater
      */
     public function update($oldVersion)
     {
-        if (version_compare($oldVersion, '1.0.2', '<=')) {
+        if (\version_compare($oldVersion, '1.0.2', '<=')) {
             $this->updateTo103();
         }
 
-        if (version_compare($oldVersion, '1.0.7', '<=')) {
+        if (\version_compare($oldVersion, '1.0.7', '<=')) {
             $this->updateTo110();
         }
 
-        if (version_compare($oldVersion, '1.1.0', '<=')) {
+        if (\version_compare($oldVersion, '1.1.0', '<=')) {
             $this->updateTo111();
         }
 
-        if (version_compare($oldVersion, '1.1.1', '<=')) {
+        if (\version_compare($oldVersion, '1.1.1', '<=')) {
             $this->updateTo112();
         }
 
-        if (version_compare($oldVersion, '2.0.3', '<=')) {
+        if (\version_compare($oldVersion, '2.0.3', '<=')) {
             $this->updateTo210();
         }
 
-        if (version_compare($oldVersion, '2.1.3', '<=')) {
+        if (\version_compare($oldVersion, '2.1.3', '<=')) {
             $this->updateTo220();
         }
 
-        if (version_compare($oldVersion, '2.3.0', '<=')) {
+        if (\version_compare($oldVersion, '2.3.0', '<=')) {
             $this->updateTo240();
         }
 
-        if (version_compare($oldVersion, '2.4.1', '<=')) {
+        if (\version_compare($oldVersion, '2.4.1', '<=')) {
             $this->updateTo250();
         }
 
-        if (version_compare($oldVersion, '2.6.0', '<=')) {
+        if (\version_compare($oldVersion, '2.6.0', '<=')) {
             $this->updateTo261();
         }
 
-        if (version_compare($oldVersion, '2.7.0', '<=')) {
+        if (\version_compare($oldVersion, '2.7.0', '<=')) {
             $this->updateTo270();
         }
 
-        if (version_compare($oldVersion, '3.0.0', '<=')) {
+        if (\version_compare($oldVersion, '3.0.0', '<=')) {
             $this->updateTo300();
+        }
+
+        if (\version_compare($oldVersion, '3.0.3', '<=')) {
+            $this->updateTo303();
+        }
+
+        if (\version_compare($oldVersion, '3.0.4', '<=')) {
+            $this->updateTo304();
         }
     }
 
@@ -286,6 +297,54 @@ DROP COLUMN `intent`;
 SQL;
             $this->connection->executeQuery($sql);
         }
+    }
+
+    private function updateTo303()
+    {
+        $orderAttributeIds = $this->connection->createQueryBuilder()
+            ->select(['sOrderAttributes.id'])
+            ->from('s_order_attributes', 'sOrderAttributes')
+            ->join('sOrderAttributes', 's_order', 'sOrder', 'sOrder.id = sOrderAttributes.orderID')
+            ->where('sOrder.paymentID != :paymentId')
+            ->andWhere('sOrderAttributes.swag_paypal_unified_payment_type LIKE :paymentType')
+            ->andWhere('sOrder.ordertime > :orderTime')
+            ->setParameter('paymentId', (new PaymentMethodProvider())->getPaymentId($this->connection))
+            ->setParameter('paymentType', PaymentType::PAYPAL_CLASSIC)
+            ->setParameter('orderTime', '2021-01-13 00:00:00') // Day of 3.0.2 release, which broke the applying of the payment type attribute
+            ->execute()
+            ->fetchAll(\PDO::FETCH_COLUMN);
+
+        $this->connection->createQueryBuilder()
+            ->update('s_order_attributes', 'sOrderAttributes')
+            ->set('sOrderAttributes.swag_paypal_unified_payment_type', 'NULL')
+            ->where('sOrderAttributes.id IN (:attributeIds)')
+            ->setParameter('attributeIds', $orderAttributeIds, Connection::PARAM_INT_ARRAY)
+            ->execute();
+    }
+
+    private function updateTo304()
+    {
+        $orderAttributeIds = $this->connection->createQueryBuilder()
+            ->select(['sOrderAttributes.id'])
+            ->from('s_order_attributes', 'sOrderAttributes')
+            ->join('sOrderAttributes', 's_order', 'sOrder', 'sOrder.id = sOrderAttributes.orderID')
+            ->where('sOrder.paymentID = :paymentId')
+            ->andWhere('sOrderAttributes.swag_paypal_unified_payment_type LIKE :paymentType')
+            ->andWhere('sOrder.internalcomment LIKE :description')
+            ->andWhere('sOrder.ordertime > :orderTime')
+            ->setParameter('paymentId', (new PaymentMethodProvider())->getPaymentId($this->connection))
+            ->setParameter('paymentType', PaymentType::PAYPAL_PLUS)
+            ->setParameter('description', \sprintf('%%%s%%', PaymentInstructionService::INVOICE_INSTRUCTION_DESCRIPTION))
+            ->setParameter('orderTime', '2021-01-15 00:00:00') // Day of 3.0.3 release, which broke the applying of the payment type attribute for invoice
+            ->execute()
+            ->fetchAll(\PDO::FETCH_COLUMN);
+
+        $this->connection->createQueryBuilder()
+            ->update('s_order_attributes', 'sOrderAttributes')
+            ->set('sOrderAttributes.swag_paypal_unified_payment_type', \sprintf('"%s"', PaymentType::PAYPAL_INVOICE))
+            ->where('sOrderAttributes.id IN (:attributeIds)')
+            ->setParameter('attributeIds', $orderAttributeIds, Connection::PARAM_INT_ARRAY)
+            ->execute();
     }
 
     /**

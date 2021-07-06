@@ -18,17 +18,17 @@ use SwagPaymentPayPalUnified\Tests\Functional\Components\Services\Mock\SettingsS
 
 class PlusPaymentBuilderServiceTest extends TestCase
 {
-    public function test_serviceIsAvailable()
+    public function testServiceIsAvailable()
     {
         $service = Shopware()->Container()->get('paypal_unified.plus.payment_builder_service');
-        static::assertSame(PlusPaymentBuilderService::class, get_class($service));
+        static::assertSame(PlusPaymentBuilderService::class, \get_class($service));
     }
 
-    public function test_getPayment_has_plus_basketId()
+    public function testGetPaymentHasPlusBasketId()
     {
         $request = $this->getRequestData();
 
-        if (method_exists($this, 'assertStringContainsString')) {
+        if (\method_exists($this, 'assertStringContainsString')) {
             static::assertStringContainsString(
                 '/PaypalUnified/return/plus/1/basketId/' . BasketIdWhitelist::WHITELIST_IDS['PayPalPlus'],
                 $request->getRedirectUrls()->getReturnUrl()
@@ -42,7 +42,7 @@ class PlusPaymentBuilderServiceTest extends TestCase
         );
     }
 
-    public function test_estimated_delivery_date_attribute_exists_but_not_set()
+    public function testEstimatedDeliveryDateAttributeExistsButNotSet()
     {
         $this->createEddAttribute();
 
@@ -53,7 +53,7 @@ class PlusPaymentBuilderServiceTest extends TestCase
         $this->deleteEddAttribute();
     }
 
-    public function test_estimated_delivery_date_is_correct()
+    public function testEstimatedDeliveryDateIsCorrect()
     {
         $this->createEddAttribute();
         $eddDays = 21;

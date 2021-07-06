@@ -1,5 +1,3 @@
-
-
 /**
  * Shopware 5
  * Copyright (c) shopware AG
@@ -37,7 +35,7 @@ Ext.define('Shopware.apps.SwagTax.controller.Wizard', {
         { ref: 'customerGroupMapping', selector: 'swag-tax-wizard [name="customerGroupMapping"]' },
     ],
 
-    init: function () {
+    init: function() {
         this.control({
             'swag-tax-wizard': {
                 previous: this.onClickPrevious,
@@ -57,27 +55,27 @@ Ext.define('Shopware.apps.SwagTax.controller.Wizard', {
         this.callParent(arguments);
     },
 
-    onClickPrevious: function () {
+    onClickPrevious: function() {
         this.step(-1);
     },
 
-    onClickNext: function () {
+    onClickNext: function() {
         this.step(1);
     },
 
-    onSave: function () {
+    onSave: function() {
         var me = this,
             values = this.getWizard().getValues();
 
-        this.save(values, function () {
+        this.save(values, function() {
             me.step(1);
         });
     },
 
-    onSaveDate: function () {
+    onSaveDate: function() {
         var values = this.getWizard().getValues();
 
-        this.save(values, function () {
+        this.save(values, function() {
             Shopware.Notification.createGrowlMessage(
                 '{s name="wizard/growl/schedule/title"}{/s}',
                 '{s name="wizard/growl/schedule/message"}{/s}'
@@ -85,15 +83,19 @@ Ext.define('Shopware.apps.SwagTax.controller.Wizard', {
         });
     },
 
-    checkSaveButton: function () {
+    checkSaveButton: function() {
         this.getSaveBtn().setDisabled(this.getCustomerGroupMapping().getValue() <= 0);
     },
 
-    save: function (values, callback) {
+    save: function(values, callback) {
         Ext.Ajax.request({
             url: '{url action=save}',
             params: {
                 recalculatePrices: ~~(values.recalculatePrices),
+                recalculatePseudoPrices: ~~(values.recalculatePseudoPrices),
+                adjustVoucherTax: ~~(values.adjustVoucherTax),
+                adjustDiscountTax: ~~(values.adjustDiscountTax),
+                copyTaxRules: ~~(values.copyTaxRules),
                 taxMapping: Ext.JSON.encode(values.taxMapping),
                 customerGroupMapping: Ext.JSON.encode(values.customerGroupMapping),
                 scheduledDate: values.scheduledDate,
@@ -102,15 +104,15 @@ Ext.define('Shopware.apps.SwagTax.controller.Wizard', {
         });
     },
 
-    execute: function () {
-        Ext.MessageBox.confirm('{s name="fourth_card/confirm/title"}{/s}', '{s name="fourth_card/confirm/message"}{/s}', function (answer) {
+    execute: function() {
+        Ext.MessageBox.confirm('{s name="fourth_card/confirm/title"}{/s}', '{s name="fourth_card/confirm/message"}{/s}', function(answer) {
             if (answer !== 'yes') {
                 return;
             }
 
             Ext.Ajax.request({
                 url: '{url action=execute}',
-                success: function () {
+                success: function() {
                     Shopware.Notification.createGrowlMessage(
                         '{s name="wizard/growl/execute/title"}{/s}',
                         '{s name="wizard/growl/execute/message"}{/s}'
@@ -121,7 +123,7 @@ Ext.define('Shopware.apps.SwagTax.controller.Wizard', {
                             'cache[config]': 'on',
                             'cache[http]': 'on'
                         },
-                        success: function () {
+                        success: function() {
                             Shopware.Notification.createGrowlMessage(
                                 '{s name="wizard/growl/cache/title"}{/s}',
                                 '{s name="wizard/growl/cache/message"}{/s}'
@@ -136,7 +138,7 @@ Ext.define('Shopware.apps.SwagTax.controller.Wizard', {
     /**
      * @param { number } step
      */
-    step: function (step) {
+    step: function(step) {
         var wizard = this.getWizard(),
             layout = wizard.getLayout(),
             index = layout.getActiveItem().swId.split('card-')[1],
@@ -154,6 +156,11 @@ Ext.define('Shopware.apps.SwagTax.controller.Wizard', {
         } else if (next === wizard.items.length - 3) {
             this.getSaveBtn().hide();
             this.getNextBtn().show();
+        }
+
+        this.getPrevBtn().show();
+        if (next === 0) {
+            this.getPrevBtn().hide();
         }
 
         layout.setActiveItem(next);

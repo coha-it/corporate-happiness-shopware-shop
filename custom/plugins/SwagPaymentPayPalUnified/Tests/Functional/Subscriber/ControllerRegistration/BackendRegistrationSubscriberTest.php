@@ -13,13 +13,13 @@ use SwagPaymentPayPalUnified\Subscriber\ControllerRegistration\Backend;
 
 class BackendRegistrationSubscriberTest extends TestCase
 {
-    public function test_can_be_created()
+    public function testCanBeCreated()
     {
         $subscriber = new Backend(Shopware()->Container()->getParameter('paypal_unified.plugin_dir'), Shopware()->Container()->get('template'));
         static::assertNotNull($subscriber);
     }
 
-    public function test_getSubscribedEvents()
+    public function testGetSubscribedEvents()
     {
         $events = Backend::getSubscribedEvents();
         static::assertCount(6, $events);
@@ -31,7 +31,7 @@ class BackendRegistrationSubscriberTest extends TestCase
         static::assertSame('onGetBackendPlusSettingsControllerPath', $events['Enlight_Controller_Dispatcher_ControllerPath_Backend_PaypalUnifiedPlusSettings']);
     }
 
-    public function test_onGetBackendControllerPath()
+    public function testOnGetBackendControllerPath()
     {
         $subscriber = new Backend(Shopware()->Container()->getParameter('paypal_unified.plugin_dir'), Shopware()->Container()->get('template'));
         $backendControllerPath = $subscriber->onGetBackendControllerPath();
@@ -43,15 +43,15 @@ class BackendRegistrationSubscriberTest extends TestCase
         $templateDirs = $template->getTemplateDir();
 
         //Do not use the absolute path, since it's different from machine to machine
-        if (method_exists($this, 'assertStringContainsString')) {
-            static::assertStringContainsString('/SwagPaymentPayPalUnified/Resources/views/', implode('', $templateDirs));
+        if (\method_exists($this, 'assertStringContainsString')) {
+            static::assertStringContainsString('/SwagPaymentPayPalUnified/Resources/views/', \implode('', $templateDirs));
 
             return;
         }
-        static::assertContains('/SwagPaymentPayPalUnified/Resources/views/', implode('', $templateDirs));
+        static::assertContains('/SwagPaymentPayPalUnified/Resources/views/', \implode('', $templateDirs));
     }
 
-    public function test_onGetSettingsControllerPath()
+    public function testOnGetSettingsControllerPath()
     {
         $subscriber = new Backend(Shopware()->Container()->getParameter('paypal_unified.plugin_dir'), Shopware()->Container()->get('template'));
         $backendControllerPath = $subscriber->onGetBackendSettingsControllerPath();
@@ -63,15 +63,15 @@ class BackendRegistrationSubscriberTest extends TestCase
         $templateDirs = $template->getTemplateDir();
 
         //Do not use the absolute path, since it's different from machine to machine
-        if (method_exists($this, 'assertStringContainsString')) {
-            static::assertStringContainsString('/SwagPaymentPayPalUnified/Resources/views/', implode('', $templateDirs));
+        if (\method_exists($this, 'assertStringContainsString')) {
+            static::assertStringContainsString('/SwagPaymentPayPalUnified/Resources/views/', \implode('', $templateDirs));
 
             return;
         }
-        static::assertContains('/SwagPaymentPayPalUnified/Resources/views/', implode('', $templateDirs));
+        static::assertContains('/SwagPaymentPayPalUnified/Resources/views/', \implode('', $templateDirs));
     }
 
-    public function test_onGetGeneralSettingsControllerPath()
+    public function testOnGetGeneralSettingsControllerPath()
     {
         $subscriber = new Backend(Shopware()->Container()->getParameter('paypal_unified.plugin_dir'), Shopware()->Container()->get('template'));
         $backendControllerPath = $subscriber->onGetBackendGeneralSettingsControllerPath();
@@ -79,7 +79,7 @@ class BackendRegistrationSubscriberTest extends TestCase
         static::assertFileExists($backendControllerPath);
     }
 
-    public function test_onGetExpressSettingsControllerPath()
+    public function testOnGetExpressSettingsControllerPath()
     {
         $subscriber = new Backend(Shopware()->Container()->getParameter('paypal_unified.plugin_dir'), Shopware()->Container()->get('template'));
         $backendControllerPath = $subscriber->onGetBackendExpressSettingsControllerPath();
@@ -87,7 +87,7 @@ class BackendRegistrationSubscriberTest extends TestCase
         static::assertFileExists($backendControllerPath);
     }
 
-    public function test_onGetInstallmentsSettingsControllerPath()
+    public function testOnGetInstallmentsSettingsControllerPath()
     {
         $subscriber = new Backend(Shopware()->Container()->getParameter('paypal_unified.plugin_dir'), Shopware()->Container()->get('template'));
         $backendControllerPath = $subscriber->onGetBackendInstallmentsSettingsControllerPath();
@@ -95,7 +95,7 @@ class BackendRegistrationSubscriberTest extends TestCase
         static::assertFileExists($backendControllerPath);
     }
 
-    public function test_onGetPlusSettingsControllerPath()
+    public function testOnGetPlusSettingsControllerPath()
     {
         $subscriber = new Backend(Shopware()->Container()->getParameter('paypal_unified.plugin_dir'), Shopware()->Container()->get('template'));
         $backendControllerPath = $subscriber->onGetBackendPlusSettingsControllerPath();

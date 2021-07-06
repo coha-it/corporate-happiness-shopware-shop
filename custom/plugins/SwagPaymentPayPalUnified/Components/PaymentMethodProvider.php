@@ -20,7 +20,7 @@ class PaymentMethodProvider
     const PAYPAL_UNIFIED_PAYMENT_METHOD_NAME = 'SwagPaymentPayPalUnified';
 
     /**
-     * @var ModelManager
+     * @var ModelManager|null
      */
     private $modelManager;
 
@@ -39,6 +39,10 @@ class PaymentMethodProvider
      */
     public function getPaymentMethodModel()
     {
+        if ($this->modelManager === null) {
+            throw new \RuntimeException('ModelManager not defined in PaymentMethodProvider');
+        }
+
         /** @var Payment|null $payment */
         $payment = $this->modelManager->getRepository(Payment::class)->findOneBy([
             'name' => self::PAYPAL_UNIFIED_PAYMENT_METHOD_NAME,
@@ -54,12 +58,16 @@ class PaymentMethodProvider
      */
     public function setPaymentMethodActiveFlag($active)
     {
+        if ($this->modelManager === null) {
+            throw new \RuntimeException('ModelManager not defined in PaymentMethodProvider');
+        }
+
         $paymentMethod = $this->getPaymentMethodModel();
         if ($paymentMethod) {
             $paymentMethod->setActive($active);
 
             $this->modelManager->persist($paymentMethod);
-            $this->modelManager->flush($paymentMethod);
+            $this->modelManager->flush();
         }
     }
 
@@ -84,7 +92,7 @@ class PaymentMethodProvider
      */
     public function getPaymentId(Connection $connection)
     {
-        $sql = 'SELECT `id` FROM s_core_paymentmeans WHERE `name`=:paymentName';
+        $sql = 'SELECT `id` FROM s_core_paymentmeans WHERE `name`=:paymentName AND active = 1';
 
         return (int) $connection->fetchColumn($sql, [
             ':paymentName' => self::PAYPAL_UNIFIED_PAYMENT_METHOD_NAME,
@@ -98,7 +106,7 @@ class PaymentMethodProvider
      */
     public function getInstallmentPaymentId(Connection $connection)
     {
-        $sql = 'SELECT `id` FROM s_core_paymentmeans WHERE `name`=:paymentName';
+        $sql = 'SELECT `id` FROM s_core_paymentmeans WHERE `name`=:paymentName AND active = 1';
 
         return (int) $connection->fetchColumn($sql, [
             ':paymentName' => 'SwagPaymentPayPalUnifiedInstallments',

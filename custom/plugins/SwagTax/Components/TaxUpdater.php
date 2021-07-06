@@ -1,5 +1,5 @@
 <?php
-/*
+/**
  * (c) shopware AG <info@shopware.com>
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
@@ -9,9 +9,15 @@ namespace SwagTax\Components;
 
 use Doctrine\DBAL\Connection;
 use Enlight_Event_EventManager;
+use SwagTax\Components\ThirdPlugins\ThirdPluginUpdater;
+use SwagTax\Structs\TaxMapping;
+use SwagTax\Structs\UpdateConfig;
 
 class TaxUpdater
 {
+    const PRICE_COLUMN = 'price';
+    const PSEUDOPRICE_COLUMN = 'pseudoprice';
+
     /**
      * @var Connection
      */
@@ -22,43 +28,57 @@ class TaxUpdater
      */
     private $eventManager;
 
-    public function __construct(Connection $connection, Enlight_Event_EventManager $eventManager)
-    {
+    /**
+     * @var ShopConfigUpdater
+     */
+    private $shopConfigUpdater;
+
+    /**
+     * @var ThirdPluginUpdater
+     */
+    private $pluginUpdater;
+
+    public function __construct(
+        Connection $connection,
+        Enlight_Event_EventManager $eventManager,
+        ShopConfigUpdater $shopConfigUpdater,
+        ThirdPluginUpdater $pluginUpdater
+    ) {
         $this->connection = $connection;
         $this->eventManager = $eventManager;
+        $this->shopConfigUpdater = $shopConfigUpdater;
+        $this->pluginUpdater = $pluginUpdater;
     }
 
+    /**
+     * @param bool $cronJobMode
+     *
+     * @return bool
+     */
     public function update($cronJobMode = false)
     {
         $config = $this->getConfig($cronJobMode);
 
-        if (!$config) {
+        if ($config === null) {
             return false;
         }
 
-        foreach ($config['tax_mapping'] as $oldTaxId => $newTaxRate) {
-            $this->connection->insert('s_core_tax', [
-                'tax' => $newTaxRate,
-                'description' => sprintf('%s %%', $newTaxRate)
-            ]);
+        foreach ($config->getTaxMapping() as $oldTaxId => $newTaxId) {
+            $taxMapping = $this->getTaxMapping($oldTaxId, $newTaxId);
 
-            $newTaxId = (int) $this->connection->lastInsertId();
-            $this->copyTaxRules($oldTaxId, $newTaxId);
+            $this->copyTaxRules($config, $taxMapping);
 
-            if (!$config['recalculate_prices']) {
-                $this->recalculateShippingCosts($oldTaxId, $newTaxRate);
-            }
+            $this->recalculateAndUpdate($config, $taxMapping);
 
-            $this->updateTaxIds($oldTaxId, $newTaxId);
+            $this->shopConfigUpdater->update($config, $taxMapping);
 
-            if ($config['recalculate_prices']) {
-                $this->recalculateProductPrices($oldTaxId, $newTaxRate, $newTaxId, $config['customer_group_mapping']);
-            }
+            $this->pluginUpdater->update($config, $taxMapping);
 
             $this->eventManager->notify('Swag_Tax_Updated_TaxRate', [
                 'config' => $config,
-                'newTaxId' => $newTaxId,
-                'newTaxRate' => $newTaxRate
+                'newTaxId' => $taxMapping->getNewTaxRateId(),
+                'newTaxRate' => $taxMapping->getNewTaxRate(),
+                'taxMapping' => $taxMapping,
             ]);
         }
 
@@ -68,7 +88,31 @@ class TaxUpdater
     }
 
     /**
-     * @return array
+     * @param int $taxRateId
+     *
+     * @return float|null
+     */
+    private function getTaxRateById($taxRateId)
+    {
+        $result = $this->connection->createQueryBuilder()
+            ->select('tax')
+            ->from('s_core_tax')
+            ->where('id = :taxRateId')
+            ->setParameter('taxRateId', $taxRateId)
+            ->execute()
+            ->fetchColumn();
+
+        if ($result === false) {
+            return null;
+        }
+
+        return (float) $result;
+    }
+
+    /**
+     * @param bool $cronJobMode
+     *
+     * @return UpdateConfig
      */
     private function getConfig($cronJobMode)
     {
@@ -89,56 +133,64 @@ class TaxUpdater
             return null;
         }
 
-        $config['recalculate_prices'] = (bool) $config['recalculate_prices'];
-        $config['tax_mapping'] = json_decode($config['tax_mapping'], true);
-        $config['customer_group_mapping'] = json_decode($config['customer_group_mapping'], true);
-
-        return $config;
+        return new UpdateConfig($config);
     }
 
-    private function copyTaxRules($oldTaxId, $newTaxId)
+    private function copyTaxRules(UpdateConfig $config, TaxMapping $taxMapping)
     {
-        $data = $this->connection->fetchAll('SELECT * FROM s_core_tax_rules WHERE groupID = ?', [$oldTaxId]);
+        if ($config->getCopyTaxRules() === false) {
+            return;
+        }
+
+        $data = $this->connection->fetchAll('SELECT * FROM s_core_tax_rules WHERE groupID = ?', [$taxMapping->getOldTaxRateId()]);
 
         foreach ($data as $row) {
             unset($row['id']);
-            $row['groupID'] = $newTaxId;
+            $row['groupID'] = $taxMapping->getNewTaxRateId();
 
             $this->connection->insert('s_core_tax_rules', $row);
         }
     }
 
-    private function recalculateProductPrices($oldTaxId, $newTaxRate, $newTaxId, $customer_group_mapping)
+    /**
+     * @param string $column
+     */
+    private function recalculatePrices(TaxMapping $taxMapping, UpdateConfig $config, $column)
     {
-        $oldTaxRate = $this->connection->fetchColumn('SELECT tax FROM s_core_tax WHERE id = ?', [$oldTaxId]);
-
-        $qb = $this->connection->createQueryBuilder();
-        $qb->update('s_articles_prices', 'prices')
-            ->set('price', sprintf('price/%s*%s', 1 + ($newTaxRate / 100), 1 + ($oldTaxRate / 100)))
+        $queryBuilder = $this->connection->createQueryBuilder();
+        $queryBuilder->update('s_articles_prices', 'prices')
             ->where('prices.pricegroup IN (:groups)')
             ->andWhere('(SELECT taxID FROM s_articles WHERE id = prices.articleID) = :newTaxID');
 
-        $qb->setParameter(':groups', $customer_group_mapping, Connection::PARAM_STR_ARRAY);
-        $qb->setParameter(':newTaxID', $newTaxId);
+        $queryBuilder->set(
+            $column,
+            sprintf(
+                '%s/%s*%s',
+                $column,
+                1 + ($taxMapping->getNewTaxRate() / 100),
+                1 + ($taxMapping->getOldTaxRate() / 100)
+            )
+        );
 
-        $qb->execute();
+        $queryBuilder->setParameter(':groups', $config->getCustomerGroupMapping(), Connection::PARAM_STR_ARRAY);
+        $queryBuilder->setParameter(':newTaxID', $taxMapping->getNewTaxRateId());
+
+        $queryBuilder->execute();
     }
 
-    private function recalculateShippingCosts($oldTaxId, $newTaxRate)
+    private function recalculateShippingCosts(TaxMapping $taxMapping)
     {
-        $oldTaxRate = $this->connection->fetchColumn('SELECT tax FROM s_core_tax WHERE id = ?', [$oldTaxId]);
-
         $affectedQueryBuilder = $this->connection->createQueryBuilder();
         $affectedQueryBuilder->select('id')
             ->from('s_premium_dispatch', 'dispatch')
             ->where('tax_calculation = :oldTaxId')
-            ->setParameter(':oldTaxId', $oldTaxId);
+            ->setParameter(':oldTaxId', $taxMapping->getOldTaxRateId());
 
         $affectedDispatchIds = $affectedQueryBuilder->execute()->fetchAll(\PDO::FETCH_COLUMN);
 
         $recalculatePricesQueryBuilder = $this->connection->createQueryBuilder();
         $recalculatePricesQueryBuilder->update('s_premium_shippingcosts', 'shippingCosts')
-            ->set('value', sprintf('value / %s*%s', 1 + ($oldTaxRate / 100), 1 + ($newTaxRate / 100)))
+            ->set('value', sprintf('value / %s*%s', 1 + ($taxMapping->getOldTaxRate() / 100), 1 + ($taxMapping->getNewTaxRate() / 100)))
             ->where('shippingCosts.dispatchID IN (:dispatchIds)');
 
         $recalculatePricesQueryBuilder->setParameter(':dispatchIds', $affectedDispatchIds, Connection::PARAM_INT_ARRAY);
@@ -146,21 +198,52 @@ class TaxUpdater
         $recalculatePricesQueryBuilder->execute();
     }
 
-    private function updateTaxIds($oldTaxId, $newTaxId)
+    private function updateTaxIds(TaxMapping $taxMapping)
     {
         $this->connection->executeQuery('UPDATE `s_articles` SET `taxID` = ? WHERE taxID=?', [
-            $newTaxId,
-            $oldTaxId
+            $taxMapping->getNewTaxRateId(),
+            $taxMapping->getOldTaxRateId(),
         ]);
 
         $this->connection->executeQuery('UPDATE `s_emarketing_vouchers` SET `taxconfig` = ? WHERE taxconfig = ?', [
-            $newTaxId,
-            $oldTaxId
+            $taxMapping->getNewTaxRateId(),
+            $taxMapping->getOldTaxRateId(),
         ]);
 
         $this->connection->executeQuery('UPDATE `s_premium_dispatch` SET `tax_calculation` = ? WHERE tax_calculation = ?', [
-            $newTaxId,
-            $oldTaxId
+            $taxMapping->getNewTaxRateId(),
+            $taxMapping->getOldTaxRateId(),
         ]);
+    }
+
+    private function recalculateAndUpdate(UpdateConfig $config, TaxMapping $taxMapping)
+    {
+        if ($config->getRecalculatePrices() === false) {
+            $this->recalculateShippingCosts($taxMapping);
+        }
+
+        $this->updateTaxIds($taxMapping);
+
+        if ($config->getRecalculatePrices()) {
+            $this->recalculatePrices($taxMapping, $config, self::PRICE_COLUMN);
+        }
+
+        if ($config->getRecalculatePseudoPrices()) {
+            $this->recalculatePrices($taxMapping, $config, self::PSEUDOPRICE_COLUMN);
+        }
+    }
+
+    /**
+     * @param int $oldTaxRateId
+     * @param int $newTaxRateId
+     *
+     * @return TaxMapping
+     */
+    private function getTaxMapping($oldTaxRateId, $newTaxRateId)
+    {
+        $oldTaxRate = $this->getTaxRateById((float) $oldTaxRateId);
+        $newTaxRate = $this->getTaxRateById((float) $newTaxRateId);
+
+        return new TaxMapping($oldTaxRateId, $oldTaxRate, $newTaxRateId, $newTaxRate);
     }
 }

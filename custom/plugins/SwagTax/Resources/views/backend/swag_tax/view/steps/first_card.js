@@ -27,7 +27,7 @@ Ext.define('Shopware.apps.SwagTax.view.steps.FirstCard', {
     extend: 'Ext.container.Container',
     swId: 'card-0',
 
-    initComponent: function () {
+    initComponent: function() {
         this.items = [
             {
                 xtype: 'fieldset',
@@ -45,21 +45,53 @@ Ext.define('Shopware.apps.SwagTax.view.steps.FirstCard', {
             {
                 xtype: 'fieldset',
                 title: '{s name="wizard/information_panel/settings"}{/s}',
+                layout: 'anchor',
                 items: [
                     {
                         xtype: 'checkbox',
                         fieldLabel: '{s name="first_card/recalculatePrices"}{/s}',
                         supportText: '{s name="first_card/recalculatePrices/support"}{/s}',
                         name: 'recalculatePrices',
+                        labelWidth: 155,
                         inputValue: true,
                         uncheckedValue: false,
                         labelStyle: 'margin-top: 0;'
+                    },
+                    {
+                        xtype: 'checkbox',
+                        fieldLabel: '{s name="first_card/recalculatePseudoPrices"}{/s}',
+                        supportText: '{s name="first_card/recalculatePseudoPrices/support"}{/s}',
+                        name: 'recalculatePseudoPrices',
+                        labelWidth: 155,
+                        inputValue: true,
+                        uncheckedValue: false,
+                        labelStyle: 'margin-top: 0;'
+                    },
+                    {
+                        xtype: 'checkbox',
+                        fieldLabel: '{s name="first_card/adjustVoucherTax"}{/s}',
+                        supportText: '{s name="first_card/adjustVoucherTax/support"}{/s}',
+                        name: 'adjustVoucherTax',
+                        labelWidth: 155,
+                        inputValue: true,
+                        uncheckedValue: false,
+                        labelStyle: 'margin-top: 0;',
+                    },
+                    {
+                        xtype: 'checkbox',
+                        fieldLabel: '{s name="first_card/adjustDiscountTax"}{/s}',
+                        supportText: '{s name="first_card/adjustDiscountTax/support"}{/s}',
+                        name: 'adjustDiscountTax',
+                        labelWidth: 155,
+                        inputValue: true,
+                        uncheckedValue: false,
+                        labelStyle: 'margin-top: 0;',
                     }
                 ]
             }
         ];
 
         this.callParent(arguments);
-    }
+    },
 });
 //{/block}

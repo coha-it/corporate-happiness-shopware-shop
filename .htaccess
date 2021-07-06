@@ -120,3 +120,7 @@ DirectoryIndex shopware.php
 <IfModule mod_headers.c>
     Header append X-Frame-Options SAMEORIGIN
 </IfModule>
+
+Redirect /koeln /botschafter-ausbildung-in-koeln
+Redirect /koln /koeln
+Redirect /cologne /koeln

@@ -273,7 +273,8 @@
 		<name>uvalaTargetIframeCodeThree</name>
 		<label lang="de">Video</label>
 		<label lang="en">Video</label>
-		<value>&lt;iframe src="##url_to_replace##" style="border:none;overflow:hidden" scrolling="no" frameborder="0" allowTransparency="true" allowFullScreen="true"&gt;&lt;/iframe&gt;</value>
+		<value>&lt;div id="fb-root"&gt;&lt;/div&gt;&lt;script async defer 
+            src="https://connect.facebook.net/en_US/sdk.js#xfbml=1&amp;version=v3.2"&gt;&lt;/script&gt;&lt;div class="fb-video" data-href="##url_to_replace##" data-width="500" data-lazy="true" data-autoplay="false" data-allowfullscreen="true"&gt;&lt;/div&gt;</value>
 		<description lang="de">Ausgabeschema für Facebook Videos. Die URL wird mittels ##url_to_replace## Platzhalter ersetzt!</description>
 		<description lang="en">Output scheme for Facebook videos. The URL is replaced by ##url_to_replace## placeholders!</description>
 	</element>

@@ -34,7 +34,9 @@ Ext.define('Shopware.apps.SwagTax', {
 
     stores: [],
 
-    models: [ ],
+    models: [
+        'Mapping'
+    ],
 
     views: [
         'main.Window',
@@ -45,6 +47,7 @@ Ext.define('Shopware.apps.SwagTax', {
         'steps.SecondCard',
         'steps.ThirdCard',
         'steps.FourthCard',
+        'tax.TaxWindow',
     ],
 
     launch: function () {

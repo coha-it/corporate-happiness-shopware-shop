@@ -187,7 +187,7 @@ class Shopware_Controllers_Frontend_PaypalUnified extends Shopware_Controllers_F
         $basketId = $request->getParam('basketId');
 
         //Basket validation with shopware 5.2 support
-        if (in_array($basketId, BasketIdWhitelist::WHITELIST_IDS, true)
+        if (\in_array($basketId, BasketIdWhitelist::WHITELIST_IDS, true)
             || !$this->container->has('basket_signature_generator')
         ) {
             //For shopware < 5.3 and for whitelisted basket ids
@@ -228,7 +228,7 @@ class Shopware_Controllers_Frontend_PaypalUnified extends Shopware_Controllers_F
 
         // if the order number should be send to PayPal do it before the execute
         if ($sendOrderNumber) {
-            $orderNumber = $this->saveOrder($paymentId, $paymentId, PaymentStatus::PAYMENT_STATUS_OPEN);
+            $orderNumber = (string) $this->saveOrder($paymentId, $paymentId, PaymentStatus::PAYMENT_STATUS_OPEN);
             $patchOrderNumber = $this->settingsService->get('order_number_prefix') . $orderNumber;
 
             /** @var PaymentOrderNumberPatch $paymentPatch */
@@ -269,10 +269,11 @@ class Shopware_Controllers_Frontend_PaypalUnified extends Shopware_Controllers_F
 
         /** @var Payment $response */
         $response = Payment::fromArray($executionResponse);
+        $request->setParam('invoiceCheckout', $response->getPaymentInstruction() !== null);
 
         // if the order number is not sent to PayPal, save the order here
         if (!$sendOrderNumber) {
-            $orderNumber = $this->saveOrder($paymentId, $paymentId, PaymentStatus::PAYMENT_STATUS_OPEN);
+            $orderNumber = (string) $this->saveOrder($paymentId, $paymentId, PaymentStatus::PAYMENT_STATUS_OPEN);
         }
 
         /** @var RelatedResource $relatedResource */
@@ -303,7 +304,7 @@ class Shopware_Controllers_Frontend_PaypalUnified extends Shopware_Controllers_F
             $instructionService->createInstructions($orderNumber, $instructions);
         }
 
-        $orderDataService->applyPaymentTypeAttribute($orderNumber, $response, $isExpressCheckout, $isSpbCheckout);
+        $orderDataService->applyPaymentTypeAttribute((string) $orderNumber, $response, $isExpressCheckout, $isSpbCheckout);
 
         $redirectParameter = [
             'module' => 'frontend',
