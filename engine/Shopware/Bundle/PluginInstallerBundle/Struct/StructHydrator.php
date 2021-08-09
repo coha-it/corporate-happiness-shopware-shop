@@ -339,7 +339,7 @@ class StructHydrator
         $plugin->setCapabilityUpdate((bool) $data['capability_update']);
         $plugin->setCapabilityInstall((bool) $data['capability_install']);
         $plugin->setCapabilitySecureUninstall((bool) $data['capability_secure_uninstall']);
-        $plugin->setLocalUpdateAvailable(($data['update_version'] !== null));
+        $plugin->setLocalUpdateAvailable($data['update_version'] !== null);
         $plugin->setLink($data['link']);
 
         if (array_key_exists('redirectToStore', $data)) {
@@ -515,7 +515,7 @@ class StructHydrator
         $plugin->setInstallationManual($data['installationManual']);
         $plugin->setExampleUrl($data['examplePageUrl']);
         $plugin->setIconPath($data['iconPath']);
-        $plugin->setUseContactForm((bool) $data['useContactForm']);
+        $plugin->setUseContactForm((bool) ($data['useContactForm'] ?? false));
         $plugin->setRating($data['ratingAverage']);
 
         if (isset($data['priceModels']) && !empty($data['priceModels'])) {

@@ -96,7 +96,7 @@ class Backup
      */
     public function setupBackupDir()
     {
-        $projectDir = Shopware()->Container()->getParameter('shopware.app.rootdir');
+        $projectDir = Shopware()->Container()->getParameter('shopware.app.rootDir');
         $this->backupPath = $projectDir . 'files/backup/multi_edit';
         $this->backupPath = rtrim($this->backupPath, '/\\') . '/';
 
@@ -154,7 +154,7 @@ class Backup
     public function create($detailIds, $operations, $newBackup, $id)
     {
         // When backups are disabled, return
-        if (!$this->getConfig()->getByNamespace('SwagMultiEdit', 'enableBackup', true)) {
+        if (!$this->getConfig()->getByNamespace('MultiEdit', 'enableBackup', true)) {
             return;
         }
 
@@ -181,7 +181,7 @@ class Backup
     public function finishBackup($filterString, $operations, $items, $id)
     {
         // When backups are disabled, return
-        if (!$this->getConfig()->getByNamespace('SwagMultiEdit', 'enableBackup', true)) {
+        if (!$this->getConfig()->getByNamespace('MultiEdit', 'enableBackup', true)) {
             return;
         }
 

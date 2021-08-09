@@ -140,7 +140,7 @@ class sRewriteTable implements \Enlight_Hook
         Enlight_Components_Db_Adapter_Pdo_Mysql $db = null,
         Shopware_Components_Config $config = null,
         ModelManager $modelManager = null,
-        \sSystem $systemModule = null,
+        sSystem $systemModule = null,
         Enlight_Template_Manager $template = null,
         Shopware_Components_Modules $moduleManager = null,
         SlugInterface $slug = null,
@@ -155,10 +155,10 @@ class sRewriteTable implements \Enlight_Hook
         $this->template = $template ?: Shopware()->Template();
         $this->moduleManager = $moduleManager ?: Shopware()->Modules();
         $this->slug = $slug ?: Shopware()->Container()->get('shopware.slug');
-        $this->contextService = $contextService ?: Shopware()->Container()->get('shopware_storefront.context_service');
+        $this->contextService = $contextService ?: Shopware()->Container()->get(\Shopware\Bundle\StoreFrontBundle\Service\ContextServiceInterface::class);
         $this->shopPageService = $shopPageService ?: Shopware()->Container()
             ->get('shopware_storefront.shop_page_service');
-        $this->translationComponent = $translationComponent ?: Shopware()->Container()->get('translation');
+        $this->translationComponent = $translationComponent ?: Shopware()->Container()->get(\Shopware_Components_Translation::class);
     }
 
     /**
@@ -585,7 +585,7 @@ class sRewriteTable implements \Enlight_Hook
         }
 
         $ids = $this->getManufacturerIds($offset, $limit);
-        $manufacturers = Shopware()->Container()->get('shopware_storefront.manufacturer_service')
+        $manufacturers = Shopware()->Container()->get(\Shopware\Bundle\StoreFrontBundle\Service\ManufacturerServiceInterface::class)
             ->getList($ids, $context);
 
         $seoSupplierRouteTemplate = $this->config->get('seoSupplierRouteTemplate');

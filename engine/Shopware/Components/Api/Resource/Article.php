@@ -61,7 +61,7 @@ class Article extends Resource implements BatchInterface
 
     public function __construct(Shopware_Components_Translation $translationComponent = null)
     {
-        $this->translationComponent = $translationComponent ?: Shopware()->Container()->get('translation');
+        $this->translationComponent = $translationComponent ?: Shopware()->Container()->get(\Shopware_Components_Translation::class);
     }
 
     /**
@@ -516,16 +516,16 @@ class Article extends Resource implements BatchInterface
     public function generateMainThumbnails(ProductModel $article, $force = false)
     {
         /** @var \Shopware\Components\Thumbnail\Manager $generator */
-        $generator = $this->getContainer()->get('thumbnail_manager');
+        $generator = $this->getContainer()->get(\Shopware\Components\Thumbnail\Manager::class);
 
-        /** @var \Shopware\Bundle\MediaBundle\MediaServiceInterface $mediaService */
-        $mediaService = Shopware()->Container()->get('shopware_media.media_service');
+        /** @var \Shopware\Bundle\MediaBundle\MediaService $mediaService */
+        $mediaService = Shopware()->Container()->get(\Shopware\Bundle\MediaBundle\MediaServiceInterface::class);
 
         /** @var Image $image */
         foreach ($article->getImages() as $image) {
             $media = $image->getMedia();
 
-            $projectDir = $this->getContainer()->getParameter('shopware.app.rootdir');
+            $projectDir = $this->getContainer()->getParameter('shopware.app.rootDir');
             if (!$force && $mediaService->has($projectDir . $media->getPath())) {
                 continue;
             }
@@ -691,7 +691,7 @@ class Article extends Resource implements BatchInterface
      */
     protected function getVariantResource()
     {
-        return $this->getContainer()->get('shopware.api.variant');
+        return $this->getContainer()->get(\Shopware\Components\Api\Resource\Variant::class);
     }
 
     /**
@@ -699,7 +699,7 @@ class Article extends Resource implements BatchInterface
      */
     protected function getTranslationResource()
     {
-        return $this->getContainer()->get('shopware.api.translation');
+        return $this->getContainer()->get(\Shopware\Components\Api\Resource\Translation::class);
     }
 
     /**
@@ -707,7 +707,7 @@ class Article extends Resource implements BatchInterface
      */
     protected function getMediaResource()
     {
-        return $this->getContainer()->get('shopware.api.media');
+        return $this->getContainer()->get(\Shopware\Components\Api\Resource\Media::class);
     }
 
     /**
@@ -719,6 +719,7 @@ class Article extends Resource implements BatchInterface
      */
     protected function getArticleConfiguratorSet($articleId)
     {
+        /** @var QueryBuilder $builder */
         $builder = $this->getManager()->createQueryBuilder();
         $builder->select(['configuratorSet', 'groups'])
             ->from(Configurator\Set::class, 'configuratorSet')
@@ -741,6 +742,7 @@ class Article extends Resource implements BatchInterface
      */
     protected function getArticleImages($articleId)
     {
+        /** @var QueryBuilder $builder */
         $builder = $this->getManager()->createQueryBuilder();
         $builder->select(['images'])
             ->from(Image::class, 'images')
@@ -762,6 +764,7 @@ class Article extends Resource implements BatchInterface
      */
     protected function getArticleDownloads($articleId)
     {
+        /** @var QueryBuilder $builder */
         $builder = $this->getManager()->createQueryBuilder();
         $builder->select(['downloads'])
             ->from(Download::class, 'downloads')
@@ -782,6 +785,7 @@ class Article extends Resource implements BatchInterface
      */
     protected function getArticleLinks($articleId)
     {
+        /** @var QueryBuilder $builder */
         $builder = $this->getManager()->createQueryBuilder();
         $builder->select(['links'])
             ->from(Link::class, 'links')
@@ -803,6 +807,7 @@ class Article extends Resource implements BatchInterface
      */
     protected function getArticleCategories($articleId)
     {
+        /** @var QueryBuilder $builder */
         $builder = $this->getManager()->createQueryBuilder();
         $builder->select(['categories.id', 'categories.name'])
             ->from(Category::class, 'categories')
@@ -820,6 +825,7 @@ class Article extends Resource implements BatchInterface
      */
     protected function getArticleSimilar($articleId)
     {
+        /** @var QueryBuilder $builder */
         $builder = $this->getManager()->createQueryBuilder();
         $builder->select(['article', 'PARTIAL similar.{id, name}'])
             ->from(ProductModel::class, 'article')
@@ -839,6 +845,7 @@ class Article extends Resource implements BatchInterface
      */
     protected function getArticleRelated($articleId)
     {
+        /** @var QueryBuilder $builder */
         $builder = $this->getManager()->createQueryBuilder();
         $builder->select(['article', 'PARTIAL related.{id, name}'])
             ->from(ProductModel::class, 'article')
@@ -1352,13 +1359,11 @@ class Article extends Resource implements BatchInterface
             if (!$category) {
                 if (!empty($categoryData['path'])) {
                     /** @var CategoryResource $categoryResource */
-                    $categoryResource = $this->getContainer()->get('shopware.api.category');
+                    $categoryResource = $this->getContainer()->get(\Shopware\Components\Api\Resource\Category::class);
                     $category = $categoryResource->findCategoryByPath($categoryData['path'], true);
 
                     if (!$category) {
-                        throw new ApiException\CustomValidationException(
-                            sprintf('Could not find or create category by path: %s.', $categoryData['path'])
-                        );
+                        throw new ApiException\CustomValidationException(sprintf('Could not find or create category by path: %s.', $categoryData['path']));
                     }
 
                     if (isset($categoryIds[$category->getId()])) {
@@ -1413,18 +1418,14 @@ class Article extends Resource implements BatchInterface
                 );
 
                 if (!$shop) {
-                    throw new ApiException\CustomValidationException(
-                        sprintf('Could not find shop by id: %s.', $categoryData['shopId'])
-                    );
+                    throw new ApiException\CustomValidationException(sprintf('Could not find shop by id: %s.', $categoryData['shopId']));
                 }
 
                 $seoCategory->setShop($shop);
             }
 
             if (!$seoCategory->getShop()) {
-                throw new ApiException\CustomValidationException(
-                    sprintf('An product seo category requires a configured shop')
-                );
+                throw new ApiException\CustomValidationException(sprintf('An product seo category requires a configured shop'));
             }
 
             if (isset($categoryData['categoryId'])) {
@@ -1435,23 +1436,19 @@ class Article extends Resource implements BatchInterface
                 );
 
                 if (!$category) {
-                    throw new ApiException\CustomValidationException(
-                        sprintf('Could not find category by id: %s.', $categoryData['categoryId'])
-                    );
+                    throw new ApiException\CustomValidationException(sprintf('Could not find category by id: %s.', $categoryData['categoryId']));
                 }
 
                 $seoCategory->setCategory($category);
             } elseif (isset($categoryData['categoryPath'])) {
                 /** @var CategoryResource $categoryResource */
-                $categoryResource = $this->getContainer()->get('shopware.api.category');
+                $categoryResource = $this->getContainer()->get(\Shopware\Components\Api\Resource\Category::class);
                 $category = $categoryResource->findCategoryByPath(
                     $categoryData['categoryPath'],
                     true
                 );
                 if (!$category) {
-                    throw new ApiException\CustomValidationException(
-                        sprintf('Could not find category by path: %s.', $categoryData['categoryPath'])
-                    );
+                    throw new ApiException\CustomValidationException(sprintf('Could not find category by path: %s.', $categoryData['categoryPath']));
                 }
                 $seoCategory->setCategory($category);
             }
@@ -1463,9 +1460,7 @@ class Article extends Resource implements BatchInterface
             );
 
             if (!$existing) {
-                throw new ApiException\CustomValidationException(
-                    sprintf('Seo category isn\'t assigned as normal product category. Only assigned categories can be used as seo category')
-                );
+                throw new ApiException\CustomValidationException(sprintf('Seo category isn\'t assigned as normal product category. Only assigned categories can be used as seo category'));
             }
 
             $seoCategory->setArticle($article);
@@ -1551,9 +1546,7 @@ class Article extends Resource implements BatchInterface
             //no valid entity found, throw exception!
             if (!$relatedProduct) {
                 $property = $relatedData['number'] ?: $relatedData['id'];
-                throw new ApiException\CustomValidationException(
-                    sprintf('Related product by number/id "%s" not found', $property)
-                );
+                throw new ApiException\CustomValidationException(sprintf('Related product by number/id "%s" not found', $property));
             }
 
             /* @var ProductModel $relatedProduct */
@@ -1614,9 +1607,7 @@ class Article extends Resource implements BatchInterface
             // No valid entity found, throw exception!
             if (!$similarProduct) {
                 $property = $similarData['number'] ?: $similarData['id'];
-                throw new ApiException\CustomValidationException(
-                    sprintf('Similar product by number/id "%s" not found', $property)
-                );
+                throw new ApiException\CustomValidationException(sprintf('Similar product by number/id "%s" not found', $property));
             }
 
             /* @var ProductModel $similarProduct */
@@ -1843,9 +1834,7 @@ class Article extends Resource implements BatchInterface
     protected function createImageMappings(Image $image, ProductModel $article, array $mappings)
     {
         if (!$article->getConfiguratorSet()) {
-            throw new ApiException\CustomValidationException(
-                'Product is no configurator product. Image mapping can only be created on configurator products'
-            );
+            throw new ApiException\CustomValidationException('Product is no configurator product. Image mapping can only be created on configurator products');
         }
 
         $configuratorOptions = $article->getConfiguratorSet()->getOptions();
@@ -1866,9 +1855,7 @@ class Article extends Resource implements BatchInterface
 
                 if (!$available) {
                     $property = $option['id'] ?: $option['name'];
-                    throw new ApiException\CustomValidationException(
-                        sprintf('Passed option "%s" does not exist in the configurator set of the product', $property)
-                    );
+                    throw new ApiException\CustomValidationException(sprintf('Passed option "%s" does not exist in the configurator set of the product', $property));
                 }
 
                 $options->add($available);
@@ -2295,14 +2282,11 @@ class Article extends Resource implements BatchInterface
                 try { //persist the model into the model manager
                     $this->getManager()->persist($media);
                 } catch (ORMException $e) {
-                    throw new ApiException\CustomValidationException(
-                        sprintf('Some error occured while loading your image from link "%s"', $downloadData['link'])
-                    );
+                    throw new ApiException\CustomValidationException(sprintf('Some error occured while loading your image from link "%s"', $downloadData['link']));
                 }
 
                 $download->setFile($media->getPath());
                 $download->setName($media->getName());
-                $download->setSize($media->getFileSize());
             }
 
             $download->fromArray($downloadData);
@@ -2384,6 +2368,9 @@ class Article extends Resource implements BatchInterface
                     $image,
                     $media
                 );
+
+                $image->setPosition($position);
+                ++$position;
             }
 
             $image->fromArray($imageData);
@@ -2428,7 +2415,7 @@ class Article extends Resource implements BatchInterface
     private function getAttributeProperties()
     {
         /** @var \Shopware\Bundle\AttributeBundle\Service\CrudServiceInterface $crud */
-        $crud = $this->getContainer()->get('shopware_attribute.crud_service');
+        $crud = $this->getContainer()->get(\Shopware\Bundle\AttributeBundle\Service\CrudServiceInterface::class);
         $attributeNames = $crud->getList('s_articles_attributes');
         $fields = [];
         foreach ($attributeNames as $property) {

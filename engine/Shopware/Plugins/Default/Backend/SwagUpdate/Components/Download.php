@@ -128,8 +128,7 @@ class Download
         curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
         curl_setopt($ch, CURLOPT_NOPROGRESS, false);
 
-        $me = $this;
-        curl_setopt($ch, CURLOPT_PROGRESSFUNCTION, function ($ch, $dltotal, $dlnow) use ($me, $size) {
+        curl_setopt($ch, CURLOPT_PROGRESSFUNCTION, function ($ch, $dltotal, $dlnow) use ($size) {
             if ($dlnow > 0) {
                 $this->progress($dltotal, $dlnow, $size + $dlnow);
             }
@@ -176,13 +175,20 @@ class Download
             $this->verifyHash($partFile, $hash);
             // close local file connections before move for windows
             $partFilePath = $partFile->getPathname();
-            fclose($destination);
+
+            if (is_resource($destination)) {
+                fclose($destination);
+            }
+
             unset($partFile);
             $this->moveFile($partFilePath, $destinationUri);
         }
 
         // close local file
-        fclose($destination);
+        if (is_resource($destination)) {
+            fclose($destination);
+        }
+
         unset($partFile);
 
         return $size;

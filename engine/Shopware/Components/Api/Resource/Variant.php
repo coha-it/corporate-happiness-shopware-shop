@@ -464,7 +464,7 @@ class Variant extends Resource implements BatchInterface
      */
     protected function getArticleResource()
     {
-        return $this->getContainer()->get('shopware.api.article');
+        return $this->getContainer()->get(\Shopware\Components\Api\Resource\Article::class);
     }
 
     /**
@@ -472,7 +472,7 @@ class Variant extends Resource implements BatchInterface
      */
     protected function getMediaResource()
     {
-        return $this->getContainer()->get('shopware.api.media');
+        return $this->getContainer()->get(\Shopware\Components\Api\Resource\Media::class);
     }
 
     /**
@@ -514,7 +514,7 @@ class Variant extends Resource implements BatchInterface
         if (!empty($data['number']) && $data['number'] !== $variant->getNumber()) {
             // Number changed, hence make sure it does not already exist in another variant
             $exists = $this->getContainer()
-                ->get('dbal_connection')
+                ->get(\Doctrine\DBAL\Connection::class)
                 ->fetchColumn('SELECT id FROM s_articles_details WHERE ordernumber = ?', [$data['number']]);
             if ($exists) {
                 throw new ApiException\CustomValidationException(sprintf('A variant with the given order number "%s" already exists.', $data['number']));
@@ -575,9 +575,7 @@ class Variant extends Resource implements BatchInterface
                     $media = $this->getManager()->find(MediaModel::class, (int) $imageData['mediaId']);
 
                     if (!$media) {
-                        throw new ApiException\CustomValidationException(
-                            sprintf('Media by id %s not found', (int) $imageData['mediaId'])
-                        );
+                        throw new ApiException\CustomValidationException(sprintf('Media by id %s not found', (int) $imageData['mediaId']));
                     }
 
                     $image = $this->getArticleResource()->createNewArticleImage($article, $media);
@@ -851,9 +849,7 @@ class Variant extends Resource implements BatchInterface
         );
 
         if (empty($tax)) {
-            throw new ApiException\CustomValidationException(
-                sprintf('No product tax configured for variant: %s', $variant['id'])
-            );
+            throw new ApiException\CustomValidationException(sprintf('No product tax configured for variant: %s', $variant['id']));
         }
 
         $variant['prices'] = $this->getArticleResource()->getTaxPrices(

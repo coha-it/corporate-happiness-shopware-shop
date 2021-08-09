@@ -25,9 +25,10 @@
 namespace Shopware\Components\Model;
 
 use Doctrine\Common\EventManager;
-use Doctrine\Common\Util\Inflector;
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\Query\QueryBuilder as DBALQueryBuilder;
+use Doctrine\Inflector\Inflector;
+use Doctrine\Inflector\NoopWordInflector;
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\Mapping\ClassMetadata;
 use Doctrine\ORM\ORMException;
@@ -166,7 +167,7 @@ class ModelManager extends EntityManager
      */
     public function getValidator()
     {
-        return Shopware()->Container()->get('validator');
+        return Shopware()->Container()->get(ValidatorInterface::class);
     }
 
     /**
@@ -325,13 +326,22 @@ class ModelManager extends EntityManager
         }
         $metadata = $this->getClassMetadata($className);
         $data = [];
+        $inflector = new Inflector(new NoopWordInflector(), new NoopWordInflector());
 
         foreach ($metadata->fieldMappings as $field => $mapping) {
+            if (!($metadata->reflFields[$field] instanceof \ReflectionProperty)) {
+                throw new \InvalidArgumentException(sprintf('Expected an instance of %s', \ReflectionProperty::class));
+            }
+
             $data[$field] = $metadata->reflFields[$field]->getValue($entity);
         }
 
         foreach ($metadata->associationMappings as $field => $mapping) {
-            $key = Inflector::tableize($field);
+            if (!($metadata->reflFields[$field] instanceof \ReflectionProperty)) {
+                throw new \InvalidArgumentException(sprintf('Expected an instance of %s', \ReflectionProperty::class));
+            }
+
+            $key = $inflector->tableize($field);
             if ($mapping['isCascadeDetach']) {
                 $data[$key] = $metadata->reflFields[$field]->getValue($entity);
                 if ($data[$key] !== null) {

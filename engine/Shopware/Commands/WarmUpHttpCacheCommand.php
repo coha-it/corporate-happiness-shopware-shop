@@ -44,7 +44,7 @@ class WarmUpHttpCacheCommand extends ShopwareCommand implements CompletionAwareI
      *
      * @var string[]
      */
-    private $defaultProviderNames = ['blog', 'category', 'emotion', 'manufacturer', 'product', 'productwithcategory', 'productwithnumber', 'static', 'variantswitch'];
+    private $defaultProviderNames = ['blog', 'category', 'emotion', 'manufacturer', 'product', 'productwithcategory', 'productwithnumber', 'static', 'form', 'variantswitch'];
 
     /**
      * {@inheritdoc}
@@ -83,6 +83,7 @@ class WarmUpHttpCacheCommand extends ShopwareCommand implements CompletionAwareI
             ->addOption('blog', 'g', InputOption::VALUE_NONE, 'Warm up blogs')
             ->addOption('manufacturer', 'm', InputOption::VALUE_NONE, 'Warm up manufacturers')
             ->addOption('static', 't', InputOption::VALUE_NONE, 'Warm up static pages')
+            ->addOption('form', 'f', InputOption::VALUE_NONE, 'Warm up contact form pages')
             ->addOption('product', 'p', InputOption::VALUE_NONE, 'Warm up products')
             ->addOption('variantswitch', 'd', InputOption::VALUE_NONE, 'Warm up variant switch of configurators')
             ->addOption('productwithnumber', 'z', InputOption::VALUE_NONE, 'Warm up products and variants with number parameter')
@@ -114,7 +115,7 @@ class WarmUpHttpCacheCommand extends ShopwareCommand implements CompletionAwareI
         }
 
         /** @var \Shopware\Models\Shop\Repository $shopRepository */
-        $shopRepository = $this->container->get('models')->getRepository(Shop::class);
+        $shopRepository = $this->container->get(\Shopware\Components\Model\ModelManager::class)->getRepository(Shop::class);
         $shops = null;
 
         if (!empty($shopIds)) {
@@ -137,7 +138,7 @@ class WarmUpHttpCacheCommand extends ShopwareCommand implements CompletionAwareI
         // Clear cache?
         if ($input->getOption('clear-cache')) {
             $io->writeln('Clearing httpcache.');
-            $this->container->get('shopware.cache_manager')->clearHttpCache();
+            $this->container->get(\Shopware\Components\CacheManager::class)->clearHttpCache();
         }
 
         /*
@@ -166,7 +167,7 @@ class WarmUpHttpCacheCommand extends ShopwareCommand implements CompletionAwareI
             /** @var Context $context */
             $context = Context::createFromShop(
                 $shop,
-                $this->container->get('config')
+                $this->container->get(\Shopware_Components_Config::class)
             );
 
             // Gathering URLs

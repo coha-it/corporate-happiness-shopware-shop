@@ -52,11 +52,6 @@ class EsBackendIndexer
     private $evaluation;
 
     /**
-     * @var string
-     */
-    private $esVersion;
-
-    /**
      * @var IndexFactoryInterface
      */
     private $indexFactory;
@@ -65,13 +60,11 @@ class EsBackendIndexer
         Client $client,
         \IteratorAggregate $repositories,
         EvaluationHelperInterface $evaluation,
-        string $esVersion,
         IndexFactoryInterface $indexFactory
     ) {
         $this->client = $client;
         $this->repositories = $repositories;
         $this->evaluation = $evaluation;
-        $this->esVersion = $esVersion;
         $this->indexFactory = $indexFactory;
     }
 
@@ -85,20 +78,6 @@ class EsBackendIndexer
             $this->populateEntity($index->getName(), $repository, $helper);
             $this->createAlias($index->getName(), $index->getAlias());
         }
-    }
-
-    /**
-     * @deprecated since 5.6, will be removed with 5.7. Use IndexFactory service instead
-     *
-     * @param string $domainName
-     *
-     * @return string
-     */
-    public static function buildAlias($domainName)
-    {
-        trigger_error(sprintf('%s:%s is deprecated since 5.6 and will be removed with 5.7, use IndexNameBuilderInterface instead', __CLASS__, __FUNCTION__), E_USER_DEPRECATED);
-
-        return Shopware()->Container()->get(IndexFactoryInterface::class)->createIndexConfiguration($domainName)->getAlias();
     }
 
     /**
@@ -256,16 +235,8 @@ class EsBackendIndexer
             'index' => $index,
             'type' => $entity->getDomainName(),
             'body' => $merged,
+            'include_type_name' => true,
         ];
-
-        if (version_compare($this->esVersion, '7', '>=')) {
-            $arguments = array_merge(
-                $arguments,
-                [
-                    'include_type_name' => true,
-                ]
-            );
-        }
 
         $this->client->indices()->putMapping(
             $arguments

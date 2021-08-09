@@ -52,10 +52,11 @@ abstract class Enlight_Components_Test_Plugin_TestCase extends Enlight_Component
 
     /**
      * Tests set up method
-     * @before
      */
-    public function setUpEnlightPluginTestCase(): void
+    public function setUp(): void
     {
+        parent::setUp();
+
         Shopware()->Container()->load('plugins');
     }
 }

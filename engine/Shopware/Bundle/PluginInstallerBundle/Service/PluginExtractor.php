@@ -62,7 +62,7 @@ class PluginExtractor
     public function __construct(
         $pluginDir,
         Filesystem $filesystem,
-        array $pluginDirectories = [],
+        array $pluginDirectories,
         ShopwareReleaseStruct $release,
         RequirementValidator $requirementValidator
     ) {
@@ -162,13 +162,7 @@ class PluginExtractor
     private function assertPrefix($filename, $prefix)
     {
         if (strpos($filename, $prefix) !== 0) {
-            throw new \RuntimeException(
-                sprintf(
-                    'Detected invalid file/directory %s in the plugin zip: %s',
-                    $filename,
-                    $prefix
-                )
-            );
+            throw new \RuntimeException(sprintf('Detected invalid file/directory %s in the plugin zip: %s', $filename, $prefix));
         }
     }
 

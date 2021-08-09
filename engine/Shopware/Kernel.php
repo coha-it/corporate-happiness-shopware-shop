@@ -44,14 +44,16 @@ use Shopware\Bundle\EsBackendBundle\EsBackendBundle;
 use Shopware\Bundle\ESIndexingBundle\DependencyInjection\CompilerPass\VersionCompilerPass;
 use Shopware\Bundle\ESIndexingBundle\ESIndexingBundle;
 use Shopware\Bundle\FormBundle\DependencyInjection\CompilerPass\AddConstraintValidatorsPass;
-use Shopware\Bundle\FormBundle\DependencyInjection\CompilerPass\FormPass;
 use Shopware\Bundle\FormBundle\FormBundle;
 use Shopware\Bundle\MailBundle\MailBundle;
 use Shopware\Bundle\MediaBundle\MediaBundle;
+use Shopware\Bundle\OrderBundle\OrderBundle;
 use Shopware\Bundle\PluginInstallerBundle\PluginInstallerBundle;
 use Shopware\Bundle\PluginInstallerBundle\Service\PluginInitializer;
 use Shopware\Bundle\SearchBundle\SearchBundle;
+use Shopware\Bundle\SearchBundleDBAL\DependencyInjection\Compiler\DBALHandlerCompilerPass;
 use Shopware\Bundle\SearchBundleDBAL\SearchBundleDBAL;
+use Shopware\Bundle\SearchBundleES\DependencyInjection\Compiler\ESHandlerCompilerPass;
 use Shopware\Bundle\SearchBundleES\SearchBundleES;
 use Shopware\Bundle\SitemapBundle\SitemapBundle;
 use Shopware\Bundle\StaticContentBundle\StaticContentBundle;
@@ -77,6 +79,7 @@ use Symfony\Component\DependencyInjection\Compiler\PassConfig;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Loader\XmlFileLoader;
 use Symfony\Component\DependencyInjection\ParameterBag\ParameterBag;
+use Symfony\Component\Form\DependencyInjection\FormPass;
 use Symfony\Component\HttpFoundation\Request as SymfonyRequest;
 use Symfony\Component\HttpFoundation\Response as SymfonyResponse;
 use Symfony\Component\HttpKernel\Bundle\BundleInterface;
@@ -98,9 +101,9 @@ class Kernel extends SymfonyKernel
      * Is available in the DIC as parameter 'shopware.release.*' or a Struct containing all the parameters below.
      */
     protected $release = [
-        'version' => '5.6.9',
+        'version' => '5.7.2',
         'version_text' => '',
-        'revision' => '202011060821',
+        'revision' => '202106241450',
     ];
 
     /**
@@ -469,6 +472,7 @@ class Kernel extends SymfonyKernel
             new SitemapBundle(),
             new StaticContentBundle(),
             new StoreFrontBundle(),
+            new OrderBundle(),
         ];
     }
 
@@ -484,12 +488,7 @@ class Kernel extends SymfonyKernel
 
         $plugins = $initializer->initializePlugins();
 
-        /*
-         * @deprecated since 5.5, is true by default since 5.6 will be removed in Shopware 5.7
-         */
-        if ($this->config['backward_compatibility']['predictable_plugin_order'] === true) {
-            ksort($plugins);
-        }
+        ksort($plugins);
 
         $this->bundles = array_merge($this->bundles, $plugins);
 
@@ -671,6 +670,8 @@ class Kernel extends SymfonyKernel
         $container->addCompilerPass(new ControllerCompilerPass());
         $container->addCompilerPass(new RegisterControllerArgumentLocatorsPass('argument_resolver.service', 'shopware.controller'));
         $container->addCompilerPass(new VersionCompilerPass());
+        $container->addCompilerPass(new DBALHandlerCompilerPass());
+        $container->addCompilerPass(new ESHandlerCompilerPass());
 
         $container->setParameter('active_plugins', $this->activePlugins);
 
@@ -722,7 +723,6 @@ class Kernel extends SymfonyKernel
         foreach ($this->bundles as $name => $bundle) {
             $bundles[$name] = \get_class($bundle);
             $bundlesMetadata[$name] = [
-                'parent' => $bundle->getParent(),
                 'path' => $bundle->getPath(),
                 'namespace' => $bundle->getNamespace(),
             ];

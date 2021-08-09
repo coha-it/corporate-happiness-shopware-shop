@@ -215,25 +215,25 @@ class sArticles implements \Enlight_Hook
         $this->translationId = $translationId ?: (!Shopware()->Shop()->getDefault() ? Shopware()->Shop()->getId() : null);
         $this->customerGroupId = $customerGroupId ?: ((int) Shopware()->Modules()->System()->sUSERGROUPDATA['id']);
 
-        $this->config = $container->get('config');
+        $this->config = $container->get(\Shopware_Components_Config::class);
         $this->db = $container->get('db');
         $this->eventManager = $container->get('events');
-        $this->contextService = $container->get('shopware_storefront.context_service');
-        $this->listProductService = $container->get('shopware_storefront.list_product_service');
-        $this->productService = $container->get('shopware_storefront.product_service');
-        $this->productNumberSearch = $container->get('shopware_search.product_number_search');
-        $this->configuratorService = $container->get('shopware_storefront.configurator_service');
-        $this->propertyService = $container->get('shopware_storefront.property_service');
-        $this->additionalTextService = $container->get('shopware_storefront.additional_text_service');
-        $this->searchService = $container->get('shopware_search.product_search');
-        $this->queryAliasMapper = $container->get('query_alias_mapper');
+        $this->contextService = $container->get(\Shopware\Bundle\StoreFrontBundle\Service\ContextServiceInterface::class);
+        $this->listProductService = $container->get(\Shopware\Bundle\StoreFrontBundle\Service\ListProductServiceInterface::class);
+        $this->productService = $container->get(\Shopware\Bundle\StoreFrontBundle\Service\ProductServiceInterface::class);
+        $this->productNumberSearch = $container->get(\Shopware\Bundle\SearchBundle\ProductNumberSearchInterface::class);
+        $this->configuratorService = $container->get(\Shopware\Bundle\StoreFrontBundle\Service\ConfiguratorServiceInterface::class);
+        $this->propertyService = $container->get(\Shopware\Bundle\StoreFrontBundle\Service\PropertyServiceInterface::class);
+        $this->additionalTextService = $container->get(\Shopware\Bundle\StoreFrontBundle\Service\AdditionalTextServiceInterface::class);
+        $this->searchService = $container->get(\Shopware\Bundle\SearchBundle\ProductSearchInterface::class);
+        $this->queryAliasMapper = $container->get(QueryAliasMapper::class);
         $this->frontController = $container->get('front');
-        $this->legacyStructConverter = $container->get('legacy_struct_converter');
-        $this->legacyEventManager = $container->get('legacy_event_manager');
+        $this->legacyStructConverter = $container->get(LegacyStructConverter::class);
+        $this->legacyEventManager = $container->get(LegacyEventManager::class);
         $this->session = $container->get('session');
-        $this->storeFrontCriteriaFactory = $container->get('shopware_search.store_front_criteria_factory');
-        $this->productNumberService = $container->get('shopware_storefront.product_number_service');
-        $this->listingLinkRewriteService = $container->get('shopware_storefront.listing_link_rewrite_service');
+        $this->storeFrontCriteriaFactory = $container->get(\Shopware\Bundle\SearchBundle\StoreFrontCriteriaFactoryInterface::class);
+        $this->productNumberService = $container->get(\Shopware\Bundle\StoreFrontBundle\Service\ProductNumberServiceInterface::class);
+        $this->listingLinkRewriteService = $container->get(\Shopware\Bundle\StoreFrontBundle\Service\ListingLinkRewriteServiceInterface::class);
 
         $this->productComparisons = new sArticlesComparisons($this, $container);
     }
@@ -397,7 +397,7 @@ class sArticles implements \Enlight_Hook
             $shopId = $container->get('shop')->getId();
         }
 
-        $connection = $container->get('dbal_connection');
+        $connection = $container->get(\Doctrine\DBAL\Connection::class);
         $query = $connection->createQueryBuilder();
         $query->insert('s_articles_vote');
         $query->values([
@@ -568,7 +568,7 @@ class sArticles implements \Enlight_Hook
 
         // Condition Output-Netto AND NOT overwrite by customer-group
         // OR Output-Netto NOT SET AND tax-settings provided by customer-group
-        if ((!$this->sSYSTEM->sUSERGROUPDATA['tax'] && $this->sSYSTEM->sUSERGROUPDATA['id'])) {
+        if (!$this->sSYSTEM->sUSERGROUPDATA['tax'] && $this->sSYSTEM->sUSERGROUPDATA['id']) {
             $price = $this->sFormatPrice($price);
         } else {
             $price = $this->sFormatPrice(round($price * (100 + $tax) / 100, 3));
@@ -645,12 +645,12 @@ class sArticles implements \Enlight_Hook
         // Condition Output-Netto AND NOT overwrite by customer-group
         // OR Output-Netto NOT SET AND tax-settings provided by customer-group
         if ($doNotRound == true) {
-            if ((!$this->sSYSTEM->sUSERGROUPDATA['tax'] && $this->sSYSTEM->sUSERGROUPDATA['id'])) {
+            if (!$this->sSYSTEM->sUSERGROUPDATA['tax'] && $this->sSYSTEM->sUSERGROUPDATA['id']) {
             } else {
                 $price = $price * (100 + $tax) / 100;
             }
         } else {
-            if ((!$this->sSYSTEM->sUSERGROUPDATA['tax'] && $this->sSYSTEM->sUSERGROUPDATA['id'])) {
+            if (!$this->sSYSTEM->sUSERGROUPDATA['tax'] && $this->sSYSTEM->sUSERGROUPDATA['id']) {
                 $price = round($price, 2);
             } else {
                 $price = round($price * (100 + $tax) / 100, 2);
@@ -792,7 +792,11 @@ class sArticles implements \Enlight_Hook
                       AND objectlanguage=" . Shopware()->Shop()->getId();
             $translation = $this->db->fetchOne($sql);
             if (!empty($translation)) {
-                $translation = unserialize($translation, ['allowed_classes' => false]);
+                $translation = @unserialize($translation, ['allowed_classes' => false]);
+
+                if ($translation === false) {
+                    $translation = [];
+                }
             }
             if (!empty($translation[$id])) {
                 $unit = array_merge($unit, $translation[$id]);
@@ -1738,7 +1742,12 @@ class sArticles implements \Enlight_Hook
 
         foreach ($translations as $translation) {
             $productId = (int) $translation['objectkey'];
-            $object = unserialize($translation['objectdata'], ['allowed_classes' => false]);
+            $object = @unserialize($translation['objectdata'], ['allowed_classes' => false]);
+
+            if ($object === false) {
+                $object = [];
+            }
+
             foreach ($object as $translateKey => $value) {
                 if (isset($map[$translateKey])) {
                     $key = $map[$translateKey];
@@ -1821,7 +1830,11 @@ class sArticles implements \Enlight_Hook
         ";
         $objectData = $this->db->fetchOne($sql, [$id]);
         if (!empty($objectData)) {
-            $objectData = unserialize($objectData, ['allowed_classes' => false]);
+            $objectData = @unserialize($objectData, ['allowed_classes' => false]);
+
+            if ($objectData === false) {
+                $objectData = [];
+            }
         } else {
             $objectData = [];
         }
@@ -1835,6 +1848,11 @@ class sArticles implements \Enlight_Hook
             $objectFallback = $this->db->fetchOne($sql);
             if (!empty($objectFallback)) {
                 $objectFallback = unserialize($objectFallback, ['allowed_classes' => false]);
+
+                if ($objectFallback === false) {
+                    $objectFallback = [];
+                }
+
                 $objectData = array_merge($objectFallback, $objectData);
             }
         }
@@ -1882,7 +1900,8 @@ class sArticles implements \Enlight_Hook
                         }
                     }
                 }
-                foreach (array_merge($sArticle['images'], [count($sArticle['images']) => $sArticle['image']]) as $value) {
+
+                foreach (array_merge($sArticle['images'] ?? [], [count($sArticle['images'] ?? []) => $sArticle['image']]) as $value) {
                     if (preg_match('/(.*){(.*)}/', $value['relations'])) {
                         $configuratorImages = true;
 
@@ -2090,12 +2109,12 @@ class sArticles implements \Enlight_Hook
         }
 
         /** @var \Shopware\Components\ProductStream\CriteriaFactoryInterface $factory */
-        $factory = Shopware()->Container()->get('shopware_product_stream.criteria_factory');
+        $factory = Shopware()->Container()->get(\Shopware\Components\ProductStream\CriteriaFactoryInterface::class);
         $criteria = $factory->createCriteria($request, $context);
         $criteria->limit(null);
 
         /** @var \Shopware\Components\ProductStream\RepositoryInterface $streamRepository */
-        $streamRepository = Shopware()->Container()->get('shopware_product_stream.repository');
+        $streamRepository = Shopware()->Container()->get(\Shopware\Components\ProductStream\Repository::class);
         $streamRepository->prepareCriteria($criteria, $streamId);
 
         return $criteria;
@@ -2277,7 +2296,7 @@ class sArticles implements \Enlight_Hook
     {
         // Initial the data array
         $imageData = [];
-        $mediaService = Shopware()->Container()->get('shopware_media.media_service');
+        $mediaService = Shopware()->Container()->get(\Shopware\Bundle\MediaBundle\MediaServiceInterface::class);
 
         if (empty($image['path'])) {
             return $imageData;
@@ -2545,7 +2564,7 @@ class sArticles implements \Enlight_Hook
             );
         }
 
-        $service = Shopware()->Container()->get('shopware_storefront.variant_listing_price_service');
+        $service = Shopware()->Container()->get(\Shopware\Bundle\StoreFrontBundle\Service\VariantListingPriceServiceInterface::class);
 
         $result = new SearchBundle\ProductSearchResult(
             [$product->getNumber() => $product],

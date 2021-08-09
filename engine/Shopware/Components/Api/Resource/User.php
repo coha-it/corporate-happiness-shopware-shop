@@ -114,6 +114,9 @@ class User extends Resource
         $builder = $this->getRepository()->createQueryBuilder('user')
             ->join('user.role', 'role');
 
+        $builder->addSelect(['attribute'])
+            ->leftJoin('user.attribute', 'attribute');
+
         $builder->addFilter($criteria)
             ->addOrderBy($orderBy)
             ->setFirstResult($offset)
@@ -263,14 +266,7 @@ class User extends Resource
         $role = $this->getRole();
 
         if (!$this->getAcl()->isAllowed($role, $resource, $privilege)) {
-            throw new ApiException\PrivilegeException(
-                sprintf(
-                    'Role "%s" is not allowed to "%s" on resource "%s"',
-                    is_string($role) ? $role : $role->getRoleId(),
-                    $privilege,
-                    is_string($resource) ? $resource : $resource->getResourceId()
-                )
-            );
+            throw new ApiException\PrivilegeException(sprintf('Role "%s" is not allowed to "%s" on resource "%s"', is_string($role) ? $role : $role->getRoleId(), $privilege, is_string($resource) ? $resource : $resource->getResourceId()));
         }
     }
 
