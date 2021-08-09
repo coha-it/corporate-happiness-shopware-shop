@@ -46,3 +46,6 @@
 [submodule "custom/plugins/CohaCrmApi"]
 	path = custom/plugins/CohaCrmApi
 	url = git@github.com:coha-it/CohaCrmApi.git
+[submodule "custom/plugins/CohaOrderDateAttributes"]
+	path = custom/plugins/CohaOrderDateAttributes
+	url = git@github.com:coha-it/CohaOrderDateAttributes.git
