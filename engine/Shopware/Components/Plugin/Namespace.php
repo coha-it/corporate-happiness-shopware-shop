@@ -24,7 +24,7 @@
 
 use Doctrine\DBAL\Connection;
 use Shopware\Components\Model\ModelManager;
-use Shopware\Components\Plugin\ConfigReader;
+use Shopware\Components\Plugin\Configuration\ReaderInterface as ConfigurationReader;
 use Shopware\Models\Plugin\Plugin;
 use Shopware\Models\Shop\Shop;
 
@@ -33,8 +33,12 @@ use Shopware\Models\Shop\Shop;
  */
 class Shopware_Components_Plugin_Namespace extends Enlight_Plugin_Namespace_Config
 {
+    private const DEPRECATED_PLUGINS = [
+        'PluginManager', // Remove with Shopware 5.8
+    ];
+
     /**
-     * @var Shop
+     * @var Shop|null
      */
     protected $shop;
 
@@ -44,7 +48,7 @@ class Shopware_Components_Plugin_Namespace extends Enlight_Plugin_Namespace_Conf
     private $pluginDirectories;
 
     /**
-     * @var ConfigReader
+     * @var ConfigurationReader
      */
     private $configReader;
 
@@ -52,7 +56,7 @@ class Shopware_Components_Plugin_Namespace extends Enlight_Plugin_Namespace_Conf
      * @param string              $name
      * @param Enlight_Config|null $storage
      */
-    public function __construct($name, $storage, array $pluginDirectories, ConfigReader $configReader)
+    public function __construct($name, $storage, array $pluginDirectories, ConfigurationReader $configReader)
     {
         $this->pluginDirectories = $pluginDirectories;
         $this->configReader = $configReader;
@@ -65,7 +69,6 @@ class Shopware_Components_Plugin_Namespace extends Enlight_Plugin_Namespace_Conf
      * plugin has no config, the config is automatically set to an empty array.
      *
      * @param string $name
-     * @param Shop   $shop
      *
      * @return Enlight_Config
      */
@@ -75,7 +78,7 @@ class Shopware_Components_Plugin_Namespace extends Enlight_Plugin_Namespace_Conf
             $shop = $this->shop;
         }
 
-        $config = $this->configReader->getByPluginName($name, $shop);
+        $config = $this->configReader->getByPluginName($name, $shop ? $shop->getId() : null);
 
         return new Enlight_Config($config, true);
     }
@@ -139,7 +142,7 @@ class Shopware_Components_Plugin_Namespace extends Enlight_Plugin_Namespace_Conf
      *
      * @return Enlight_Plugin_PluginManager|Shopware_Components_Plugin_Namespace
      */
-    public function registerPlugin(Enlight_Plugin_Bootstrap $plugin, \DateTimeInterface $refreshDate = null)
+    public function registerPlugin(Enlight_Plugin_Bootstrap $plugin, DateTimeInterface $refreshDate = null)
     {
         parent::registerPlugin($plugin);
 
@@ -178,7 +181,7 @@ class Shopware_Components_Plugin_Namespace extends Enlight_Plugin_Namespace_Conf
             'refresh_date' => $refreshDate,
         ];
 
-        $connection = $this->Application()->Container()->get('dbal_connection');
+        $connection = $this->Application()->Container()->get(\Doctrine\DBAL\Connection::class);
         if (empty($id)) {
             $data['added'] = $refreshDate;
             $connection->insert(
@@ -256,9 +259,9 @@ class Shopware_Components_Plugin_Namespace extends Enlight_Plugin_Namespace_Conf
 
             $em->flush();
 
-            $this->Application()->Container()->get('shopware.snippet_database_handler')->loadToDatabase($bootstrap->Path() . 'Snippets/');
-            $this->Application()->Container()->get('shopware.snippet_database_handler')->loadToDatabase($bootstrap->Path() . 'snippets/');
-            $this->Application()->Container()->get('shopware.snippet_database_handler')->loadToDatabase($bootstrap->Path() . 'Resources/snippet/');
+            $this->Application()->Container()->get(\Shopware\Components\Snippet\DatabaseHandler::class)->loadToDatabase($bootstrap->Path() . 'Snippets/');
+            $this->Application()->Container()->get(\Shopware\Components\Snippet\DatabaseHandler::class)->loadToDatabase($bootstrap->Path() . 'snippets/');
+            $this->Application()->Container()->get(\Shopware\Components\Snippet\DatabaseHandler::class)->loadToDatabase($bootstrap->Path() . 'Resources/snippet/');
 
             // Clear proxy cache
             $this->Application()->Hooks()->getProxyFactory()->clearCache();
@@ -466,9 +469,9 @@ class Shopware_Components_Plugin_Namespace extends Enlight_Plugin_Namespace_Conf
             }
             $this->Application()->Models()->flush();
 
-            $this->Application()->Container()->get('shopware.snippet_database_handler')->loadToDatabase($plugin->Path() . 'Snippets/');
-            $this->Application()->Container()->get('shopware.snippet_database_handler')->loadToDatabase($plugin->Path() . 'snippets/');
-            $this->Application()->Container()->get('shopware.snippet_database_handler')->loadToDatabase($plugin->Path() . 'Resources/snippet/');
+            $this->Application()->Container()->get(\Shopware\Components\Snippet\DatabaseHandler::class)->loadToDatabase($plugin->Path() . 'Snippets/');
+            $this->Application()->Container()->get(\Shopware\Components\Snippet\DatabaseHandler::class)->loadToDatabase($plugin->Path() . 'snippets/');
+            $this->Application()->Container()->get(\Shopware\Components\Snippet\DatabaseHandler::class)->loadToDatabase($plugin->Path() . 'Resources/snippet/');
 
             // Clear proxy cache
             $this->Application()->Hooks()->getProxyFactory()->clearCache();
@@ -539,11 +542,16 @@ class Shopware_Components_Plugin_Namespace extends Enlight_Plugin_Namespace_Conf
               update_date as updateDate, 
               version
             FROM s_core_plugins
-            WHERE namespace=?
+            WHERE namespace=:namespace AND name not IN(:names)
         ';
 
-        $connection = $this->Application()->Container()->get('dbal_connection');
-        $rows = $connection->fetchAll($sql, [$this->name]);
+        $connection = $this->Application()->Container()->get(\Doctrine\DBAL\Connection::class);
+        $rows = $connection->fetchAll($sql, [
+            'namespace' => $this->name,
+            'names' => self::DEPRECATED_PLUGINS,
+        ], [
+            'names' => Connection::PARAM_STR_ARRAY,
+        ]);
 
         $plugins = [];
         foreach ($rows as $row) {
@@ -613,11 +621,18 @@ class Shopware_Components_Plugin_Namespace extends Enlight_Plugin_Namespace_Conf
              JOIN s_core_plugins cp
              ON cp.id=ce.pluginID
              AND cp.active=1
-             AND cp.namespace=?
-             WHERE ce.type=0
+             AND cp.namespace = :namespace
+             WHERE ce.type=0 AND cp.name NOT IN(:names)
              ORDER BY name, position
         ';
-        $listeners = $this->Application()->Db()->fetchAll($sql, [$namespace]);
+
+        $connection = $this->Application()->Container()->get(\Doctrine\DBAL\Connection::class);
+        $listeners = $connection->fetchAll($sql, [
+            'namespace' => $this->name,
+            'names' => self::DEPRECATED_PLUGINS,
+        ], [
+            'names' => Connection::PARAM_STR_ARRAY,
+        ]);
 
         foreach ($listeners as $listenerKey => $listener) {
             if (($position = strpos($listener['listener'], '::')) !== false) {
@@ -657,7 +672,7 @@ class Shopware_Components_Plugin_Namespace extends Enlight_Plugin_Namespace_Conf
     private function removePluginWidgets($pluginId)
     {
         /** @var Connection $connection */
-        $connection = $this->Application()->Container()->get('dbal_connection');
+        $connection = $this->Application()->Container()->get(\Doctrine\DBAL\Connection::class);
 
         $sql = "
             DELETE widgets, views, priv

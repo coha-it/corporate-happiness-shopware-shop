@@ -24,6 +24,7 @@
 
 use Doctrine\DBAL\Connection;
 use Doctrine\ORM\AbstractQuery;
+use setasign\Fpdi\Fpdi;
 use Shopware\Bundle\AttributeBundle\Repository\SearchCriteria;
 use Shopware\Bundle\MailBundle\Service\LogEntryBuilder;
 use Shopware\Components\CSRFWhitelistAware;
@@ -255,7 +256,7 @@ class Shopware_Controllers_Backend_Order extends Shopware_Controllers_Backend_Ex
             return;
         }
 
-        $stateTranslator = $this->get('shopware.components.state_translator');
+        $stateTranslator = $this->get(\Shopware\Components\StateTranslatorService::class);
 
         $orderState = $this->getOrderStatusQuery()->getArrayResult();
         $paymentState = $this->getRepository()->getPaymentStatusQuery()->getArrayResult();
@@ -289,8 +290,8 @@ class Shopware_Controllers_Backend_Order extends Shopware_Controllers_Backend_Ex
         $dispatches = $this->getDispatchRepository()->getDispatchesQuery()->getArrayResult();
         $documentTypes = $this->getRepository()->getDocumentTypesQuery()->getArrayResult();
 
-        // translate objects
-        $translationComponent = $this->get('translation');
+        // Translate objects
+        $translationComponent = $this->get(\Shopware_Components_Translation::class);
         $payments = $translationComponent->translatePaymentMethods($payments);
         $documentTypes = $translationComponent->translateDocuments($documentTypes);
         $dispatches = $translationComponent->translateDispatchMethods($dispatches);
@@ -334,7 +335,7 @@ class Shopware_Controllers_Backend_Order extends Shopware_Controllers_Backend_Ex
 
         $list = $this->getList($filter, $sort, $offset, $limit);
 
-        $translationComponent = $this->get('translation');
+        $translationComponent = $this->get(\Shopware_Components_Translation::class);
         $list['data'] = $translationComponent->translateOrders($list['data']);
 
         $this->View()->assign($list);
@@ -518,7 +519,9 @@ class Shopware_Controllers_Backend_Order extends Shopware_Controllers_Backend_Ex
         $invoiceShippingNetChanged = (bool) ($invoiceShippingNetBefore != $order->getInvoiceShippingNet());
         if ($invoiceShippingChanged || $invoiceShippingNetChanged) {
             // Recalculate the new invoice amount
-            $order->calculateInvoiceAmount();
+            /** @var \Shopware\Bundle\OrderBundle\Service\CalculationServiceInterface $calculationService */
+            $calculationService = $this->container->get(\Shopware\Bundle\OrderBundle\Service\CalculationServiceInterface::class);
+            $calculationService->recalculateOrderTotals($order);
         }
 
         Shopware()->Models()->flush();
@@ -777,7 +780,10 @@ class Shopware_Controllers_Backend_Order extends Shopware_Controllers_Backend_Ex
         // After each model has been removed to executes the doctrine flush.
         Shopware()->Models()->flush();
 
-        $order->calculateInvoiceAmount();
+        /** @var \Shopware\Bundle\OrderBundle\Service\CalculationServiceInterface $calculationService */
+        $calculationService = $this->container->get(\Shopware\Bundle\OrderBundle\Service\CalculationServiceInterface::class);
+        $calculationService->recalculateOrderTotals($order);
+
         Shopware()->Models()->flush();
 
         $data = $this->getOrder($order->getId());
@@ -817,9 +823,9 @@ class Shopware_Controllers_Backend_Order extends Shopware_Controllers_Backend_Ex
             return;
         }
 
-        $modelManager = $this->get('models');
+        $modelManager = $this->get(\Shopware\Components\Model\ModelManager::class);
         /** @var \Shopware\Components\StateTranslatorServiceInterface $stateTranslator */
-        $stateTranslator = $this->get('shopware.components.state_translator');
+        $stateTranslator = $this->get(\Shopware\Components\StateTranslatorService::class);
 
         $previousLocale = $this->getCurrentLocale();
 
@@ -1040,7 +1046,7 @@ class Shopware_Controllers_Backend_Order extends Shopware_Controllers_Backend_Ex
         $filesystem = $this->container->get('shopware.filesystem.private');
         $documentId = $this->request->getParam('documentId');
         /** @var \Doctrine\DBAL\Connection $connection */
-        $connection = $this->container->get('dbal_connection');
+        $connection = $this->container->get(\Doctrine\DBAL\Connection::class);
         $queryBuilder = $connection->createQueryBuilder();
 
         try {
@@ -1158,7 +1164,7 @@ class Shopware_Controllers_Backend_Order extends Shopware_Controllers_Backend_Ex
 
         // Needs to be called this early since $this->createDocument boots the
         // shop, the order was made in, and thereby destroys the backend session
-        $translationComponent = $this->get('translation');
+        $translationComponent = $this->get(\Shopware_Components_Translation::class);
 
         if (!empty($orderId) && !empty($documentType)) {
             $this->createDocument($orderId, $documentType);
@@ -1229,7 +1235,7 @@ class Shopware_Controllers_Backend_Order extends Shopware_Controllers_Backend_Ex
         $offset = $this->Request()->getParam('start', 0);
 
         /** @var \Doctrine\DBAL\Query\QueryBuilder $dbalBuilder */
-        $dbalBuilder = $this->get('dbal_connection')->createQueryBuilder();
+        $dbalBuilder = $this->get(\Doctrine\DBAL\Connection::class)->createQueryBuilder();
 
         $data = $dbalBuilder
             ->select(['SQL_CALC_FOUND_ROWS MAX(IFNULL(partner.company, orders.partnerID)) as name', 'orders.partnerID as `value`'])
@@ -1243,7 +1249,7 @@ class Shopware_Controllers_Backend_Order extends Shopware_Controllers_Backend_Ex
             ->execute()
             ->fetchAll();
 
-        $total = (int) $this->get('dbal_connection')->fetchColumn('SELECT FOUND_ROWS()');
+        $total = (int) $this->get(\Doctrine\DBAL\Connection::class)->fetchColumn('SELECT FOUND_ROWS()');
 
         $this->View()->assign(['success' => true, 'data' => $data, 'total' => $total]);
     }
@@ -1363,7 +1369,7 @@ class Shopware_Controllers_Backend_Order extends Shopware_Controllers_Backend_Ex
         $sort = $this->resolveSortParameter($sort);
 
         if ($this->container->getParameter('shopware.es.backend.enabled')) {
-            $repository = $this->container->get('shopware_attribute.order_repository');
+            $repository = $this->container->get(\Shopware\Bundle\AttributeBundle\Repository\OrderRepository::class);
             $criteria = $this->createCriteria();
             $result = $repository->search($criteria);
 
@@ -1388,7 +1394,7 @@ class Shopware_Controllers_Backend_Order extends Shopware_Controllers_Backend_Ex
         $namespace = $this->get('snippets')->getNamespace('frontend/salutation');
 
         /** @var \Shopware\Components\StateTranslatorServiceInterface $stateTranslator */
-        $stateTranslator = $this->get('shopware.components.state_translator');
+        $stateTranslator = $this->get(\Shopware\Components\StateTranslatorService::class);
 
         $numbers = [];
         foreach ($orders as $orderKey => $order) {
@@ -1542,14 +1548,14 @@ class Shopware_Controllers_Backend_Order extends Shopware_Controllers_Backend_Ex
      */
     private function mergeDocuments(array $paths)
     {
-        $pdf = new FPDI();
+        $pdf = new Fpdi();
 
         foreach ($paths as $path) {
             $numPages = $pdf->setSourceFile($path);
             for ($i = 1; $i <= $numPages; ++$i) {
                 $template = $pdf->importPage($i);
                 $size = $pdf->getTemplateSize($template);
-                $pdf->AddPage('P', [$size['w'], $size['h']]);
+                $pdf->AddPage('P', [$size['width'], $size['height']]);
                 $pdf->useTemplate($template);
             }
         }
@@ -1690,7 +1696,7 @@ class Shopware_Controllers_Backend_Order extends Shopware_Controllers_Backend_Ex
      */
     private function getDocumentFromDatabase($orderId, $documentTypeId)
     {
-        $queryBuilder = $this->container->get('dbal_connection')->createQueryBuilder();
+        $queryBuilder = $this->container->get(\Doctrine\DBAL\Connection::class)->createQueryBuilder();
         $queryResult = $queryBuilder->select('doc.hash, template.id, template.name')
             ->from('s_order_documents', 'doc')
             ->join('doc', 's_core_documents', 'template', 'doc.type = template.id')
@@ -1774,7 +1780,7 @@ class Shopware_Controllers_Backend_Order extends Shopware_Controllers_Backend_Ex
     {
         $localeId = $this->getOrderLocaleId($orderId);
 
-        $translationReader = $this->container->get('translation');
+        $translationReader = $this->container->get(\Shopware_Components_Translation::class);
         $translations = $translationReader->read($localeId, 'documents', $typeId, true);
 
         if (empty($translations) || empty($translations['name'])) {
@@ -1793,7 +1799,7 @@ class Shopware_Controllers_Backend_Order extends Shopware_Controllers_Backend_Ex
      */
     private function getOrderLocaleId($orderId)
     {
-        $queryBuilder = $this->container->get('dbal_connection')->createQueryBuilder();
+        $queryBuilder = $this->container->get(\Doctrine\DBAL\Connection::class)->createQueryBuilder();
 
         return $queryBuilder->select('language')
             ->from('s_order')
@@ -1813,7 +1819,7 @@ class Shopware_Controllers_Backend_Order extends Shopware_Controllers_Backend_Ex
     private function getDefaultName($typeId)
     {
         /** @var \Doctrine\DBAL\Query\QueryBuilder $queryBuilder */
-        $queryBuilder = $this->container->get('dbal_connection')->createQueryBuilder();
+        $queryBuilder = $this->container->get(\Doctrine\DBAL\Connection::class)->createQueryBuilder();
 
         return $queryBuilder->select('name')
             ->from('s_core_documents')
@@ -1931,7 +1937,7 @@ class Shopware_Controllers_Backend_Order extends Shopware_Controllers_Backend_Ex
             );
 
             if (!$languageData['default']) {
-                $translator = $this->container->get('translation');
+                $translator = $this->container->get(\Shopware_Components_Translation::class);
 
                 // Translate unit
                 if ($unit) {
@@ -2092,7 +2098,7 @@ class Shopware_Controllers_Backend_Order extends Shopware_Controllers_Backend_Ex
      */
     private function getVariantsStock(array $numbers)
     {
-        $query = Shopware()->Container()->get('dbal_connection')->createQueryBuilder();
+        $query = Shopware()->Container()->get(\Doctrine\DBAL\Connection::class)->createQueryBuilder();
         $query->select(['variant.ordernumber', 'variant.instock']);
         $query->from('s_articles_details', 'variant');
         $query->where('variant.ordernumber IN (:numbers)');
@@ -2200,7 +2206,7 @@ class Shopware_Controllers_Backend_Order extends Shopware_Controllers_Backend_Ex
             return $templateName;
         }
 
-        $statement = $this->container->get('dbal_connection')
+        $statement = $this->container->get(\Doctrine\DBAL\Connection::class)
             ->prepare('SELECT `name` FROM `s_core_config_mails` WHERE `name` = (SELECT CONCAT("document_", `key`) FROM `s_core_documents` WHERE id=:documentTypeId)');
 
         $statement->bindValue('documentTypeId', (int) $documentTypeId, \PDO::PARAM_INT);

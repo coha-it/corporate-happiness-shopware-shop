@@ -22,7 +22,11 @@
  * our trademarks remain entirely with us.
  */
 
+use Doctrine\ORM\AbstractQuery;
 use Doctrine\ORM\Mapping\ClassMetadataInfo;
+use Doctrine\ORM\Tools\Pagination\Paginator;
+use Shopware\Components\Model\ModelManager;
+use Shopware\Components\Model\ModelRepository;
 use Shopware\Components\Model\QueryBuilder;
 
 /**
@@ -62,7 +66,7 @@ abstract class Shopware_Controllers_Backend_Application extends Shopware_Control
      * Contains the repository class of the configured
      * doctrine model.
      *
-     * @var \Shopware\Components\Model\ModelRepository
+     * @var ModelRepository
      */
     protected $repository;
 
@@ -70,7 +74,7 @@ abstract class Shopware_Controllers_Backend_Application extends Shopware_Control
      * Contains the global shopware entity manager.
      * The manager is used for each doctrine entity operation.
      *
-     * @var \Shopware\Components\Model\ModelManager
+     * @var ModelManager
      */
     protected $manager;
 
@@ -139,9 +143,7 @@ abstract class Shopware_Controllers_Backend_Application extends Shopware_Control
     public function init()
     {
         if (empty($this->model)) {
-            throw new Exception(
-                'The `model` property of your PHP controller is not configured!'
-            );
+            throw new Exception('The `model` property of your PHP controller is not configured!');
         }
 
         parent::init();
@@ -151,7 +153,7 @@ abstract class Shopware_Controllers_Backend_Application extends Shopware_Control
      * Allows to set the repository property of this class.
      * The repository is used for find queries for the configured model.
      */
-    public function setRepository(\Shopware\Components\Model\ModelRepository $repository)
+    public function setRepository(ModelRepository $repository)
     {
         $this->repository = $repository;
     }
@@ -160,7 +162,7 @@ abstract class Shopware_Controllers_Backend_Application extends Shopware_Control
      * Allows to set the manager property of this class.
      * The manager is used for each data operation with doctrine models.
      */
-    public function setManager(\Shopware\Components\Model\ModelManager $manager)
+    public function setManager(ModelManager $manager)
     {
         $this->manager = $manager;
     }
@@ -169,7 +171,7 @@ abstract class Shopware_Controllers_Backend_Application extends Shopware_Control
      * Returns the instance of the global shopware entity manager.
      * Used for each data operation with doctrine models.
      *
-     * @return \Shopware\Components\Model\ModelManager
+     * @return ModelManager
      */
     public function getManager()
     {
@@ -597,7 +599,7 @@ abstract class Shopware_Controllers_Backend_Application extends Shopware_Control
     /**
      * Helper function to get the repository of the configured model.
      *
-     * @return \Shopware\Components\Model\ModelRepository
+     * @return ModelRepository
      */
     protected function getRepository()
     {
@@ -725,7 +727,7 @@ abstract class Shopware_Controllers_Backend_Application extends Shopware_Control
         $builder->select($association);
         $builder->from($model, $association);
 
-        if (strlen($search) > 0) {
+        if ($search !== '') {
             $where = [];
 
             $fields = $this->getModelFields($model, $association);
@@ -819,7 +821,7 @@ abstract class Shopware_Controllers_Backend_Application extends Shopware_Control
              */
             if ($mapping['type'] === ClassMetadataInfo::ONE_TO_ONE) {
                 $mappingData = $data[$mapping['fieldName']];
-                if (array_key_exists(0, $mappingData)) {
+                if (is_array($mappingData) && array_key_exists(0, $mappingData)) {
                     $data[$mapping['fieldName']] = $data[$mapping['fieldName']][0];
                 }
             }
@@ -847,7 +849,7 @@ abstract class Shopware_Controllers_Backend_Application extends Shopware_Control
                     $associationModel = $this->getManager()->find($mapping['targetEntity'], $data[$field]);
 
                     //proxies need to be loaded, otherwise the validation will be failed.
-                    if ($associationModel instanceof \Doctrine\Common\Persistence\Proxy && method_exists($associationModel, '__load')) {
+                    if ($associationModel instanceof \Doctrine\Persistence\Proxy && method_exists($associationModel, '__load')) {
                         $associationModel->__load();
                     }
                     $data[$mapping['fieldName']] = $associationModel;
@@ -1088,15 +1090,12 @@ abstract class Shopware_Controllers_Backend_Application extends Shopware_Control
     /**
      * Helper function to create the query builder paginator.
      *
-     * @param Doctrine\ORM\QueryBuilder $builder
-     * @param int                       $hydrationMode
+     * @param int $hydrationMode
      *
-     * @return \Doctrine\ORM\Tools\Pagination\Paginator
+     * @return Paginator
      */
-    protected function getQueryPaginator(
-        \Doctrine\ORM\QueryBuilder $builder,
-        $hydrationMode = \Doctrine\ORM\AbstractQuery::HYDRATE_ARRAY
-    ) {
+    protected function getQueryPaginator(QueryBuilder $builder, $hydrationMode = AbstractQuery::HYDRATE_ARRAY)
+    {
         $query = $builder->getQuery();
         $query->setHydrationMode($hydrationMode);
 

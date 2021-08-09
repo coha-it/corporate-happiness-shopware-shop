@@ -146,7 +146,7 @@ class Application extends BaseApplication
             // Wrap database related logic in a try-catch
             // so that non-db commands can still execute
             try {
-                $em = $this->kernel->getContainer()->get('models');
+                $em = $this->kernel->getContainer()->get(\Shopware\Components\Model\ModelManager::class);
 
                 // Setup doctrine commands
                 $helperSet = $this->getHelperSet();
@@ -198,7 +198,7 @@ class Application extends BaseApplication
      */
     protected function registerTaggedServiceIds()
     {
-        $lazyServices = array_keys($this->kernel->getContainer()->getParameter('console.lazy_command.ids'));
+        $lazyServices = array_keys($this->kernel->getContainer()->getParameter('console.command.ids'));
 
         if ($this->kernel->getContainer()->hasParameter('console.command.ids')) {
             foreach ($this->kernel->getContainer()->getParameter('console.command.ids') as $id) {

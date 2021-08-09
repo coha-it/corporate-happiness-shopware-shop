@@ -116,7 +116,7 @@ class Shopware_Controllers_Backend_SwagUpdate extends Shopware_Controllers_Backe
         $namespace = $this->get('snippets')->getNamespace('backend/swag_update/main');
 
         $fileSystem = new \ShopwarePlugins\SwagUpdate\Components\FileSystem();
-        $conn = $this->get('dbal_connection');
+        $conn = $this->get(\Doctrine\DBAL\Connection::class);
         $checks = [
             new RegexCheck($namespace, $userLang),
             new MySQLVersionCheck($conn, $namespace),
@@ -252,7 +252,7 @@ class Shopware_Controllers_Backend_SwagUpdate extends Shopware_Controllers_Backe
         }
 
         $payload = json_encode($payload);
-        $projectDir = $this->container->getParameter('shopware.app.rootdir');
+        $projectDir = $this->container->getParameter('shopware.app.rootDir');
         $updateFilePath = $projectDir . 'files/update/update.json';
 
         if (!file_put_contents($updateFilePath, $payload)) {
@@ -407,7 +407,7 @@ class Shopware_Controllers_Backend_SwagUpdate extends Shopware_Controllers_Backe
     private function getUnique()
     {
         /** @var Shopware\Bundle\PluginInstallerBundle\Service\UniqueIdGeneratorInterface $uniqueIdGenerator */
-        $uniqueIdGenerator = $this->container->get('shopware_plugininstaller.unique_id_generator');
+        $uniqueIdGenerator = $this->container->get(\Shopware\Bundle\PluginInstallerBundle\Service\UniqueIdGenerator\UniqueIdGenerator::class);
 
         return $uniqueIdGenerator->getUniqueId();
     }
@@ -446,7 +446,7 @@ class Shopware_Controllers_Backend_SwagUpdate extends Shopware_Controllers_Backe
     private function getCachedVersion()
     {
         /** @var \Zend_Cache_Core $cache */
-        $cache = $this->get('cache');
+        $cache = $this->get(\Zend_Cache_Core::class);
         if (false === $version = $cache->load(self::CACHE_KEY)) {
             $version = $this->fetchUpdateVersion();
         }
@@ -471,7 +471,7 @@ class Shopware_Controllers_Backend_SwagUpdate extends Shopware_Controllers_Backe
         $result = $update->checkUpdate($shopwareVersion, $params);
 
         /** @var \Zend_Cache_Core $cache */
-        $cache = $this->get('cache');
+        $cache = $this->get(\Zend_Cache_Core::class);
         $cache->save($result, self::CACHE_KEY, [], 60);
 
         return $result;
@@ -484,7 +484,7 @@ class Shopware_Controllers_Backend_SwagUpdate extends Shopware_Controllers_Backe
     {
         $filename = 'update_' . $version->sha1 . '.zip';
 
-        return $this->container->getParameter('shopware.app.rootdir') . $filename;
+        return $this->container->getParameter('shopware.app.rootDir') . $filename;
     }
 
     /**

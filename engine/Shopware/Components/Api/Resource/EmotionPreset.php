@@ -239,7 +239,7 @@ class EmotionPreset extends Resource
     {
         $pluginNames = [];
         foreach ($presets as $id => $preset) {
-            $plugins = json_decode($preset['requiredPlugins'], true);
+            $plugins = json_decode($preset['requiredPlugins'], true) ?? [];
             $preset['requiredPlugins'] = array_combine(array_column($plugins, 'name'), $plugins);
             $pluginNames = array_merge($pluginNames, array_keys($preset['requiredPlugins']));
             $presets[$id] = $preset;
@@ -334,7 +334,7 @@ class EmotionPreset extends Resource
                 ], $plugin);
 
                 $plugin['updateRequired'] = version_compare($plugin['version'], $plugin['current_version'], '>');
-                $plugin['valid'] = ($plugin['active'] && $plugin['installed'] && !$plugin['updateRequired']);
+                $plugin['valid'] = $plugin['active'] && $plugin['installed'] && !$plugin['updateRequired'];
 
                 return $plugin;
             },

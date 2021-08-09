@@ -46,7 +46,7 @@ use Shopware\Bundle\StoreFrontBundle\Struct\ListProduct;
 use Shopware\Bundle\StoreFrontBundle\Struct\Shop;
 use Shopware\Bundle\StoreFrontBundle\Struct\ShopContextInterface;
 
-class ProductProvider implements ProviderInterface, ProductProviderInterface
+class ProductProvider implements ProviderInterface
 {
     /**
      * @var ContextServiceInterface
@@ -128,6 +128,11 @@ class ProductProvider implements ProviderInterface, ProductProviderInterface
      */
     private $manualPositionLoader;
 
+    /**
+     * @var \Shopware_Components_Config
+     */
+    private $config;
+
     public function __construct(
         ListProductGatewayInterface $productGateway,
         CheapestPriceServiceInterface $cheapestPriceService,
@@ -143,7 +148,8 @@ class ProductProvider implements ProviderInterface, ProductProviderInterface
         ProductConfigurationLoader $configurationLoader,
         ProductListingVariationLoader $visibilityLoader,
         CrudServiceInterface $crudService,
-        ProductManualPositionLoaderInterface $manualPositionLoader
+        ProductManualPositionLoaderInterface $manualPositionLoader,
+        \Shopware_Components_Config $config
     ) {
         $this->productGateway = $productGateway;
         $this->cheapestPriceService = $cheapestPriceService;
@@ -160,6 +166,7 @@ class ProductProvider implements ProviderInterface, ProductProviderInterface
         $this->listingVariationLoader = $visibilityLoader;
         $this->crudService = $crudService;
         $this->manualPositionLoader = $manualPositionLoader;
+        $this->config = $config;
     }
 
     /**
@@ -214,6 +221,8 @@ class ProductProvider implements ProviderInterface, ProductProviderInterface
             $number = $product->getNumber();
             $id = $product->getId();
 
+            $product->setHasStock($product->getStock() >= $product->getUnit()->getMinPurchase());
+
             if ($variantFacet) {
                 $this->addVariantSearchDetails($product, $configurations, $variantFacet, $variantConfiguration, $combinations, $listingPrices, $availability);
             } elseif (!$product->isMainVariant()) {
@@ -225,6 +234,7 @@ class ProductProvider implements ProviderInterface, ProductProviderInterface
             if (isset($average[$number])) {
                 $product->setVoteAverage($average[$number]);
             }
+
             if (isset($calculated[$number])) {
                 $product->setCalculatedPrices($calculated[$number]);
             }
@@ -453,6 +463,7 @@ class ProductProvider implements ProviderInterface, ProductProviderInterface
             if (!isset($priceRules[$number])) {
                 continue;
             }
+
             $rules = $priceRules[$number];
 
             foreach ($contexts as $context) {
@@ -470,10 +481,16 @@ class ProductProvider implements ProviderInterface, ProductProviderInterface
                 /* @var ProductContextInterface $context */
                 $this->priceCalculationService->calculateProduct($product, $context);
 
-                if ($product->getCheapestPrice()) {
-                    $product->getCheapestPrice()->setRule(null);
+                $priceObj = $product->getCheapestUnitPrice();
 
-                    $prices[$number][$key] = $product->getCheapestPrice();
+                if ($this->config->get('calculateCheapestPriceWithMinPurchase')) {
+                    $priceObj = $product->getCheapestPrice();
+                }
+
+                if ($priceObj) {
+                    $priceObj->setRule(null);
+
+                    $prices[$number][$key] = $priceObj;
                 }
             }
         }
@@ -512,6 +529,12 @@ class ProductProvider implements ProviderInterface, ProductProviderInterface
         $currencies = $this->identifierSelector->getShopCurrencyIds($shop->getId());
         if (!$shop->isMain()) {
             $currencies = $this->identifierSelector->getShopCurrencyIds($shop->getParentId());
+        }
+
+        $defaultCurrencyId = $shop->getCurrency()->getId();
+
+        if (!in_array($defaultCurrencyId, $currencies, true)) {
+            $currencies[] = $defaultCurrencyId;
         }
 
         $customerGroups = $this->identifierSelector->getCustomerGroupKeys();

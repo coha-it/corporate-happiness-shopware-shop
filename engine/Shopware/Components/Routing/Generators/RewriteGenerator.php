@@ -109,7 +109,7 @@ class RewriteGenerator implements GeneratorListInterface
             return $this->preAssemble($params, $context);
         }, $list);
 
-        if (max($orgQueryList) === false) {
+        if (count($orgQueryList) === 0 || max($orgQueryList) === false) {
             return $list;
         }
 
@@ -118,7 +118,7 @@ class RewriteGenerator implements GeneratorListInterface
         }, $orgQueryList);
 
         $urls = $this->rewriteList($orgPathList, $context);
-        if (max($urls) === false) {
+        if (empty($urls) || max($urls) === false) {
             return $list;
         }
 

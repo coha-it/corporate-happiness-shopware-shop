@@ -25,6 +25,7 @@
 namespace ShopwarePlugin\PaymentMethods\Components;
 
 use Doctrine\ORM\AbstractQuery;
+use Mpdf\Mpdf;
 use Shopware\Bundle\MailBundle\Service\LogEntryBuilder;
 
 /**
@@ -40,13 +41,13 @@ class SepaPaymentMethod extends GenericPaymentMethod
         $sErrorFlag = [];
         $sErrorMessages = [];
 
-        if (!$paymentData['sSepaIban'] || strlen(trim($paymentData['sSepaIban'])) === 0) {
+        if (!$paymentData['sSepaIban'] || trim($paymentData['sSepaIban']) === '') {
             $sErrorFlag['sSepaIban'] = true;
         }
-        if (Shopware()->Config()->sepaShowBic && Shopware()->Config()->sepaRequireBic && (!$paymentData['sSepaBic'] || strlen(trim($paymentData['sSepaBic'])) === 0)) {
+        if (Shopware()->Config()->sepaShowBic && Shopware()->Config()->sepaRequireBic && (!$paymentData['sSepaBic'] || trim($paymentData['sSepaBic']) === '')) {
             $sErrorFlag['sSepaBic'] = true;
         }
-        if (Shopware()->Config()->sepaShowBankName && Shopware()->Config()->sepaRequireBankName && (!$paymentData['sSepaBankName'] || strlen(trim($paymentData['sSepaBankName'])) === 0)) {
+        if (Shopware()->Config()->sepaShowBankName && Shopware()->Config()->sepaRequireBankName && (!$paymentData['sSepaBankName'] || trim($paymentData['sSepaBankName']) === '')) {
             $sErrorFlag['sSepaBankName'] = true;
         }
 
@@ -266,7 +267,7 @@ class SepaPaymentMethod extends GenericPaymentMethod
         $data = Shopware()->Template()->fetch('frontend/plugins/sepa/email.tpl');
 
         $mpdfConfig = Shopware()->Container()->getParameter('shopware.mpdf.defaultConfig');
-        $mpdf = new \Mpdf\Mpdf($mpdfConfig);
+        $mpdf = new Mpdf($mpdfConfig);
         $mpdf->WriteHTML($data);
         $pdfFileContent = $mpdf->Output('', 'S');
 

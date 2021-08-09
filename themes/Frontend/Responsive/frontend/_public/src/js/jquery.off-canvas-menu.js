@@ -1,4 +1,4 @@
-(function ($) {
+(function ($, window) {
     'use strict';
 
     var $html = $('html');
@@ -160,7 +160,22 @@
              *
              * @type {String}
              */
-            'ajaxURL': ''
+            'ajaxURL': '',
+
+            /**
+             * If this is set to true, the plugin will search its content container for an element matching the
+             * autoOpenSelector and open the offcanvas menu in case it finds one.
+             *
+             * @type {Boolean}
+             */
+            'autoOpen': false,
+
+            /**
+             * The selector used to automatically open the offcanvas menu.
+             *
+             * @type {String}
+             */
+            'autoOpenSelector': ''
         },
 
         /**
@@ -225,11 +240,16 @@
 
             // Button click
             me._on(me.$el, 'click touch', $.proxy(me.onClickElement, me));
+            me._on(window, 'popstate', $.proxy(me.onBackButton, me));
 
             // Allow the user to close the off canvas menu
             me.$offCanvas.on(me.getEventName('click'), opts.closeButtonSelector, $.proxy(me.onClickCloseButton, me));
 
             $.subscribe(me.getEventName('plugin/swOffcanvasMenu/onBeforeOpenMenu'), $.proxy(me.onBeforeOpenMenu, me));
+
+            if (opts.autoOpen && opts.autoOpenSelector) {
+                $.subscribe(me.getEventName('plugin/swOffcanvasMenu/onInit'), $.proxy(me.onAutoOpen, me));
+            }
 
             $.publish('plugin/swOffcanvasMenu/onRegisterEvents', [ me ]);
         },
@@ -272,7 +292,7 @@
 
         /**
          * Called when the body was clicked on.
-         * Closes the off canvas menu.
+         * Triggers the history back functionality
          *
          * @public
          * @method onClickBody
@@ -284,14 +304,25 @@
             event.preventDefault();
             event.stopPropagation();
 
-            me.closeMenu();
+            if (me.isOpened) {
+                window.history.back();
+            }
 
             $.publish('plugin/swOffcanvasMenu/onClickCloseButton', [ me, event ]);
         },
 
         /**
+         * Called when the browser goes back in history
+         * Closes the off-canvas menu
+         */
+        onBackButton: function() {
+            this.closeMenu();
+        },
+
+        /**
          * Opens the off-canvas menu based on the direction.
          * Also closes all other off-canvas menus.
+         * Pushes to the history state, so it could be closed with browser back
          *
          * @public
          * @method openMenu
@@ -323,6 +354,8 @@
             }
 
             me.$offCanvas.addClass(opts.openClass);
+
+            window.history.pushState('offcanvas-open', '');
 
             $.publish('plugin/swOffcanvasMenu/onOpenMenu', [ me ]);
 
@@ -367,6 +400,20 @@
         },
 
         /**
+         * Opens the menu, when a certain element matching opts.autoOpenSelector is detected.
+         *
+         * @public
+         * @method onAutoOpen
+         */
+        onAutoOpen: function () {
+            var me = this;
+
+            if (me.$offCanvas.find(me.opts.autoOpenSelector).length > 0) {
+                me.openMenu();
+            }
+        },
+
+        /**
          * Destroys the initialized plugin completely, so all event listeners will
          * be removed and the plugin data, which is stored in-memory referenced to
          * the DOM node.
@@ -389,11 +436,13 @@
                 me.$pageWrap.prop('style', '');
             }
 
-            me.$el.off(me.getEventName('click'), opts.closeButtonSelector);
+            me._off(me.$el, 'click touch');
+            me._off(window, 'popstate');
+            me.$offCanvas.off(me.getEventName('click'), opts.closeButtonSelector);
 
             $.unsubscribe(me.getEventName('plugin/swOffcanvasMenu/onBeforeOpenMenu'));
 
             me._destroy();
         }
     });
-})(jQuery);
+})(jQuery, window);

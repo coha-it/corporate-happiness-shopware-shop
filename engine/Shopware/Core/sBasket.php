@@ -23,6 +23,7 @@
  */
 
 use Doctrine\DBAL\Connection;
+use Shopware\Bundle\OrderBundle\Service\OrderListProductServiceInterface;
 use Shopware\Bundle\StoreFrontBundle;
 use Shopware\Bundle\StoreFrontBundle\Struct\ListProduct;
 use Shopware\Components\Cart\BasketHelperInterface;
@@ -132,6 +133,11 @@ class sBasket implements \Enlight_Hook
     private $fieldHelper;
 
     /**
+     * @var OrderListProductServiceInterface
+     */
+    private $orderListProductService;
+
+    /**
      * @var CartOrderNumberProviderInterface
      */
     private $cartOrderNumberProvider;
@@ -147,7 +153,7 @@ class sBasket implements \Enlight_Hook
         Enlight_Components_Session_Namespace $session = null,
         Enlight_Controller_Front $front = null,
         Shopware_Components_Modules $moduleManager = null,
-        \sSystem $systemModule = null,
+        sSystem $systemModule = null,
         StoreFrontBundle\Service\ContextServiceInterface $contextService = null,
         StoreFrontBundle\Service\AdditionalTextServiceInterface $additionalTextService = null
     ) {
@@ -162,24 +168,24 @@ class sBasket implements \Enlight_Hook
 
         $this->contextService = $contextService;
         $this->additionalTextService = $additionalTextService;
-        $this->connection = Shopware()->Container()->get('dbal_connection');
+        $this->connection = Shopware()->Container()->get(\Doctrine\DBAL\Connection::class);
 
         if ($this->contextService === null) {
-            $this->contextService = Shopware()->Container()->get('shopware_storefront.context_service');
+            $this->contextService = Shopware()->Container()->get(\Shopware\Bundle\StoreFrontBundle\Service\ContextServiceInterface::class);
         }
 
         if ($this->additionalTextService === null) {
-            $this->additionalTextService = Shopware()->Container()->get('shopware_storefront.additional_text_service');
+            $this->additionalTextService = Shopware()->Container()->get(\Shopware\Bundle\StoreFrontBundle\Service\AdditionalTextServiceInterface::class);
         }
 
         if ($this->basketHelper === null) {
-            $this->basketHelper = Shopware()->Container()->get('shopware.cart.basket_helper');
+            $this->basketHelper = Shopware()->Container()->get(\Shopware\Components\Cart\BasketHelperInterface::class);
         }
 
         $this->proportionalTaxCalculation = $this->config->get('proportionalTaxCalculation');
-
         $this->fieldHelper = Shopware()->Container()->get('shopware_storefront.field_helper_dbal');
         $this->cartOrderNumberProvider = Shopware()->Container()->get(CartOrderNumberProviderInterface::class);
+        $this->orderListProductService = Shopware()->Container()->get(OrderListProductServiceInterface::class);
     }
 
     /**
@@ -813,7 +819,7 @@ SQL;
         }
 
         // Check if the voucher is limited to certain products, and validate that
-        list($sErrorMessages, $restrictedProducts) = $this->filterProductVoucher($voucherDetails);
+        [$sErrorMessages, $restrictedProducts] = $this->filterProductVoucher($voucherDetails);
         if (!empty($sErrorMessages)) {
             return ['sErrorFlag' => true, 'sErrorMessages' => $sErrorMessages];
         }
@@ -847,7 +853,7 @@ SQL;
                 'VoucherFailureMinimumCharge',
                 'The minimum charge for this voucher is {$sMinimumCharge|currency}'
             );
-            $smarty = Shopware()->Container()->get('template');
+            $smarty = Shopware()->Container()->get(\Enlight_Template_Manager::class);
             $template = $smarty->createTemplate(sprintf('string:%s', $snippet));
             $template->assign('sMinimumCharge', $voucherDetails['minimumcharge']);
 
@@ -870,7 +876,7 @@ SQL;
         }
 
         // Tax calculation for vouchers
-        list($taxRate, $tax, $voucherDetails, $freeShipping) = $this->calculateVoucherValues($voucherDetails);
+        [$taxRate, $tax, $voucherDetails, $freeShipping] = $this->calculateVoucherValues($voucherDetails);
 
         if ($this->proportionalTaxCalculation && !$this->session->get('taxFree') && $voucherDetails['taxconfig'] === 'auto') {
             $taxCalculator = Shopware()->Container()->get('shopware.cart.proportional_tax_calculator');
@@ -1386,13 +1392,13 @@ SQL;
         }
 
         // Reformatting data, add additional data fields to array
-        list(
+        [
             $getProducts,
             $totalAmount,
             $totalAmountWithTax,
             $totalCount,
-            $totalAmountNet
-            ) = $this->getBasketProducts($getProducts);
+            $totalAmountNet,
+        ] = $this->getBasketProducts($getProducts);
 
         if (static::roundTotal($totalAmount) < 0 || empty($totalCount)) {
             if (!$this->eventManager->notifyUntil('Shopware_Modules_Basket_sGetBasket_AllowEmptyBasket', [
@@ -1538,12 +1544,12 @@ SQL;
 
         $numbers = array_column($notes, 'ordernumber');
 
-        $context = Shopware()->Container()->get('shopware_storefront.context_service')->getShopContext();
+        $context = Shopware()->Container()->get(\Shopware\Bundle\StoreFrontBundle\Service\ContextServiceInterface::class)->getShopContext();
 
-        $products = Shopware()->Container()->get('shopware_storefront.list_product_service')
+        $products = Shopware()->Container()->get(\Shopware\Bundle\StoreFrontBundle\Service\ListProductServiceInterface::class)
             ->getList($numbers, $context);
 
-        $products = Shopware()->Container()->get('shopware_storefront.additional_text_service')
+        $products = Shopware()->Container()->get(\Shopware\Bundle\StoreFrontBundle\Service\AdditionalTextServiceInterface::class)
             ->buildAdditionalTextLists($products, $context);
 
         $promotions = [];
@@ -1726,7 +1732,7 @@ SQL;
                     continue;
                 }
 
-                list($taxRate, $netPrice, $grossPrice) = $this->getTaxesForUpdateProduct(
+                [$taxRate, $netPrice, $grossPrice] = $this->getTaxesForUpdateProduct(
                     $quantity,
                     $updatedPrice,
                     $additionalInfo
@@ -2197,7 +2203,7 @@ SQL;
      */
     private function convertListProductToNote(ListProduct $product, array $note)
     {
-        $structConverter = Shopware()->Container()->get('legacy_struct_converter');
+        $structConverter = Shopware()->Container()->get(\Shopware\Components\Compatibility\LegacyStructConverter::class);
         /** @var array $promotion */
         $promotion = $structConverter->convertListProductStruct($product);
 
@@ -2519,61 +2525,6 @@ SQL;
     }
 
     /**
-     * @param string[] $numbers Product numbers
-     *
-     * @throws \Exception
-     *
-     * @return array Basket item details
-     */
-    private function getBasketAdditionalDetails(array $numbers)
-    {
-        $container = Shopware()->Container();
-        /** @var \Shopware\Bundle\StoreFrontBundle\Service\ListProductServiceInterface $listProduct */
-        $listProduct = $container->get('shopware_storefront.list_product_service');
-        /** @var \Shopware\Bundle\StoreFrontBundle\Service\PropertyServiceInterface $propertyService */
-        $propertyService = $container->get('shopware_storefront.property_service');
-        /** @var \Shopware\Bundle\StoreFrontBundle\Service\ContextServiceInterface $context */
-        $context = $container->get('shopware_storefront.context_service');
-        /** @var \Shopware\Components\Compatibility\LegacyStructConverter $legacyStructConverter */
-        $legacyStructConverter = $container->get('legacy_struct_converter');
-
-        $products = $listProduct->getList($numbers, $context->getShopContext());
-        $propertySets = $propertyService->getList($products, $context->getShopContext());
-
-        $covers = $container->get('shopware_storefront.variant_cover_service')
-            ->getList($products, $context->getShopContext());
-
-        $details = [];
-        foreach ($products as $product) {
-            $promotion = $legacyStructConverter->convertListProductStruct($product);
-
-            if ($product->hasConfigurator()) {
-                /** @var StoreFrontBundle\Struct\Product\Price $variantPrice */
-                $variantPrice = $product->getVariantPrice();
-                $promotion['referenceprice'] = $variantPrice->getCalculatedReferencePrice();
-            }
-
-            if (isset($covers[$product->getNumber()])) {
-                $promotion['image'] = $legacyStructConverter->convertMediaStruct($covers[$product->getNumber()]);
-            }
-
-            if ($product->hasProperties() && isset($propertySets[$product->getNumber()])) {
-                $propertySet = $propertySets[$product->getNumber()];
-
-                $promotion['sProperties'] = $legacyStructConverter->convertPropertySetStruct($propertySet);
-                $promotion['filtergroupID'] = $propertySet->getId();
-                $promotion['properties'] = array_map(function ($property) {
-                    return $property['name'] . ':&nbsp;' . $property['value'];
-                }, $promotion['sProperties']);
-                $promotion['properties'] = implode(',&nbsp;', $promotion['properties']);
-            }
-            $details[$product->getNumber()] = $promotion;
-        }
-
-        return $details;
-    }
-
-    /**
      * @param array $image
      *
      * @return array
@@ -2624,7 +2575,7 @@ SQL;
                 $numbers[] = $product['ordernumber'];
             }
         }
-        $additionalDetails = $this->getBasketAdditionalDetails($numbers);
+        $additionalDetails = $this->orderListProductService->getList($numbers, $this->contextService->getShopContext());
 
         foreach (array_keys($getProducts) as $key) {
             $getProducts[$key] = $this->eventManager->filter(
@@ -2663,8 +2614,10 @@ SQL;
 
             // Get additional basket meta data for each product
             if ($getProducts[$key]['modus'] == 0) {
-                $getProducts[$key]['additional_details'] = $additionalDetails[$getProducts[$key]['ordernumber']];
-                $getProducts[$key]['shippingtime'] = $additionalDetails[$getProducts[$key]['ordernumber']]['shippingtime'];
+                if (isset($additionalDetails[$getProducts[$key]['ordernumber']])) {
+                    $getProducts[$key]['additional_details'] = $additionalDetails[$getProducts[$key]['ordernumber']];
+                    $getProducts[$key]['shippingtime'] = $additionalDetails[$getProducts[$key]['ordernumber']]['shippingtime'];
+                }
             }
 
             $getUnitData = [];
@@ -2777,7 +2730,10 @@ SQL;
 
             $totalAmount += round($getProducts[$key]['amount'], 2);
             // Needed if shop is in net-mode
-            $totalAmountWithTax += round($getProducts[$key]['amountWithTax'], 2);
+            if (isset($getProducts[$key]['amountWithTax'])) {
+                $totalAmountWithTax += round($getProducts[$key]['amountWithTax'], 2);
+            }
+
             // Ignore vouchers and premiums by counting products
             if (!$getProducts[$key]['modus']) {
                 ++$totalCount;
@@ -2937,7 +2893,7 @@ SQL;
         );
 
         $additionalInformation = $stmt->fetchAll(\PDO::FETCH_GROUP | \PDO::FETCH_UNIQUE);
-        $products = Shopware()->Container()->get('shopware_storefront.list_product_gateway')->getList(
+        $products = Shopware()->Container()->get(\Shopware\Bundle\StoreFrontBundle\Gateway\ListProductGatewayInterface::class)->getList(
             array_column($additionalInformation, 'ordernumber'),
             $this->contextService->getShopContext()
         );
@@ -3298,7 +3254,7 @@ SQL;
 
         if ($product['configurator_set_id'] > 0) {
             $context = $this->contextService->getShopContext();
-            $productStruct = Shopware()->Container()->get('shopware_storefront.list_product_service')
+            $productStruct = Shopware()->Container()->get(\Shopware\Bundle\StoreFrontBundle\Service\ListProductServiceInterface::class)
                 ->get($product['ordernumber'], $context);
             if ($productStruct === null) {
                 return false;

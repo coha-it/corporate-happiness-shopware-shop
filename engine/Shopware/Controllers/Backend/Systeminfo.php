@@ -138,9 +138,9 @@ class Shopware_Controllers_Backend_Systeminfo extends Shopware_Controllers_Backe
                 LIMIT 1
 SQL;
 
-            $timezone = $this->container->get('dbal_connection')
+            $timezone = $this->container->get(\Doctrine\DBAL\Connection::class)
                 ->query($sql)
-                ->fetchColumn();
+                ->fetchColumn(0);
 
             if (in_array($timezone[0], ['-', '+'], true)) {
                 $databaseZone = new DateTimeZone($timezone);
@@ -158,7 +158,7 @@ SQL;
         }
         if (empty($offset)) {
             $sql = 'SELECT UNIX_TIMESTAMP()-' . time();
-            $offset = $this->container->get('dbal_connection')->query($sql)->fetchColumn();
+            $offset = $this->container->get(\Doctrine\DBAL\Connection::class)->query($sql)->fetchColumn(0);
         }
 
         $this->View()->assign(['success' => true, 'offset' => $offset < 60 ? 0 : round($offset / 60)]);
@@ -181,7 +181,7 @@ SQL;
 
     public function getOptimizersAction()
     {
-        $optimizers = $this->get('shopware_media.optimizer_service')->getOptimizers();
+        $optimizers = $this->get(\Shopware\Bundle\MediaBundle\OptimizerService::class)->getOptimizers();
         $optimizerResult = [];
 
         foreach ($optimizers as $optimizer) {

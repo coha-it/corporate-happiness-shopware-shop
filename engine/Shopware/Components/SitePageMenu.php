@@ -100,7 +100,7 @@ class SitePageMenu
 
                 if ($translations) {
                     foreach ($translations as $property => $translation) {
-                        if (strlen($translation) > 0) {
+                        if ($translation !== '') {
                             $site[$property] = $translation;
                         }
                     }
@@ -161,7 +161,7 @@ class SitePageMenu
     {
         $result = [];
         foreach ($sites as $index => $site) {
-            $site['active'] = ($site['id'] == $activeId);
+            $site['active'] = $site['id'] == $activeId;
 
             if ($site['parentID'] != $parentId) {
                 continue;
@@ -176,7 +176,9 @@ class SitePageMenu
             );
 
             if (!$site['active'] && count($site['subPages']) > 0) {
-                $site['active'] = max(array_column($site['subPages'], 'active'));
+                $activePages = array_column($site['subPages'], 'active');
+
+                $site['active'] = empty($activePages) ? 0 : max($activePages);
             }
 
             $site['childrenCount'] = count($site['subPages']);

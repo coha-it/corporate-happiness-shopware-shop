@@ -23,6 +23,7 @@
  */
 
 use Shopware\Components\Model\QueryBuilder;
+use Shopware\Models\Emotion\Emotion;
 use Shopware\Models\Shop\DetachedShop;
 use Shopware\Models\Site\Site;
 
@@ -170,7 +171,7 @@ class Shopware_Controllers_Frontend_Sitemap extends Enlight_Controller_Action
         $keys = $statement->fetchAll(PDO::FETCH_COLUMN);
 
         /** @var Shopware\Models\Site\Repository $siteRepository */
-        $siteRepository = $this->get('models')->getRepository('Shopware\Models\Site\Site');
+        $siteRepository = $this->get(\Shopware\Components\Model\ModelManager::class)->getRepository('Shopware\Models\Site\Site');
 
         $sites = [];
         foreach ($keys as $key) {
@@ -239,7 +240,7 @@ class Shopware_Controllers_Frontend_Sitemap extends Enlight_Controller_Action
             $fallbackId = $fallbackShop->getId();
         }
 
-        $translator = $this->container->get('translation');
+        $translator = $this->container->get(\Shopware_Components_Translation::class);
 
         return $translator->readBatchWithFallback($shopId, $fallbackId, $type, $ids, false);
     }
@@ -325,7 +326,7 @@ class Shopware_Controllers_Frontend_Sitemap extends Enlight_Controller_Action
     private function getLandingPages()
     {
         /** @var Shopware\Models\Emotion\Repository $emotionRepository */
-        $emotionRepository = $this->get('models')->getRepository('Shopware\Models\Emotion\Emotion');
+        $emotionRepository = $this->get(\Shopware\Components\Model\ModelManager::class)->getRepository(Emotion::class);
 
         /** @var DetachedShop $shop */
         $shop = $this->container->get('shop');
@@ -442,11 +443,11 @@ class Shopware_Controllers_Frontend_Sitemap extends Enlight_Controller_Action
      */
     private function getSupplierForSitemap()
     {
-        $context = $this->get('shopware_storefront.context_service')->getShopContext();
+        $context = $this->get(\Shopware\Bundle\StoreFrontBundle\Service\ContextServiceInterface::class)->getShopContext();
         $categoryId = $context->getShop()->getCategory()->getId();
 
         /** @var QueryBuilder $query */
-        $query = $this->get('dbal_connection')->createQueryBuilder();
+        $query = $this->get(\Doctrine\DBAL\Connection::class)->createQueryBuilder();
         $query->select(['manufacturer.id', 'manufacturer.name']);
 
         $query->from('s_articles_supplier', 'manufacturer');

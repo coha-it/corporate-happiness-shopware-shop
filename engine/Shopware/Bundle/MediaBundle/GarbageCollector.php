@@ -193,8 +193,10 @@ class GarbageCollector
         $values = $this->fetchColumn($mediaPosition);
 
         foreach ($values as $value) {
-            $value = unserialize($value, ['allowed_classes' => false]);
-            $this->addMediaByPath($value);
+            $value = @unserialize($value, ['allowed_classes' => false]);
+            if ($value !== false) {
+                $this->addMediaByPath($value);
+            }
         }
     }
 
@@ -242,10 +244,8 @@ class GarbageCollector
 
     /**
      * Handles tables with IDs separated by pipes
-     *
-     * @param MediaPosition $mediaPosition
      */
-    private function handlePipeTable($mediaPosition)
+    private function handlePipeTable(MediaPosition $mediaPosition)
     {
         $values = $this->fetchColumn($mediaPosition);
 

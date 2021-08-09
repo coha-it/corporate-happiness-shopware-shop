@@ -145,28 +145,26 @@ class PluginInstaller
 
         $this->requirementValidator->validate($pluginBootstrap->getPath() . '/plugin.xml', $this->release->getVersion());
 
-        $this->em->transactional(function ($em) use ($pluginBootstrap, $plugin, $context) {
-            $this->events->notify(PluginEvent::PRE_INSTALL, new PrePluginInstallEvent($context, $pluginBootstrap));
-            $this->installResources($pluginBootstrap, $plugin);
+        $this->events->notify(PluginEvent::PRE_INSTALL, new PrePluginInstallEvent($context, $pluginBootstrap));
+        $this->installResources($pluginBootstrap, $plugin);
 
-            // Makes sure the version is updated in the db after a re-installation
-            if ($this->hasInfoNewerVersion($plugin->getUpdateVersion(), $plugin->getVersion())) {
-                $plugin->setVersion($plugin->getUpdateVersion());
-            }
+        // Makes sure the version is updated in the db after a re-installation
+        if ($this->hasInfoNewerVersion($plugin->getUpdateVersion(), $plugin->getVersion())) {
+            $plugin->setVersion($plugin->getUpdateVersion());
+        }
 
-            $this->em->flush($plugin);
+        $this->em->flush($plugin);
 
-            $this->applyMigrations($pluginBootstrap, AbstractPluginMigration::MODUS_INSTALL);
+        $this->applyMigrations($pluginBootstrap, AbstractPluginMigration::MODUS_INSTALL);
 
-            $pluginBootstrap->install($context);
+        $pluginBootstrap->install($context);
 
-            $this->events->notify(PluginEvent::POST_INSTALL, new PostPluginInstallEvent($context, $pluginBootstrap));
+        $this->events->notify(PluginEvent::POST_INSTALL, new PostPluginInstallEvent($context, $pluginBootstrap));
 
-            $plugin->setInstalled(new \DateTime());
-            $plugin->setUpdated(new \DateTime());
+        $plugin->setInstalled(new \DateTime());
+        $plugin->setUpdated(new \DateTime());
 
-            $this->em->flush($plugin);
-        });
+        $this->em->flush($plugin);
 
         return $context;
     }
@@ -234,24 +232,22 @@ class PluginInstaller
             $plugin->getUpdateVersion()
         );
 
-        $this->em->transactional(function ($em) use ($pluginBootstrap, $plugin, $context) {
-            $this->events->notify(PluginEvent::PRE_UPDATE, new PrePluginUpdateEvent($context, $pluginBootstrap));
+        $this->events->notify(PluginEvent::PRE_UPDATE, new PrePluginUpdateEvent($context, $pluginBootstrap));
 
-            $this->installResources($pluginBootstrap, $plugin);
+        $this->installResources($pluginBootstrap, $plugin);
 
-            $this->applyMigrations($pluginBootstrap, AbstractPluginMigration::MODUS_UPDATE);
+        $this->applyMigrations($pluginBootstrap, AbstractPluginMigration::MODUS_UPDATE);
 
-            $pluginBootstrap->update($context);
+        $pluginBootstrap->update($context);
 
-            $this->events->notify(PluginEvent::POST_UPDATE, new PostPluginUpdateEvent($context, $pluginBootstrap));
+        $this->events->notify(PluginEvent::POST_UPDATE, new PostPluginUpdateEvent($context, $pluginBootstrap));
 
-            $plugin->setVersion($context->getUpdateVersion());
-            $plugin->setUpdateVersion(null);
-            $plugin->setUpdateSource(null);
-            $plugin->setUpdated(new \DateTime());
+        $plugin->setVersion($context->getUpdateVersion());
+        $plugin->setUpdateVersion(null);
+        $plugin->setUpdateSource(null);
+        $plugin->setUpdated(new \DateTime());
 
-            $this->em->flush($plugin);
-        });
+        $this->em->flush($plugin);
 
         return $context;
     }
@@ -266,7 +262,6 @@ class PluginInstaller
     {
         $bootstrap = $this->getPluginByName($plugin->getName());
         $this->requirementValidator->validate($bootstrap->getPath() . '/plugin.xml', $this->release->getVersion());
-
         $context = new ActivateContext($plugin, $this->release->getVersion(), $plugin->getVersion());
 
         $this->events->notify(PluginEvent::PRE_ACTIVATE, new PrePluginActivateEvent($context, $bootstrap));
@@ -528,7 +523,7 @@ class PluginInstaller
                     ON s_library_component.id = s_emotion_element.componentID
                     AND s_library_component.pluginID = :pluginId';
 
-        $this->connection->executeUpdate($sql, [':pluginId' => $pluginId]);
+        $this->connection->executeStatement($sql, [':pluginId' => $pluginId]);
 
         $sql = 'DELETE s_library_component_field, s_library_component
                 FROM s_library_component_field
@@ -536,7 +531,7 @@ class PluginInstaller
                     ON s_library_component.id = s_library_component_field.componentID
                     AND s_library_component.pluginID = :pluginId';
 
-        $this->connection->executeUpdate($sql, [':pluginId' => $pluginId]);
+        $this->connection->executeStatement($sql, [':pluginId' => $pluginId]);
     }
 
     /**
@@ -555,7 +550,7 @@ LEFT JOIN s_core_config_element_translations ON s_core_config_element_translatio
 LEFT JOIN s_core_config_values ON s_core_config_values.element_id = s_core_config_elements.id
 WHERE s_core_config_forms.plugin_id = :pluginId
 SQL;
-        $this->connection->executeUpdate($sql, [':pluginId' => $pluginId]);
+        $this->connection->executeStatement($sql, [':pluginId' => $pluginId]);
     }
 
     /**
@@ -566,7 +561,7 @@ SQL;
     private function removeTemplates($pluginId)
     {
         $sql = 'DELETE FROM s_core_templates WHERE plugin_id = :pluginId';
-        $this->connection->executeUpdate($sql, [':pluginId' => $pluginId]);
+        $this->connection->executeStatement($sql, [':pluginId' => $pluginId]);
     }
 
     /**
@@ -577,7 +572,7 @@ SQL;
     private function removeMenuEntries($pluginId)
     {
         $sql = 'DELETE FROM s_core_menu WHERE pluginID = :pluginId';
-        $this->connection->executeUpdate($sql, [':pluginId' => $pluginId]);
+        $this->connection->executeStatement($sql, [':pluginId' => $pluginId]);
     }
 
     /**
@@ -588,7 +583,7 @@ SQL;
     private function removeCrontabEntries($pluginId)
     {
         $sql = 'DELETE FROM s_crontab WHERE pluginID = :pluginId';
-        $this->connection->executeUpdate($sql, [':pluginId' => $pluginId]);
+        $this->connection->executeStatement($sql, [':pluginId' => $pluginId]);
     }
 
     /**
@@ -599,7 +594,7 @@ SQL;
     private function removeEventSubscribers($pluginId)
     {
         $sql = 'DELETE FROM s_core_subscribes WHERE pluginID = :pluginId';
-        $this->connection->executeUpdate($sql, [':pluginId' => $pluginId]);
+        $this->connection->executeStatement($sql, [':pluginId' => $pluginId]);
     }
 
     private function applyMigrations(PluginComponent $plugin, string $mode, bool $keepUserData = false): void

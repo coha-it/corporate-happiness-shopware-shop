@@ -25,6 +25,7 @@
 namespace Shopware\Components\Api\Resource;
 
 use Doctrine\Common\Collections\Collection;
+use Doctrine\DBAL\Connection;
 use Exception;
 use RuntimeException;
 use Shopware\Components\Api\BatchInterface;
@@ -428,9 +429,7 @@ abstract class Resource implements ContainerAwareInterface
             $method = 'get' . ucfirst($property);
 
             if (!method_exists($entity, $method)) {
-                throw new RuntimeException(
-                    sprintf('Method %s not found on entity %s', $method, get_class($entity))
-                );
+                throw new RuntimeException(sprintf('Method %s not found on entity %s', $method, get_class($entity)));
             }
             if ($entity->$method() === $value) {
                 return $entity;
@@ -516,9 +515,7 @@ abstract class Resource implements ContainerAwareInterface
             $item = $this->getCollectionElementByProperty($collection, $property, $data[$property]);
 
             if (!$item) {
-                throw new ApiException\CustomValidationException(
-                    sprintf('%s by %s %s not found', $entityType, $property, $data[$property])
-                );
+                throw new ApiException\CustomValidationException(sprintf('%s by %s %s not found', $entityType, $property, $data[$property]));
             }
 
             return $item;
@@ -569,9 +566,7 @@ abstract class Resource implements ContainerAwareInterface
             $item = $repo->findOneBy([$property => $data[$property]]);
 
             if (!$item) {
-                throw new ApiException\CustomValidationException(
-                    sprintf('%s by %s %s not found', $entityType, $property, $data[$property])
-                );
+                throw new ApiException\CustomValidationException(sprintf('%s by %s %s not found', $entityType, $property, $data[$property]));
             }
 
             $collection->add($item);
@@ -589,12 +584,12 @@ abstract class Resource implements ContainerAwareInterface
      */
     protected function resetEntityManager()
     {
-        $this->getContainer()->reset('models')
-            ->reset('dbal_connection')
+        $this->getContainer()->reset(ModelManager::class)
+            ->reset(Connection::class)
             ->load('models');
 
         $this->getContainer()->load('dbal_connection');
 
-        $this->setManager($this->container->get('models'));
+        $this->setManager($this->container->get(ModelManager::class));
     }
 }

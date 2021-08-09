@@ -994,6 +994,7 @@
          * @param {boolean} appendDefaults
          */
         sendListingRequest: function (params, loadFacets, loadProducts, callback, appendDefaults) {
+            var me = this;
             if (typeof params === 'object') {
                 params = '?' + $.param(params);
             }
@@ -1003,7 +1004,29 @@
             $.ajax({
                 type: 'get',
                 url: this.buildListingUrl(params, loadFacets, loadProducts),
-                success: $.proxy(callback, this)
+                success: function (textResponse, status, ajaxResponse) {
+                    var $textResponse = $($.parseHTML(textResponse, document, true)),
+                        facets = $textResponse.find('#facets').html(),
+                        listing = $textResponse.find('#listing').html(),
+                        pagination = $textResponse.find('#pagination').html(),
+                        response = {
+                            totalCount: parseInt(ajaxResponse.getResponseHeader('Shopware-Listing-Total')),
+                    };
+
+                    if (facets) {
+                        response.facets = JSON.parse(facets);
+                    }
+
+                    if (listing) {
+                        response.listing = listing;
+                    }
+
+                    if (pagination) {
+                        response.pagination = pagination;
+                    }
+
+                    callback.apply(me, [response, status, ajaxResponse]);
+                }
             });
             $.publish('plugin/swListingActions/onGetFilterResult', [this, params]);
         },
