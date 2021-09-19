@@ -45,9 +45,7 @@ class MediaSubscriber implements EventSubscriber
     }
 
     /**
-     * Returns an array of events this subscriber wants to listen to.
-     *
-     * @return array
+     * {@inheritdoc}
      */
     public function getSubscribedEvents()
     {
@@ -105,7 +103,7 @@ class MediaSubscriber implements EventSubscriber
                         if ((int) $attr->width > 0 && (int) $attr->height > 0) {
                             $width = (int) $attr->width;
                             $height = (int) $attr->height;
-                        } elseif ($attr->viewBox && count($size = explode(' ', $attr->viewBox)) === 4) {
+                        } elseif ($attr->viewBox && \count($size = explode(' ', $attr->viewBox)) === 4) {
                             $width = (int) $size[2];
                             $height = (int) $size[3];
                         }

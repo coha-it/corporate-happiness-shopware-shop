@@ -39,13 +39,19 @@ use Shopware\Models\Plugin\Plugin;
 
 abstract class AbstractShopConfigurationLayer implements ConfigurationLayerInterface
 {
-    /** @var Connection */
+    /**
+     * @var Connection
+     */
     protected $connection;
 
-    /** @var ConfigurationLayerInterface */
+    /**
+     * @var ConfigurationLayerInterface
+     */
     protected $parent;
 
-    /** @var ModelManager */
+    /**
+     * @var ModelManager
+     */
     protected $modelManager;
 
     public function __construct(Connection $connection, ModelManager $modelManager, ConfigurationLayerInterface $parent)
@@ -206,7 +212,7 @@ abstract class AbstractShopConfigurationLayer implements ConfigurationLayerInter
     protected function mergeValues(array $old, array $new): array
     {
         foreach ($new as $key => $value) {
-            if (!array_key_exists($key, $old) || $value !== null) {
+            if (!\array_key_exists($key, $old) || $value !== null) {
                 $old[$key] = $value;
             }
         }
