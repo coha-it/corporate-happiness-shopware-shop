@@ -29,15 +29,16 @@ use Shopware\Bundle\SearchBundle\ConditionInterface;
 use Shopware\Bundle\SearchBundleDBAL\ConditionHandlerInterface;
 use Shopware\Bundle\SearchBundleDBAL\QueryBuilder;
 use Shopware\Bundle\StoreFrontBundle\Struct\ShopContextInterface;
+use Shopware_Components_Config;
 
 class VoteAverageConditionHandler implements ConditionHandlerInterface
 {
     /**
-     * @var \Shopware_Components_Config
+     * @var Shopware_Components_Config
      */
     private $config;
 
-    public function __construct(\Shopware_Components_Config $config)
+    public function __construct(Shopware_Components_Config $config)
     {
         $this->config = $config;
     }
@@ -80,7 +81,6 @@ GROUP BY vote.articleID';
              AND voteAverage.average >= :average'
         );
 
-        /* @var VoteAverageCondition $condition */
         $query->setParameter(':average', (float) $condition->getAverage());
         $query->addState(VoteAverageCondition::STATE_INCLUDES_VOTE_TABLE);
     }
