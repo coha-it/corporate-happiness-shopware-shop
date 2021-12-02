@@ -24,6 +24,8 @@
 
 namespace Shopware\Components\BasketSignature;
 
+use DateInterval;
+use DateTime;
 use Doctrine\DBAL\Connection;
 use Enlight\Event\SubscriberInterface;
 
@@ -40,7 +42,7 @@ class CleanupSignatureSubscriber implements SubscriberInterface
     }
 
     /**
-     * @return array
+     * {@inheritdoc}
      */
     public static function getSubscribedEvents()
     {
@@ -51,8 +53,8 @@ class CleanupSignatureSubscriber implements SubscriberInterface
 
     public function cleanup()
     {
-        $date = (new \DateTime())
-            ->sub(new \DateInterval('P10D'))
+        $date = (new DateTime())
+            ->sub(new DateInterval('P10D'))
             ->format('Y-m-d');
 
         $this->connection->executeUpdate(

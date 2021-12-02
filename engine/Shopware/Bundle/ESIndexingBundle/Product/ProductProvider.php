@@ -24,7 +24,9 @@
 
 namespace Shopware\Bundle\ESIndexingBundle\Product;
 
+use DateTimeInterface;
 use Doctrine\DBAL\Connection;
+use PDO;
 use Shopware\Bundle\AttributeBundle\Service\CrudServiceInterface;
 use Shopware\Bundle\ESIndexingBundle\IdentifierSelector;
 use Shopware\Bundle\ESIndexingBundle\ProviderInterface;
@@ -45,6 +47,7 @@ use Shopware\Bundle\StoreFrontBundle\Struct\Configurator\Group;
 use Shopware\Bundle\StoreFrontBundle\Struct\ListProduct;
 use Shopware\Bundle\StoreFrontBundle\Struct\Shop;
 use Shopware\Bundle\StoreFrontBundle\Struct\ShopContextInterface;
+use Shopware_Components_Config;
 
 class ProductProvider implements ProviderInterface
 {
@@ -129,7 +132,7 @@ class ProductProvider implements ProviderInterface
     private $manualPositionLoader;
 
     /**
-     * @var \Shopware_Components_Config
+     * @var Shopware_Components_Config
      */
     private $config;
 
@@ -149,7 +152,7 @@ class ProductProvider implements ProviderInterface
         ProductListingVariationLoader $visibilityLoader,
         CrudServiceInterface $crudService,
         ProductManualPositionLoaderInterface $manualPositionLoader,
-        \Shopware_Components_Config $config
+        Shopware_Components_Config $config
     ) {
         $this->productGateway = $productGateway;
         $this->cheapestPriceService = $cheapestPriceService;
@@ -296,7 +299,7 @@ class ProductProvider implements ProviderInterface
         $id = $product->getId();
         $number = $product->getNumber();
 
-        if (!array_key_exists($id, $configurations)) {
+        if (!\array_key_exists($id, $configurations)) {
             return;
         }
 
@@ -310,10 +313,10 @@ class ProductProvider implements ProviderInterface
 
         $product->setFullConfiguration($configurations[$id]);
 
-        if (array_key_exists($number, $variantConfiguration)) {
+        if (\array_key_exists($number, $variantConfiguration)) {
             $product->setConfiguration($variantConfiguration[$number]);
         }
-        if (array_key_exists($id, $combinations)) {
+        if (\array_key_exists($id, $combinations)) {
             $product->setAvailableCombinations($combinations[$id]);
         }
 
@@ -330,19 +333,19 @@ class ProductProvider implements ProviderInterface
                 )
             );
 
-            if (array_key_exists($product->getNumber(), $listingPrices)) {
+            if (\array_key_exists($product->getNumber(), $listingPrices)) {
                 $product->setListingVariationPrices(
                     $listingPrices[$product->getNumber()]
                 );
             }
 
-            if (array_key_exists($number, $availability)) {
+            if (\array_key_exists($number, $availability)) {
                 $product->setAvailability($availability[$number]);
             }
         }
     }
 
-    private function formatDate(\DateTimeInterface $date = null): ?string
+    private function formatDate(DateTimeInterface $date = null): ?string
     {
         return !$date ? null : $date->format('Y-m-d');
     }
@@ -365,7 +368,7 @@ class ProductProvider implements ProviderInterface
             ->where('mapping.articleID IN (:ids)')
             ->setParameter(':ids', $ids, Connection::PARAM_INT_ARRAY);
 
-        $data = $query->execute()->fetchAll(\PDO::FETCH_ASSOC);
+        $data = $query->execute()->fetchAll(PDO::FETCH_ASSOC);
 
         $result = [];
         foreach ($data as $row) {
@@ -418,7 +421,7 @@ class ProductProvider implements ProviderInterface
         /** @var \Doctrine\DBAL\Driver\ResultStatement $statement */
         $statement = $query->execute();
 
-        $data = $statement->fetchAll(\PDO::FETCH_GROUP);
+        $data = $statement->fetchAll(PDO::FETCH_GROUP);
         $properties = [];
 
         $hydrator = $this->propertyHydrator;
@@ -475,10 +478,8 @@ class ProductProvider implements ProviderInterface
                     $rule = $rules[$customerGroup];
                 }
 
-                /* @var PriceRule $rule */
                 $product->setCheapestPriceRule($rule);
 
-                /* @var ProductContextInterface $context */
                 $this->priceCalculationService->calculateProduct($product, $context);
 
                 $priceObj = $product->getCheapestUnitPrice();
@@ -516,7 +517,7 @@ class ProductProvider implements ProviderInterface
 
     private function isValid(Shop $shop, $product): bool
     {
-        $valid = in_array($shop->getCategory()->getId(), $product->getCategoryIds());
+        $valid = \in_array($shop->getCategory()->getId(), $product->getCategoryIds());
         if (!$valid) {
             return false;
         }
@@ -533,7 +534,7 @@ class ProductProvider implements ProviderInterface
 
         $defaultCurrencyId = $shop->getCurrency()->getId();
 
-        if (!in_array($defaultCurrencyId, $currencies, true)) {
+        if (!\in_array($defaultCurrencyId, $currencies, true)) {
             $currencies[] = $defaultCurrencyId;
         }
 
@@ -551,7 +552,7 @@ class ProductProvider implements ProviderInterface
     {
         $merged = [];
         foreach ($configurations as $config) {
-            if (in_array($config->getId(), $expandGroupIds, true)) {
+            if (\in_array($config->getId(), $expandGroupIds, true)) {
                 $merged[] = $config;
                 continue;
             }
@@ -604,7 +605,7 @@ class ProductProvider implements ProviderInterface
     private function neededToIndex(array $groups, VariantFacet $variantFacet): bool
     {
         foreach ($groups as $group) {
-            if (in_array($group, $variantFacet->getGroupIds(), true)) {
+            if (\in_array($group, $variantFacet->getGroupIds(), true)) {
                 return true;
             }
         }

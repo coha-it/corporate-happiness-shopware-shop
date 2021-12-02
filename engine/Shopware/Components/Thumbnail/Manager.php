@@ -113,6 +113,14 @@ class Manager
             $highDpiQuality = 90;
         }
 
+        if ($standardQuality === null) {
+            $standardQuality = 90;
+        }
+
+        if ($highDpiQuality === null) {
+            $highDpiQuality = 90;
+        }
+
         $thumbnailSizes = $this->uniformThumbnailSizes($thumbnailSizes);
 
         $parameters = [
@@ -292,18 +300,18 @@ class Manager
     protected function uniformThumbnailSizes(array $thumbnailSizes)
     {
         foreach ($thumbnailSizes as &$size) {
-            if (is_string($size)) {
+            if (\is_string($size)) {
                 if (strpos($size, 'x') !== false) {
                     $size = $this->stringSizeToArray($size);
                 } else {
                     $size = ['width' => $size, 'height' => $size];
                 }
             } else {
-                if (is_array($size) && !array_key_exists('width', $size)) {
+                if (\is_array($size) && !\array_key_exists('width', $size)) {
                     $size = ['width' => $size[0], 'height' => $size[1] ?? $size[0]];
                 }
 
-                if (is_int($size)) {
+                if (\is_int($size)) {
                     $size = ['width' => $size, 'height' => $size];
                 }
             }
@@ -338,15 +346,9 @@ class Manager
      */
     private function getThumbnailSizesFromMedia(Media $media): array
     {
-        $album = $media->getAlbum();
+        $settings = $media->getAlbum()->getSettings();
 
-        if (!$album) {
-            throw new Exception('No album configured for the passed media object and no size passed!');
-        }
-
-        $settings = $album->getSettings();
-
-        if (!$settings) {
+        if (!$settings instanceof Settings) {
             throw new Exception('No settings configured in the album of the given media object!');
         }
 
@@ -362,15 +364,9 @@ class Manager
 
     private function getAlbumSettingsFromMedia(Media $media): ?Settings
     {
-        $album = $media->getAlbum();
+        $settings = $media->getAlbum()->getSettings();
 
-        if (!$album) {
-            return null;
-        }
-
-        $settings = $album->getSettings();
-
-        if (!$settings) {
+        if (!$settings instanceof Settings) {
             return null;
         }
 

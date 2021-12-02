@@ -24,6 +24,8 @@
 
 namespace Shopware\Components\Snippet;
 
+use Enlight_Components_Snippet_Namespace;
+use Enlight_Config_Adapter_File;
 use Shopware\Components\Snippet\Writer\QueryWriter;
 use Symfony\Component\Finder\Finder;
 
@@ -61,7 +63,7 @@ class QueryHandler
         $locales = [];
         $finder = new Finder();
 
-        $inputAdapter = new \Enlight_Config_Adapter_File([
+        $inputAdapter = new Enlight_Config_Adapter_File([
             'configDir' => $snippetsDir,
         ]);
 
@@ -70,19 +72,19 @@ class QueryHandler
         $finder->files()->in($snippetsDir);
         foreach ($finder as $file) {
             $filePath = $file->getRelativePathname();
-            if (strpos($filePath, '.ini') == strlen($filePath) - 4) {
+            if (strpos($filePath, '.ini') == \strlen($filePath) - 4) {
                 $namespace = substr($filePath, 0, -4);
             } else {
                 continue;
             }
 
-            $namespaceData = new \Enlight_Components_Snippet_Namespace([
+            $namespaceData = new Enlight_Components_Snippet_Namespace([
                 'adapter' => $inputAdapter,
                 'name' => $namespace,
             ]);
 
             foreach ($namespaceData->read()->toArray() as $index => $values) {
-                if (!array_key_exists($index, $locales)) {
+                if (!\array_key_exists($index, $locales)) {
                     $locales[$index] = 'SET @locale_' . $index . ' = (SELECT id FROM s_core_locales WHERE locale = \'' . $index . '\');';
                 }
 

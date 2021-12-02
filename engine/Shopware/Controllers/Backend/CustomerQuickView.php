@@ -27,6 +27,9 @@ use Shopware\Bundle\AttributeBundle\Repository\SearchCriteria;
 use Shopware\Models\Attribute\Customer as CustomerAttribute;
 use Shopware\Models\Customer\Customer;
 
+/**
+ * @extends Shopware_Controllers_Backend_Application<Customer>
+ */
 class Shopware_Controllers_Backend_CustomerQuickView extends Shopware_Controllers_Backend_Application
 {
     protected $model = Customer::class;
@@ -187,7 +190,7 @@ class Shopware_Controllers_Backend_CustomerQuickView extends Shopware_Controller
         foreach ($list['data'] as &$row) {
             $id = (int) $row['id'];
 
-            if (array_key_exists($id, $attributes)) {
+            if (\array_key_exists($id, $attributes)) {
                 $row['attribute'] = $attributes[$id];
             }
         }

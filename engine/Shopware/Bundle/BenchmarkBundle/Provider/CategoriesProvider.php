@@ -25,6 +25,7 @@
 namespace Shopware\Bundle\BenchmarkBundle\Provider;
 
 use Doctrine\DBAL\Connection;
+use PDO;
 use Shopware\Bundle\BenchmarkBundle\BenchmarkProviderInterface;
 use Shopware\Bundle\StoreFrontBundle\Struct\ShopContextInterface;
 
@@ -113,7 +114,7 @@ class CategoriesProvider implements BenchmarkProviderInterface
     {
         $counts = $this->getProductsInCategoriesCounts();
 
-        if (count($counts) === 0) {
+        if (\count($counts) === 0) {
             return 0;
         }
 
@@ -134,7 +135,7 @@ class CategoriesProvider implements BenchmarkProviderInterface
             ->setParameter(':categoryIds', $categoryIds, Connection::PARAM_INT_ARRAY)
             ->groupBy('categories.categoryID')
             ->execute()
-            ->fetchAll(\PDO::FETCH_COLUMN);
+            ->fetchAll(PDO::FETCH_COLUMN);
     }
 
     /**
@@ -181,7 +182,7 @@ class CategoriesProvider implements BenchmarkProviderInterface
     private function getCategoryIds()
     {
         $shopId = $this->shopContext->getShop()->getId();
-        if (array_key_exists($shopId, $this->categoryIds)) {
+        if (\array_key_exists($shopId, $this->categoryIds)) {
             return $this->categoryIds[$shopId];
         }
 
@@ -198,7 +199,7 @@ class CategoriesProvider implements BenchmarkProviderInterface
             ->setParameter(':categoryParentId', $categoryId)
             ->setParameter(':categoryParentIdLike', '%|' . $categoryId . '|%')
             ->execute()
-            ->fetchAll(\PDO::FETCH_COLUMN);
+            ->fetchAll(PDO::FETCH_COLUMN);
 
         return $this->categoryIds[$shopId];
     }

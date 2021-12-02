@@ -24,7 +24,10 @@
 
 namespace Shopware\Components\Compatibility;
 
+use DateTime;
+use DateTimeInterface;
 use Doctrine\DBAL\Connection;
+use Enlight_Event_EventManager;
 use Shopware\Bundle\MediaBundle\MediaServiceInterface;
 use Shopware\Bundle\StoreFrontBundle;
 use Shopware\Bundle\StoreFrontBundle\Service\CategoryServiceInterface;
@@ -33,12 +36,13 @@ use Shopware\Bundle\StoreFrontBundle\Struct\ListProduct;
 use Shopware\Bundle\StoreFrontBundle\Struct\Product\Price;
 use Shopware\Components\Model\ModelManager;
 use Shopware\Models\Emotion\Emotion;
+use Shopware_Components_Config;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
 class LegacyStructConverter
 {
     /**
-     * @var \Shopware_Components_Config
+     * @var Shopware_Components_Config
      */
     private $config;
 
@@ -48,7 +52,7 @@ class LegacyStructConverter
     private $contextService;
 
     /**
-     * @var \Enlight_Event_EventManager
+     * @var Enlight_Event_EventManager
      */
     private $eventManager;
 
@@ -78,9 +82,9 @@ class LegacyStructConverter
     private $categoryService;
 
     public function __construct(
-        \Shopware_Components_Config $config,
+        Shopware_Components_Config $config,
         ContextServiceInterface $contextService,
-        \Enlight_Event_EventManager $eventManager,
+        Enlight_Event_EventManager $eventManager,
         MediaServiceInterface $mediaService,
         Connection $connection,
         ModelManager $modelManager,
@@ -233,7 +237,7 @@ class LegacyStructConverter
         $detailUrl = ($category->isBlog() ? $blogBaseUrl : $baseUrl) . $category->getId();
         $canonicalParams = $this->getCategoryCanonicalParams($category);
 
-        if ($media && !array_key_exists('path', $media)) {
+        if ($media && !\array_key_exists('path', $media)) {
             $media['path'] = $media['source'];
         }
 
@@ -338,7 +342,7 @@ class LegacyStructConverter
         $promotion['linkVariant'] = $this->config->get('baseFile') .
             '?sViewport=detail&sArticle=' . $promotion['articleID'] . '&number=' . $promotion['ordernumber'];
 
-        if ($this->config->get('useShortDescriptionInListing') && strlen($promotion['description']) > 5) {
+        if ($this->config->get('useShortDescriptionInListing') && \strlen($promotion['description']) > 5) {
             $promotion['description_long'] = $promotion['description'];
         }
 
@@ -455,7 +459,7 @@ class LegacyStructConverter
         $data['referenceprice'] = $variantPrice->getCalculatedReferencePrice();
         $data['pricegroup'] = $variantPrice->getCustomerGroup()->getKey();
 
-        if (count($product->getPrices()) > 1) {
+        if (\count($product->getPrices()) > 1) {
             foreach ($product->getPrices() as $price) {
                 $data['sBlockPrices'][] = $this->convertPriceStruct(
                     $price
@@ -590,11 +594,11 @@ class LegacyStructConverter
             $data['attribute'] = $vote->getAttribute('core');
         }
 
-        if ($vote->getCreatedAt() instanceof \DateTime) {
+        if ($vote->getCreatedAt() instanceof DateTime) {
             $data['datum'] = $vote->getCreatedAt()->format('Y-m-d H:i:s');
         }
 
-        if ($vote->getAnsweredAt() instanceof \DateTime) {
+        if ($vote->getAnsweredAt() instanceof DateTime) {
             $data['answer_date'] = $vote->getAnsweredAt()->format('Y-m-d H:i:s');
         }
 
@@ -753,7 +757,6 @@ class LegacyStructConverter
         foreach ($set->getGroups() as $group) {
             $values = [];
             foreach ($group->getOptions() as $option) {
-                /* @var StoreFrontBundle\Struct\Property\Option $option */
                 $values[$option->getId()] = $option->getName();
             }
 
@@ -924,7 +927,7 @@ class LegacyStructConverter
         $variantPrice = $product->getVariantPrice();
         $cheapestPrice = $product->getListingPrice();
 
-        if (count($product->getPrices()) > 1 || $product->hasDifferentPrices()) {
+        if (\count($product->getPrices()) > 1 || $product->hasDifferentPrices()) {
             $data['priceStartingFrom'] = $this->sFormatPrice($cheapestPrice->getCalculatedPrice());
         }
 
@@ -1173,8 +1176,8 @@ class LegacyStructConverter
         $price = str_replace('.', ',', (string) $price); // Replaces points with commas
         $commaPos = strpos($price, ',');
         if ($commaPos) {
-            $part = substr($price, $commaPos + 1, strlen($price) - $commaPos);
-            switch (strlen($part)) {
+            $part = substr($price, $commaPos + 1, \strlen($price) - $commaPos);
+            switch (\strlen($part)) {
                 case 1:
                     $price .= '0';
                     break;
@@ -1203,7 +1206,7 @@ class LegacyStructConverter
         if (empty($amountStr[1])) {
             $amountStr[1] = 0;
         }
-        $amountStr[1] = substr($amountStr[1], 0, 3); // Rounded to the nearest thousandth as a string
+        $amountStr[1] = substr((string) $amountStr[1], 0, 3); // Rounded to the nearest thousandth as a string
 
         $amountStr = $amountStr[0] . '.' . $amountStr[1];
 
@@ -1300,7 +1303,7 @@ class LegacyStructConverter
             $data['topseller'] = $marketing->isTopSeller();
         }
 
-        $today = new \DateTime();
+        $today = new DateTime();
         if ($product->getReleaseDate() && $product->getReleaseDate() > $today) {
             $data['sReleasedate'] = $product->getReleaseDate()->format('Y-m-d');
         }
@@ -1311,13 +1314,13 @@ class LegacyStructConverter
     }
 
     /**
-     * @param \DateTimeInterface|string $date
+     * @param DateTimeInterface|string $date
      *
      * @return string
      */
     private function dateToString($date)
     {
-        if ($date instanceof \DateTime) {
+        if ($date instanceof DateTime) {
             return $date->format('Y-m-d');
         }
 

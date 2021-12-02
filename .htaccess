@@ -119,8 +119,15 @@ DirectoryIndex shopware.php
 
 <IfModule mod_headers.c>
     Header append X-Frame-Options SAMEORIGIN
+
+    # SVG Security Patch
+    # https://docs.shopware.com/de/shopware-5-de/security-updates/security-update-10-2021
+    <FilesMatch "\.(?i:svg)$">
+        Header set Content-Security-Policy "script-src 'none'"
+    </FilesMatch>
 </IfModule>
 
 Redirect /koeln /botschafter-ausbildung-in-koeln
 Redirect /koln /koeln
 Redirect /cologne /koeln
+Redirect /intensiv-seminar-das-neue-fuehren https://das-neue-fuehren.de/intensiv-seminar/

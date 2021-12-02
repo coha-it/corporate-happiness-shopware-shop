@@ -29,6 +29,7 @@ use Enlight_Controller_ActionEventArgs;
 use Enlight_Event_EventArgs;
 use Enlight_Exception;
 use Shopware\Components\Theme\LessDefinition;
+use SplFileInfo;
 use Symfony\Component\Finder\Finder;
 
 class ResourceSubscriber
@@ -94,7 +95,7 @@ class ResourceSubscriber
 
         $templates = (array) $args->getReturn();
 
-        if (!in_array($viewsDirectory, $templates, true)) {
+        if (!\in_array($viewsDirectory, $templates, true)) {
             $templates[] = $viewsDirectory;
             $args->setReturn($templates);
         }
@@ -132,7 +133,7 @@ class ResourceSubscriber
         $finder->files()->name('*.' . $type)->in($directory);
         $finder->sortByName();
 
-        /** @var \SplFileInfo $file */
+        /** @var SplFileInfo $file */
         foreach ($finder as $file) {
             $files[] = $file->getRealPath();
         }

@@ -24,6 +24,7 @@
 
 namespace Shopware\Bundle\SitemapBundle\Service;
 
+use IteratorAggregate;
 use Shopware\Bundle\SitemapBundle\Struct\FilterContainer;
 use Shopware\Bundle\SitemapBundle\Struct\Url;
 use Shopware\Bundle\SitemapBundle\UrlFilter\FilterInterface;
@@ -47,7 +48,7 @@ class UrlFilter implements UrlFilterInterface
      */
     private $filterHandler;
 
-    public function __construct(FilterContainerFactory $filterContainerFactory, \IteratorAggregate $filterHandler)
+    public function __construct(FilterContainerFactory $filterContainerFactory, IteratorAggregate $filterHandler)
     {
         $this->filterContainerFactory = $filterContainerFactory;
         $this->filterHandler = iterator_to_array($filterHandler, false);
@@ -65,7 +66,7 @@ class UrlFilter implements UrlFilterInterface
             $filters = $this->getFilterContainer($url->getResource(), $shopId)->getFilters();
 
             // Check if the whole resource should be skipped (value: 0)
-            if (in_array(0, $filters, true)) {
+            if (\in_array(0, $filters, true)) {
                 continue;
             }
 

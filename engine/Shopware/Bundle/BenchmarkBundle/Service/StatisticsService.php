@@ -24,6 +24,8 @@
 
 namespace Shopware\Bundle\BenchmarkBundle\Service;
 
+use DateTime;
+use DateTimeZone;
 use Doctrine\DBAL\Connection;
 use Shopware\Bundle\BenchmarkBundle\BenchmarkCollectorInterface;
 use Shopware\Bundle\BenchmarkBundle\Exception\TransmissionNotNecessaryException;
@@ -76,7 +78,7 @@ class StatisticsService
     }
 
     /**
-     * @param int $batchSize
+     * @param int|null $batchSize
      *
      * @throws TransmissionNotNecessaryException
      *
@@ -86,15 +88,15 @@ class StatisticsService
     {
         $benchmarkData = $this->benchmarkCollector->get($this->contextService->createShopContext($config->getShopId()), $batchSize);
 
-        $ordersCount = count($benchmarkData['orders']['list']);
-        $customersCount = count($benchmarkData['customers']['list']);
-        $productsCount = count($benchmarkData['products']['list']);
-        $analyticsCount = count($benchmarkData['analytics']['list']);
+        $ordersCount = \count($benchmarkData['orders']['list']);
+        $customersCount = \count($benchmarkData['customers']['list']);
+        $productsCount = \count($benchmarkData['products']['list']);
+        $analyticsCount = \count($benchmarkData['analytics']['list']);
 
         // If all entity counts are below the batch size (or the batch size is null), we are likely to be in the last iteration
         if ($batchSize === null
             || ($ordersCount < $batchSize && $customersCount < $batchSize && $productsCount < $batchSize && $analyticsCount < $batchSize)) {
-            $config->setLastSent(new \DateTime('now', new \DateTimeZone('UTC')));
+            $config->setLastSent(new DateTime('now', new DateTimeZone('UTC')));
             $this->benchmarkRepository->save($config);
         }
 
@@ -121,7 +123,7 @@ class StatisticsService
 
     private function updateLastIds(BenchmarkConfig $config, array $benchmarkData)
     {
-        if (!empty($benchmarkData['orders']['list']) && (!array_key_exists('moved', $benchmarkData['updated_orders']) || !$benchmarkData['updated_orders']['moved'])) {
+        if (!empty($benchmarkData['orders']['list']) && (!\array_key_exists('moved', $benchmarkData['updated_orders']) || !$benchmarkData['updated_orders']['moved'])) {
             $order = end($benchmarkData['orders']['list']);
             $config->setLastOrderId($order['orderId']);
         }
@@ -151,24 +153,24 @@ class StatisticsService
     {
         // If the column is still NULL, set it to "NOW()" for the first time
         if ($config->getLastUpdatedOrdersDate() === null) {
-            $config->setLastUpdatedOrdersDate(new \DateTime('now'));
+            $config->setLastUpdatedOrdersDate(new DateTime('now'));
         }
 
-        if (!array_key_exists('moved', $benchmarkData['updated_orders']) || !$benchmarkData['updated_orders']['moved'] || !$benchmarkData['orders']['list']) {
+        if (!\array_key_exists('moved', $benchmarkData['updated_orders']) || !$benchmarkData['updated_orders']['moved'] || !$benchmarkData['orders']['list']) {
             return;
         }
 
-        $ordersCount = count($benchmarkData['orders']['list']);
+        $ordersCount = \count($benchmarkData['orders']['list']);
 
         // Set the last_updated column to the most recent date of all updated orders if chances are high that another batch of orders
         // is necessary
         if ($ordersCount >= $config->getBatchSize()) {
             $mostRecentChangedOrder = end($benchmarkData['orders']['list']);
-            $config->setLastUpdatedOrdersDate(\DateTime::createFromFormat('Y-m-d H:i:s', $mostRecentChangedOrder['changed']));
+            $config->setLastUpdatedOrdersDate(DateTime::createFromFormat('Y-m-d H:i:s', $mostRecentChangedOrder['changed']));
 
             return;
         }
 
-        $config->setLastUpdatedOrdersDate(new \DateTime('now'));
+        $config->setLastUpdatedOrdersDate(new DateTime('now'));
     }
 }

@@ -24,6 +24,7 @@
 
 namespace Shopware\Bundle\PluginInstallerBundle\Service;
 
+use RuntimeException;
 use Shopware\Bundle\PluginInstallerBundle\Context\PluginsByTechnicalNameRequest;
 use Shopware\Bundle\PluginInstallerBundle\StoreClient;
 use Shopware\Bundle\PluginInstallerBundle\Struct\LocaleStruct;
@@ -90,7 +91,7 @@ class FirstRunWizardPluginStoreService
     public function getIntegratedPlugins($isoCode, $shopwareVersion)
     {
         if (preg_match('/^([a-zA-Z]){2}$/', $isoCode) !== 1) {
-            throw new \RuntimeException('Iso parameter format not allowed');
+            throw new RuntimeException('Iso parameter format not allowed');
         }
 
         $data = $this->storeClient->doGetRequest(
@@ -228,7 +229,7 @@ class FirstRunWizardPluginStoreService
         foreach ($plugins as &$plugin) {
             $key = strtolower($plugin->getTechnicalName());
 
-            if (!array_key_exists($key, $local)) {
+            if (!\array_key_exists($key, $local)) {
                 $merged[$key] = $plugin;
                 continue;
             }

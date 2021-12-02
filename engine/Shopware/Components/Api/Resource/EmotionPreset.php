@@ -25,6 +25,8 @@
 namespace Shopware\Components\Api\Resource;
 
 use Doctrine\DBAL\Connection;
+use Exception;
+use PDO;
 use Shopware\Components\Api\Exception\CustomValidationException;
 use Shopware\Components\Api\Exception\NotFoundException;
 use Shopware\Components\Api\Exception\ParameterMissingException;
@@ -79,7 +81,7 @@ class EmotionPreset extends Resource
      *
      * @throws NotFoundException
      * @throws ParameterMissingException
-     * @throws \Exception
+     * @throws Exception
      */
     public function delete($presetId)
     {
@@ -111,10 +113,10 @@ class EmotionPreset extends Resource
      */
     public function create(array $data, $locale = 'de_DE')
     {
-        if (!array_key_exists('name', $data)) {
+        if (!\array_key_exists('name', $data)) {
             throw new ParameterMissingException('name');
         }
-        if (!array_key_exists('presetData', $data)) {
+        if (!\array_key_exists('presetData', $data)) {
             throw new ParameterMissingException('presetData');
         }
 
@@ -162,7 +164,7 @@ class EmotionPreset extends Resource
             unset($translation);
         }
 
-        if (!is_array($data['requiredPlugins'])) {
+        if (!\is_array($data['requiredPlugins'])) {
             $data['requiredPlugins'] = [];
         }
 
@@ -240,7 +242,12 @@ class EmotionPreset extends Resource
         $pluginNames = [];
         foreach ($presets as $id => $preset) {
             $plugins = json_decode($preset['requiredPlugins'], true) ?? [];
-            $preset['requiredPlugins'] = array_combine(array_column($plugins, 'name'), $plugins);
+            $combinedPlugins = array_combine(array_column($plugins, 'name'), $plugins);
+            if (\is_array($combinedPlugins)) {
+                $preset['requiredPlugins'] = $combinedPlugins;
+            } else {
+                $preset['requiredPlugins'] = [];
+            }
             $pluginNames = array_merge($pluginNames, array_keys($preset['requiredPlugins']));
             $presets[$id] = $preset;
         }
@@ -309,7 +316,7 @@ class EmotionPreset extends Resource
         $query->where('plugin.name IN (:names)');
         $query->setParameter(':names', $technicalNames, Connection::PARAM_STR_ARRAY);
 
-        return $query->execute()->fetchAll(\PDO::FETCH_GROUP | \PDO::FETCH_UNIQUE);
+        return $query->execute()->fetchAll(PDO::FETCH_GROUP | PDO::FETCH_UNIQUE);
     }
 
     /**

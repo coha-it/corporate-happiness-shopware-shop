@@ -25,6 +25,7 @@
 use Shopware\Bundle\AccountBundle\Form\Account\AddressFormType;
 use Shopware\Bundle\AccountBundle\Form\Account\PersonalFormType;
 use Shopware\Bundle\AccountBundle\Service\RegisterServiceInterface;
+use Shopware\Bundle\StoreFrontBundle\Gateway\CountryGatewayInterface;
 use Shopware\Bundle\StoreFrontBundle\Struct\Attribute;
 use Shopware\Bundle\StoreFrontBundle\Struct\ShopContextInterface;
 use Shopware\Components\Captcha\Exception\CaptchaNotFoundException;
@@ -32,6 +33,7 @@ use Shopware\Models\Customer\Address;
 use Shopware\Models\Customer\Customer;
 use Symfony\Component\Form\Form;
 use Symfony\Component\Form\FormInterface;
+use Symfony\Component\HttpFoundation\Response;
 
 class Shopware_Controllers_Frontend_Register extends Enlight_Controller_Action
 {
@@ -123,7 +125,13 @@ class Shopware_Controllers_Frontend_Register extends Enlight_Controller_Action
             /** @var Address $billing */
             $billing = $billingForm->getData();
 
-            $country = $this->get(\Shopware\Bundle\StoreFrontBundle\Gateway\CountryGatewayInterface::class)->getCountry($billing->getCountry()->getId(), $context);
+            $billingCountry = $billing->getCountry();
+
+            if ($billingCountry === null) {
+                throw new RuntimeException('Billing address needs a country');
+            }
+
+            $country = $this->get(CountryGatewayInterface::class)->getCountry($billingCountry->getId(), $context);
 
             if (!$country->allowShipping()) {
                 $errors['billing']['country'] = $this->get('snippets')->getNamespace('frontend/register/index')->get('CountryNotAvailableForShipping');
@@ -299,26 +307,20 @@ class Shopware_Controllers_Frontend_Register extends Enlight_Controller_Action
         );
     }
 
+    /**
+     * @throws Exception
+     *
+     * @deprecated since 5.7.4. Will be removed in Shopware 5.8 without replacement
+     */
     public function ajaxValidateEmailAction()
     {
-        Shopware()->Plugins()->Controller()->ViewRenderer()->setNoRender();
-
-        $data = $this->getPostData();
-        $customerForm = $this->createCustomerForm($data['register']['personal']);
-
-        $errors = $this->getFormErrors($customerForm);
-        $errors = [
-            'email' => $errors['email'] ?: false,
-            'emailConfirmation' => $errors['emailConfirmation'] ?: false,
-        ];
-
-        $this->Response()->headers->set('content-type', 'application/json', true);
-        $this->Response()->setContent(json_encode($errors));
+        $this->Front()->Plugins()->ViewRenderer()->setNoRender();
+        $this->Response()->setHttpResponseCode(Response::HTTP_GONE);
     }
 
     public function ajaxValidatePasswordAction()
     {
-        Shopware()->Plugins()->Controller()->ViewRenderer()->setNoRender();
+        Shopware()->Front()->Plugins()->ViewRenderer()->setNoRender();
 
         $data = $this->getPostData();
         $customerForm = $this->createCustomerForm($data['register']['personal']);
@@ -421,7 +423,7 @@ class Shopware_Controllers_Frontend_Register extends Enlight_Controller_Action
 
     private function isShippingProvided(array $data): bool
     {
-        return array_key_exists('shippingAddress', $data['register']['billing']);
+        return \array_key_exists('shippingAddress', $data['register']['billing']);
     }
 
     private function getPostData(): array
@@ -492,16 +494,23 @@ class Shopware_Controllers_Frontend_Register extends Enlight_Controller_Action
 
     private function writeSession(array $data, Customer $customer): void
     {
+        $shippingCountry = $customer->getDefaultShippingAddress()->getCountry();
+
+        if ($shippingCountry === null) {
+            throw new RuntimeException('Invalid customer shipping address');
+        }
+
         /** @var Enlight_Components_Session_Namespace $session */
         $session = $this->get('session');
         $session->offsetSet('sRegister', $data['register']);
         $session->offsetSet('sOneTimeAccount', false);
         $session->offsetSet('sRegisterFinished', true);
+        $session->offsetSet('sCountry', $shippingCountry->getId());
+        $session->offsetSet('sArea', $shippingCountry->getArea() !== null ? $shippingCountry->getArea()->getId() : 0);
 
         if ($customer->getAccountMode() === Customer::ACCOUNT_MODE_FAST_LOGIN) {
             $session->offsetSet('sOneTimeAccount', true);
         }
-        $session->offsetSet('sCountry', $customer->getDefaultBillingAddress()->getCountry()->getId());
     }
 
     private function loginCustomer(Customer $customer): void

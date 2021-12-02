@@ -24,6 +24,8 @@
 
 namespace Shopware\Commands;
 
+use RuntimeException;
+use Shopware\Components\Snippet\DatabaseHandler;
 use Stecman\Component\Symfony\Console\BashCompletion\Completion\CompletionAwareInterface;
 use Stecman\Component\Symfony\Console\BashCompletion\CompletionContext;
 use Symfony\Component\Console\Input\InputArgument;
@@ -46,7 +48,13 @@ class SnippetsRemoveCommand extends ShopwareCommand implements CompletionAwareIn
     public function completeArgumentValues($argumentName, CompletionContext $context)
     {
         if ($argumentName === 'folder') {
-            return $this->completeDirectoriesInDirectory($this->container->getParameter('kernel.root_dir'));
+            $rootDir = $this->container->getParameter('kernel.root_dir');
+
+            if (!\is_string($rootDir)) {
+                throw new RuntimeException('Parameter kernel.root_dir has to be an string');
+            }
+
+            return $this->completeInDirectory($rootDir);
         }
 
         return [];
@@ -73,9 +81,20 @@ class SnippetsRemoveCommand extends ShopwareCommand implements CompletionAwareIn
      */
     protected function execute(InputInterface $input, OutputInterface $output)
     {
-        $folder = $this->container->getParameter('kernel.root_dir') . '/' . $input->getArgument('folder') . '/';
+        $rootDir = $this->container->getParameter('kernel.root_dir');
 
-        $databaseLoader = $this->container->get(\Shopware\Components\Snippet\DatabaseHandler::class);
+        if (!\is_string($rootDir)) {
+            throw new RuntimeException('Parameter kernel.root_dir has to be an string');
+        }
+
+        $folder = $input->getArgument('folder');
+        if (!\is_string($folder)) {
+            throw new RuntimeException('Argument "folder" needs to be a string');
+        }
+
+        $folder = $rootDir . '/' . $folder . '/';
+
+        $databaseLoader = $this->container->get(DatabaseHandler::class);
         $databaseLoader->setOutput($output);
         $databaseLoader->removeFromDatabase($folder);
 

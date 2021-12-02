@@ -24,7 +24,6 @@
  * It supports an automatically serialization of the configuration data, supports configuration sections and
  * update and create columns.
  *
- *
  * @license    http://enlight.de/license     New BSD License
  */
 class Enlight_Config_Adapter_DbTable extends Enlight_Config_Adapter
@@ -60,7 +59,7 @@ class Enlight_Config_Adapter_DbTable extends Enlight_Config_Adapter
     /**
      * The section column in the database table.
      *
-     * @var string|null
+     * @var string|array<string, string>|null
      */
     protected $_sectionColumn = 'section';
 
@@ -101,7 +100,6 @@ class Enlight_Config_Adapter_DbTable extends Enlight_Config_Adapter
 
     /**
      * Sets the options of an array.
-     *
      *
      * @return Enlight_Config_Adapter
      */
@@ -160,18 +158,16 @@ class Enlight_Config_Adapter_DbTable extends Enlight_Config_Adapter
     /**
      * Reads a section from the data store.
      *
-     *
      * @return Enlight_Config_Adapter_DbTable
      */
     public function read(Enlight_Config $config)
     {
         $name = $this->_namePrefix . $config->getName() . $this->_nameSuffix;
-        $section = $config->getSection();
 
         $data = [];
 
         $extends = $config->getExtends();
-        $currentSection = is_array($section) ? implode(':', $section) : $section;
+        $currentSection = $config->getSection();
         while ($currentSection !== null) {
             $data += $this->readSection($name, $currentSection);
             $currentSection = isset($extends[$currentSection]) ? $extends[$currentSection] : null;
@@ -185,10 +181,10 @@ class Enlight_Config_Adapter_DbTable extends Enlight_Config_Adapter
     /**
      * Saves the data changes in the data store.
      *
-     * @param array $fields
-     * @param bool  $update     If false, existing rows are not updated
-     * @param bool  $force      If true, existing dirty columns are updated
-     * @param bool  $allowReset If true, updating existing columns with existing value will reset dirty flag
+     * @param string[]|null $fields
+     * @param bool|null     $update     If false, existing rows are not updated
+     * @param bool          $force      If true, existing dirty columns are updated
+     * @param bool          $allowReset If true, updating existing columns with existing value will reset dirty flag
      *
      * @return Enlight_Config_Adapter_DbTable
      */
@@ -198,9 +194,12 @@ class Enlight_Config_Adapter_DbTable extends Enlight_Config_Adapter
             return $this;
         }
 
-        $name = $this->_namePrefix . $config->getName() . $this->_nameSuffix;
         $section = explode($config->getSectionSeparator(), $config->getSection());
+        if ($section === false) {
+            return $this;
+        }
 
+        $name = $this->_namePrefix . $config->getName() . $this->_nameSuffix;
         $dbTable = $this->getTable($this->_namespaceColumn === null ? $name : null);
         $db = $dbTable->getAdapter();
 
@@ -228,7 +227,7 @@ class Enlight_Config_Adapter_DbTable extends Enlight_Config_Adapter
         }
 
         if ($section !== null) {
-            if (is_array($this->_sectionColumn)) {
+            if (\is_array($this->_sectionColumn)) {
                 foreach ($this->_sectionColumn as $key => $sectionColumn) {
                     if (isset($section[$key])) {
                         $where[] = $db->quoteInto($sectionColumn . '=?', $section[$key]);
@@ -294,9 +293,12 @@ class Enlight_Config_Adapter_DbTable extends Enlight_Config_Adapter
      */
     public function delete(Enlight_Config $config, $fields = null, $deleteDirty = false)
     {
-        $name = $this->_namePrefix . $config->getName() . $this->_nameSuffix;
         $section = explode($config->getSectionSeparator(), $config->getSection());
+        if ($section === false) {
+            return $this;
+        }
 
+        $name = $this->_namePrefix . $config->getName() . $this->_nameSuffix;
         $dbTable = $this->getTable($this->_namespaceColumn === null ? $name : null);
         $db = $dbTable->getAdapter();
 
@@ -316,7 +318,7 @@ class Enlight_Config_Adapter_DbTable extends Enlight_Config_Adapter
         }
 
         if ($section !== null) {
-            if (is_array($this->_sectionColumn)) {
+            if (\is_array($this->_sectionColumn)) {
                 foreach ($this->_sectionColumn as $key => $sectionColumn) {
                     if (isset($section[$key])) {
                         $where[] = $db->quoteInto($sectionColumn . '=?', $section[$key]);
@@ -358,7 +360,7 @@ class Enlight_Config_Adapter_DbTable extends Enlight_Config_Adapter
         }
 
         if ($section !== null && $this->_sectionColumn !== null) {
-            if (is_array($this->_sectionColumn)) {
+            if (\is_array($this->_sectionColumn)) {
                 $section = explode(':', $section);
                 foreach ($this->_sectionColumn as $key => $sectionColumn) {
                     if (!empty($section[$key])) {

@@ -27,12 +27,15 @@ namespace Shopware\Components\Emotion\Preset;
 use Doctrine\DBAL\Connection;
 use Doctrine\ORM\NoResultException;
 use Doctrine\ORM\Query;
+use PDO;
 use Shopware\Components\Model\ModelManager;
 use Shopware\Models\Emotion\Emotion;
 
 class EmotionToPresetDataTransformer implements EmotionToPresetDataTransformerInterface
 {
-    /** @var ModelManager */
+    /**
+     * @var ModelManager
+     */
     private $modelManager;
 
     public function __construct(ModelManager $modelManager)
@@ -203,7 +206,7 @@ class EmotionToPresetDataTransformer implements EmotionToPresetDataTransformerIn
         /** @var array $element */
         foreach ($elements as $element) {
             $pluginId = $element['component']['pluginId'];
-            if ($pluginId && !in_array($pluginId, $pluginIds, false)) {
+            if ($pluginId && !\in_array($pluginId, $pluginIds, false)) {
                 $pluginIds[] = $pluginId;
             }
         }
@@ -229,7 +232,7 @@ class EmotionToPresetDataTransformer implements EmotionToPresetDataTransformerIn
             ->where('plugin.id IN (:ids)')
             ->setParameter('ids', $pluginIds, Connection::PARAM_INT_ARRAY)
             ->execute()
-            ->fetchAll(\PDO::FETCH_ASSOC);
+            ->fetchAll(PDO::FETCH_ASSOC);
     }
 
     /**
@@ -252,7 +255,7 @@ class EmotionToPresetDataTransformer implements EmotionToPresetDataTransformerIn
                 unset($translations[$key]);
                 continue;
             }
-            if ($translation['objecttype'] === 'emotionElement' && array_key_exists($translation['objectkey'], $elementIds)) {
+            if ($translation['objecttype'] === 'emotionElement' && \array_key_exists($translation['objectkey'], $elementIds)) {
                 $translation['objectkey'] = 'elementIndex-' . $elementIds[$translation['objectkey']];
                 continue;
             }

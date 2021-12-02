@@ -24,6 +24,11 @@
 
 namespace Shopware\Components;
 
+use InvalidArgumentException;
+use ReflectionClass;
+use ReflectionException;
+use RuntimeException;
+
 class ReflectionHelper
 {
     /**
@@ -37,25 +42,30 @@ class ReflectionHelper
      *
      * @see \Shopware\Components\ReflectionHelper::verifyClass()
      *
-     * @throws \ReflectionException      Class could not be found
-     * @throws \InvalidArgumentException
-     * @throws \RuntimeException         If the class has no namespace
+     * @throws ReflectionException      Class could not be found
+     * @throws InvalidArgumentException
+     * @throws RuntimeException         If the class has no namespace
      *
      * @return object
      */
     public function createInstanceFromNamedArguments($className, $arguments, $secure = true, $docPath = null, array $directories = [])
     {
-        $reflectionClass = new \ReflectionClass($className);
+        $reflectionClass = new ReflectionClass($className);
 
         $docPath = $docPath === null ? Shopware()->Container()->getParameter('shopware.app.rootDir') : $docPath;
 
+        if (!\is_string($docPath)) {
+            throw new RuntimeException('Parameter shopware.app.rootDir has to be an string');
+        }
+
+        /** @var string[] $folders */
         $folders = Shopware()->Container()->getParameter('shopware.plugin_directories');
 
         $folders[] = Shopware()->DocPath('engine_Shopware');
         $folders[] = Shopware()->DocPath('vendor_shopware_shopware');
 
         foreach ($folders as $folder) {
-            $directories[] = substr($folder, strlen($docPath));
+            $directories[] = substr($folder, \strlen($docPath));
         }
 
         if ($secure) {
@@ -78,7 +88,7 @@ class ReflectionHelper
 
             if (!isset($arguments[$paramName])) {
                 if (!$constructorParam->isOptional()) {
-                    throw new \RuntimeException(sprintf('Required constructor parameter missing: "$%s".', $paramName));
+                    throw new RuntimeException(sprintf('Required constructor parameter missing: "$%s".', $paramName));
                 }
                 $newParams[] = $constructorParam->getDefaultValue();
 
@@ -98,27 +108,30 @@ class ReflectionHelper
      * @param string $docPath     Path to the project's document root
      * @param array  $directories Set of directories in which the class file should be in
      *
-     * @throws \InvalidArgumentException If the class is out of scope (docpath mismatch)   (code: 1)
-     * @throws \InvalidArgumentException If the class is out of scope (directory mismatch) (code: 2)
+     * @throws InvalidArgumentException If the class is out of scope (docpath mismatch)   (code: 1)
+     * @throws InvalidArgumentException If the class is out of scope (directory mismatch) (code: 2)
      */
-    private function verifyClass(\ReflectionClass $class, $docPath, array $directories)
+    private function verifyClass(ReflectionClass $class, $docPath, array $directories)
     {
         $fileName = $class->getFileName();
-        $fileDir = substr($fileName, 0, strlen($docPath));
+        if ($fileName === false) {
+            throw new RuntimeException('Could not get file name');
+        }
+        $fileDir = substr($fileName, 0, \strlen($docPath));
 
         // Trying to execute a class outside of the Shopware DocumentRoot
         if ($fileDir !== $docPath) {
-            throw new \InvalidArgumentException(sprintf('Class "%s" out of scope', $class->getFileName()), 1);
+            throw new InvalidArgumentException(sprintf('Class "%s" out of scope', $class->getFileName()), 1);
         }
 
-        $fileName = substr($fileName, strlen($docPath));
+        $fileName = substr($fileName, \strlen($docPath));
 
         $error = true;
 
         foreach ($directories as $directory) {
             $directory = strtolower(trim($directory, DIRECTORY_SEPARATOR));
 
-            $classDir = substr($fileName, 0, strlen($directory));
+            $classDir = substr($fileName, 0, \strlen($directory));
             $classDir = trim($classDir, DIRECTORY_SEPARATOR);
             $classDir = strtolower($classDir);
 
@@ -129,12 +142,12 @@ class ReflectionHelper
         }
 
         if ($error) {
-            throw new \InvalidArgumentException(sprintf('Class "%s" out of scope', $class->getFileName()), 2);
+            throw new InvalidArgumentException(sprintf('Class "%s" out of scope', $class->getFileName()), 2);
         }
 
         $className = $class->getName();
-        if (!array_key_exists(ReflectionAwareInterface::class, class_implements($className))) {
-            throw new \InvalidArgumentException(sprintf('Class %s has to implement the interface %s', $className, ReflectionAwareInterface::class));
+        if (!\array_key_exists(ReflectionAwareInterface::class, class_implements($className))) {
+            throw new InvalidArgumentException(sprintf('Class %s has to implement the interface %s', $className, ReflectionAwareInterface::class));
         }
     }
 }

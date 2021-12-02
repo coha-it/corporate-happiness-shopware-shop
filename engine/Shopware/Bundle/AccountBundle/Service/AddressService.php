@@ -24,6 +24,7 @@
 
 namespace Shopware\Bundle\AccountBundle\Service;
 
+use RuntimeException;
 use Shopware\Bundle\AccountBundle\Service\Validator\AddressValidatorInterface;
 use Shopware\Components\Model\ModelManager;
 use Shopware\Models\Customer\Address;
@@ -91,8 +92,8 @@ class AddressService implements AddressServiceInterface
             $address->getCustomer()->getDefaultBillingAddress()->getId(),
         ];
 
-        if (in_array($address->getId(), $preventDeletionOf)) {
-            throw new \RuntimeException('The address is defined as default billing or shipping address and cannot be removed.');
+        if (\in_array($address->getId(), $preventDeletionOf)) {
+            throw new RuntimeException('The address is defined as default billing or shipping address and cannot be removed.');
         }
 
         $this->modelManager->remove($address);

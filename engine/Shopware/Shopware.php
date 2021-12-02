@@ -23,6 +23,9 @@
  */
 
 use Shopware\Components\DependencyInjection\Container;
+use Shopware\Components\Model\ModelManager;
+use Shopware\Components\Password\Manager as PasswordManager;
+use Shopware\Models\Shop\Shop;
 
 /**
  * Shopware Application
@@ -51,7 +54,7 @@ class Shopware extends Enlight_Application
 
         $this->container = $container;
         $this->appPath = __DIR__ . DIRECTORY_SEPARATOR;
-        $this->docPath = dirname(__DIR__, 2) . DIRECTORY_SEPARATOR;
+        $this->docPath = \dirname(__DIR__, 2) . DIRECTORY_SEPARATOR;
 
         parent::__construct();
     }
@@ -75,7 +78,7 @@ class Shopware extends Enlight_Application
 
         if (!$this->container->has($name)) {
             throw new Enlight_Exception(
-                sprintf('Method "%s::%s" not found failure', get_class($this), $name),
+                sprintf('Method "%s::%s" not found failure', \get_class($this), $name),
                 Enlight_Exception::METHOD_NOT_FOUND
             );
         }
@@ -92,7 +95,12 @@ class Shopware extends Enlight_Application
     {
         trigger_error('Shopware()->App() is deprecated since version 5.2 and will be removed in 5.8.', E_USER_DEPRECATED);
 
-        return $this->container->getParameter('kernel.name');
+        $name = $this->container->getParameter('kernel.name');
+        if (!\is_string($name)) {
+            throw new RuntimeException('Parameter kernel.name needs to be a string');
+        }
+
+        return $name;
     }
 
     /**
@@ -104,7 +112,12 @@ class Shopware extends Enlight_Application
     {
         trigger_error('Shopware()->Environment() is deprecated since version 5.2 and will be removed in 5.8. Use the kernel.environment parameter instead.', E_USER_DEPRECATED);
 
-        return $this->container->getParameter('kernel.environment');
+        $environment = $this->container->getParameter('kernel.environment');
+        if (!\is_string($environment)) {
+            throw new RuntimeException('Parameter kernel.environment needs to be a string');
+        }
+
+        return $environment;
     }
 
     /**
@@ -122,7 +135,7 @@ class Shopware extends Enlight_Application
     /**
      * Returns document path: <project root>/
      *
-     * @param string $path
+     * @param string|null $path
      *
      * @return string
      */
@@ -184,7 +197,7 @@ class Shopware extends Enlight_Application
     /**
      * Returns front controller instance
      *
-     * @return Enlight_Controller_Front|null
+     * @return Enlight_Controller_Front
      */
     public function Front()
     {
@@ -192,7 +205,7 @@ class Shopware extends Enlight_Application
     }
 
     /**
-     * @return Enlight_Template_Manager|null
+     * @return Enlight_Template_Manager
      */
     public function Template()
     {
@@ -200,7 +213,7 @@ class Shopware extends Enlight_Application
     }
 
     /**
-     * @return Shopware_Components_Config|null
+     * @return Shopware_Components_Config
      */
     public function Config()
     {
@@ -210,7 +223,7 @@ class Shopware extends Enlight_Application
     /**
      * Returns access layer to deprecated shopware frontend objects
      *
-     * @return Shopware_Components_Modules|null
+     * @return Shopware_Components_Modules
      */
     public function Modules()
     {
@@ -218,17 +231,22 @@ class Shopware extends Enlight_Application
     }
 
     /**
-     * @return \Shopware\Models\Shop\DetachedShop|null
+     * @return Shop
      */
     public function Shop()
     {
-        return $this->container->get('shop');
+        $shop = $this->container->get('shop');
+        if (!$shop instanceof Shop) {
+            throw new RuntimeException('Shop is not initialized correctly in DI container');
+        }
+
+        return $shop;
     }
 
     /**
      * Returns database instance
      *
-     * @return Enlight_Components_Db_Adapter_Pdo_Mysql|null
+     * @return Enlight_Components_Db_Adapter_Pdo_Mysql
      */
     public function Db()
     {
@@ -236,7 +254,7 @@ class Shopware extends Enlight_Application
     }
 
     /**
-     * @return Shopware\Components\Model\ModelManager|null
+     * @return ModelManager
      */
     public function Models()
     {
@@ -244,7 +262,7 @@ class Shopware extends Enlight_Application
     }
 
     /**
-     * @return Enlight_Components_Session_Namespace|null
+     * @return Enlight_Components_Session_Namespace
      */
     public function Session()
     {
@@ -252,7 +270,7 @@ class Shopware extends Enlight_Application
     }
 
     /**
-     * @return Enlight_Components_Session_Namespace|null
+     * @return Enlight_Components_Session_Namespace
      */
     public function BackendSession()
     {
@@ -260,7 +278,7 @@ class Shopware extends Enlight_Application
     }
 
     /**
-     * @return Shopware_Components_Acl|null
+     * @return Shopware_Components_Acl
      */
     public function Acl()
     {
@@ -268,7 +286,7 @@ class Shopware extends Enlight_Application
     }
 
     /**
-     * @return Shopware_Components_TemplateMail|null
+     * @return Shopware_Components_TemplateMail
      */
     public function TemplateMail()
     {
@@ -276,7 +294,7 @@ class Shopware extends Enlight_Application
     }
 
     /**
-     * @return Enlight_Plugin_PluginManager|null
+     * @return Enlight_Plugin_PluginManager
      */
     public function Plugins()
     {
@@ -284,7 +302,7 @@ class Shopware extends Enlight_Application
     }
 
     /**
-     * @return Shopware_Components_Snippet_Manager|null
+     * @return Shopware_Components_Snippet_Manager
      */
     public function Snippets()
     {
@@ -292,7 +310,7 @@ class Shopware extends Enlight_Application
     }
 
     /**
-     * @return \Shopware\Components\Password\Manager|null
+     * @return PasswordManager
      */
     public function PasswordEncoder()
     {
@@ -300,7 +318,7 @@ class Shopware extends Enlight_Application
     }
 
     /**
-     * @return Enlight_Event_EventManager|null
+     * @return Enlight_Event_EventManager
      */
     public function Events()
     {
@@ -333,13 +351,7 @@ class Shopware extends Enlight_Application
         return $this->container->get('bootstrap');
     }
 
-    /**
-     * @param string      $basePath
-     * @param string|null $path
-     *
-     * @return string
-     */
-    private function normalizePath($basePath, $path = null)
+    private function normalizePath(string $basePath, ?string $path = null): string
     {
         if ($path === null) {
             return $basePath;

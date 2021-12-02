@@ -25,6 +25,7 @@
 namespace Shopware\Components\Auth\Constraint;
 
 use Doctrine\DBAL\Connection;
+use PDO;
 use Shopware\Components\Validator\EmailValidatorInterface;
 use Shopware_Components_Snippet_Manager;
 use Symfony\Component\Validator\Constraint;
@@ -32,13 +33,13 @@ use Symfony\Component\Validator\ConstraintValidator;
 
 class UserEmailValidator extends ConstraintValidator
 {
-    const SNIPPET_MAIL_FAILURE = [
+    public const SNIPPET_MAIL_FAILURE = [
         'namespace' => 'frontend/account/internalMessages',
         'name' => 'MailFailure',
         'default' => 'Please enter a valid mail address',
     ];
 
-    const SNIPPET_MAIL_DUPLICATE = [
+    public const SNIPPET_MAIL_DUPLICATE = [
         'namespace' => 'frontend/account/internalMessages',
         'name' => 'MailFailureAlreadyRegistered',
         'default' => 'This mail address is already registered',
@@ -122,7 +123,7 @@ class UserEmailValidator extends ConstraintValidator
             $builder->setParameter('userId', $userId);
         }
 
-        $id = $builder->execute()->fetch(\PDO::FETCH_COLUMN);
+        $id = $builder->execute()->fetch(PDO::FETCH_COLUMN);
 
         return $id == 1;
     }

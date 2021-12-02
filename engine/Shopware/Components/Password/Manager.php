@@ -24,35 +24,39 @@
 
 namespace Shopware\Components\Password;
 
+use Exception;
+use Shopware\Components\Password\Encoder\PasswordEncoderInterface;
+use Shopware_Components_Config;
+
 /**
  * Password Manager
  */
 class Manager
 {
     /**
-     * @var array
+     * @var array<string, PasswordEncoderInterface>
      */
     protected $encoder = [];
 
     /**
-     * @var \Shopware_Components_Config
+     * @var Shopware_Components_Config
      */
     protected $config;
 
-    public function __construct(\Shopware_Components_Config $config)
+    public function __construct(Shopware_Components_Config $config)
     {
         $this->config = $config;
     }
 
     /**
-     * @throws \Exception
+     * @throws Exception
      */
-    public function addEncoder(Encoder\PasswordEncoderInterface $encoder)
+    public function addEncoder(PasswordEncoderInterface $encoder)
     {
         $name = strtolower(trim($encoder->getName()));
 
         if (isset($this->encoder[$name])) {
-            throw new \Exception(sprintf('Encoder by name %s already registered', $name));
+            throw new Exception(sprintf('Encoder by name %s already registered', $name));
         }
 
         $this->encoder[$name] = $encoder;
@@ -61,22 +65,22 @@ class Manager
     /**
      * @param string $name
      *
-     * @throws \Exception
+     * @throws Exception
      *
-     * @return Encoder\PasswordEncoderInterface
+     * @return PasswordEncoderInterface
      */
     public function getEncoderByName($name)
     {
         $name = strtolower(trim($name));
 
         if (!isset($this->encoder[$name])) {
-            throw new \Exception(sprintf('Encoder by name %s not found', $name));
+            throw new Exception(sprintf('Encoder by name %s not found', $name));
         }
 
         $encoder = $this->encoder[$name];
 
         if (method_exists($encoder, 'isCompatible') && !$encoder->isCompatible()) {
-            throw new \Exception(sprintf('Encoder by name %s is not compatible with your system', $name));
+            throw new Exception(sprintf('Encoder by name %s is not compatible with your system', $name));
         }
 
         return $encoder;

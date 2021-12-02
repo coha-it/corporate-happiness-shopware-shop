@@ -24,17 +24,19 @@
 
 namespace Shopware\Bundle\BenchmarkBundle;
 
+use Exception;
+use IteratorAggregate;
 use Shopware\Bundle\BenchmarkBundle\Provider\UpdatedOrdersProvider;
 use Shopware\Bundle\StoreFrontBundle\Struct\ShopContextInterface;
 
 class BenchmarkCollector implements BenchmarkCollectorInterface
 {
     /**
-     * @var \IteratorAggregate
+     * @var IteratorAggregate
      */
     private $providers;
 
-    public function __construct(\IteratorAggregate $providers)
+    public function __construct(IteratorAggregate $providers)
     {
         $this->providers = $providers;
     }
@@ -79,15 +81,15 @@ class BenchmarkCollector implements BenchmarkCollectorInterface
     /**
      * Moves the array element 'shop' to the parent array and deletes the 'shop' element.
      *
-     * @throws \Exception
+     * @throws Exception
      *
      * @return array
      */
     private function moveShopData(array $providerData)
     {
         $shopDataArrayKey = 'shop';
-        if (!array_key_exists($shopDataArrayKey, $providerData)) {
-            throw new \Exception(sprintf('Necessary data with name \'%s\' not provided.', $shopDataArrayKey));
+        if (!\array_key_exists($shopDataArrayKey, $providerData)) {
+            throw new Exception(sprintf('Necessary data with name \'%s\' not provided.', $shopDataArrayKey));
         }
 
         $providerData = $providerData[$shopDataArrayKey] + $providerData;
@@ -104,7 +106,7 @@ class BenchmarkCollector implements BenchmarkCollectorInterface
     private function moveUpdatedOrdersData(array $providerData)
     {
         // Nothing to be moved
-        if (!array_key_exists('updated_orders', $providerData) || !$providerData['updated_orders']['list']) {
+        if (!\array_key_exists('updated_orders', $providerData) || !$providerData['updated_orders']['list']) {
             return $providerData;
         }
 

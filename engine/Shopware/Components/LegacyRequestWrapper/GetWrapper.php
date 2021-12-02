@@ -24,17 +24,20 @@
 
 namespace Shopware\Components\LegacyRequestWrapper;
 
-class GetWrapper implements \ArrayAccess
+use ArrayAccess;
+use Enlight_Controller_Request_Request;
+
+class GetWrapper implements ArrayAccess
 {
     /**
-     * @var \Enlight_Controller_Request_Request
+     * @var Enlight_Controller_Request_Request
      */
     private $request;
 
     /**
-     * @param \Enlight_Controller_Request_Request $request The request object
+     * @param Enlight_Controller_Request_Request $request The request object
      */
-    public function __construct(\Enlight_Controller_Request_Request $request)
+    public function __construct(Enlight_Controller_Request_Request $request)
     {
         $this->request = $request;
     }
@@ -58,7 +61,7 @@ class GetWrapper implements \ArrayAccess
     {
         $getData = $this->request->getQuery();
 
-        return array_key_exists($offset, $getData);
+        return \array_key_exists($offset, $getData);
     }
 
     /**

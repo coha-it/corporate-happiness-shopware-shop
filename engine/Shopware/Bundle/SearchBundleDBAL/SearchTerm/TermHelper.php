@@ -24,10 +24,12 @@
 
 namespace Shopware\Bundle\SearchBundleDBAL\SearchTerm;
 
+use Shopware_Components_Config;
+
 class TermHelper implements TermHelperInterface
 {
     /**
-     * @var \Shopware_Components_Config
+     * @var Shopware_Components_Config
      */
     private $config;
 
@@ -47,10 +49,10 @@ class TermHelper implements TermHelperInterface
     private $replaceNonLetters;
 
     /**
-     * @param \Shopware_Components_Config $config
-     * @param bool                        $useBadWords
-     * @param bool                        $replaceUmlauts
-     * @param bool                        $replaceNonLetters
+     * @param Shopware_Components_Config $config
+     * @param bool                       $useBadWords
+     * @param bool                       $replaceUmlauts
+     * @param bool                       $replaceNonLetters
      */
     public function __construct($config, $useBadWords = true, $replaceUmlauts = true, $replaceNonLetters = true)
     {
@@ -87,7 +89,7 @@ class TermHelper implements TermHelperInterface
         // Parse string into array
         $wordsTmp = preg_split('/ /', $string, -1, PREG_SPLIT_NO_EMPTY);
 
-        if (count($wordsTmp)) {
+        if (\count($wordsTmp)) {
             $words = array_unique($wordsTmp);
         } elseif (!empty($string)) {
             $words = [$string];
@@ -110,7 +112,7 @@ class TermHelper implements TermHelperInterface
      */
     private function filterBadWordsFromString(array $words)
     {
-        if (!count($words) || !is_array($words)) {
+        if (!\count($words) || !\is_array($words)) {
             return false;
         }
 
@@ -145,7 +147,7 @@ class TermHelper implements TermHelperInterface
             );
         }
 
-        if (in_array((string) $word, $badWords)) {
+        if (\in_array((string) $word, $badWords)) {
             return false;
         }
 

@@ -25,6 +25,7 @@
 namespace Shopware\Bundle\StoreFrontBundle\Service\Core;
 
 use Doctrine\DBAL\Connection;
+use PDO;
 use Shopware\Bundle\StoreFrontBundle\Service\CategoryDepthServiceInterface;
 use Shopware\Bundle\StoreFrontBundle\Struct\Category;
 
@@ -45,7 +46,7 @@ class CategoryDepthService implements CategoryDepthServiceInterface
      */
     public function get(Category $category, $depth, array $filterIds = [])
     {
-        $depth += count(array_filter($category->getPath()));
+        $depth += \count(array_filter($category->getPath()));
         $query = $this->connection->createQueryBuilder();
         $query->select(['category.id', 'category.path'])
             ->from('s_categories', 'category')
@@ -60,11 +61,11 @@ class CategoryDepthService implements CategoryDepthServiceInterface
                 ->andWhere('category.id IN (:ids)');
         }
 
-        $paths = $query->execute()->fetchAll(\PDO::FETCH_KEY_PAIR);
+        $paths = $query->execute()->fetchAll(PDO::FETCH_KEY_PAIR);
         $ids = array_keys($paths);
         $plain = array_values($paths);
 
-        if (count($plain) > 0 && strpos($plain[0], '|') !== false) {
+        if (\count($plain) > 0 && strpos($plain[0], '|') !== false) {
             $rootPath = explode('|', $plain[0]);
             $rootPath = array_filter(array_unique($rootPath));
             $ids = array_merge($ids, $rootPath);

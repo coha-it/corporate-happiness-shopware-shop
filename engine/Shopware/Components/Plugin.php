@@ -39,6 +39,7 @@ use Symfony\Component\DependencyInjection\Definition;
 use Symfony\Component\DependencyInjection\Loader\XmlFileLoader;
 use Symfony\Component\DependencyInjection\Reference;
 use Symfony\Component\HttpKernel\Bundle\Bundle;
+use Symfony\Component\Serializer\NameConverter\CamelCaseToSnakeCaseNameConverter;
 
 abstract class Plugin extends Bundle implements SubscriberInterface
 {
@@ -47,20 +48,16 @@ abstract class Plugin extends Bundle implements SubscriberInterface
      */
     protected $pluginNamespace;
 
-    protected $autoloadViews = false;
-
     /**
      * @var bool
      */
-    private $isActive;
+    protected $autoloadViews = false;
 
-    /**
-     * @param bool   $isActive
-     * @param string $namespace
-     */
-    final public function __construct($isActive, $namespace)
+    private bool $isActive;
+
+    final public function __construct(bool $isActive, string $namespace)
     {
-        $this->isActive = (bool) $isActive;
+        $this->isActive = $isActive;
         $this->pluginNamespace = $namespace;
     }
 
@@ -97,6 +94,8 @@ abstract class Plugin extends Bundle implements SubscriberInterface
      * Registers Commands.
      *
      * @param Application $application An Application instance
+     *
+     * @return void
      */
     public function registerCommands(Application $application)
     {
@@ -104,6 +103,8 @@ abstract class Plugin extends Bundle implements SubscriberInterface
 
     /**
      * This method can be overridden
+     *
+     * @return void
      */
     public function install(InstallContext $context)
     {
@@ -111,6 +112,8 @@ abstract class Plugin extends Bundle implements SubscriberInterface
 
     /**
      * This method can be overridden
+     *
+     * @return void
      */
     public function update(UpdateContext $context)
     {
@@ -119,6 +122,8 @@ abstract class Plugin extends Bundle implements SubscriberInterface
 
     /**
      * This method can be overridden
+     *
+     * @return void
      */
     public function activate(ActivateContext $context)
     {
@@ -127,6 +132,8 @@ abstract class Plugin extends Bundle implements SubscriberInterface
 
     /**
      * This method can be overridden
+     *
+     * @return void
      */
     public function deactivate(DeactivateContext $context)
     {
@@ -135,6 +142,8 @@ abstract class Plugin extends Bundle implements SubscriberInterface
 
     /**
      * This method can be overridden
+     *
+     * @return void
      */
     public function uninstall(UninstallContext $context)
     {
@@ -150,6 +159,8 @@ abstract class Plugin extends Bundle implements SubscriberInterface
      * other extensions, ...
      *
      * @param ContainerBuilder $container A ContainerBuilder instance
+     *
+     * @return void
      */
     public function build(ContainerBuilder $container)
     {
@@ -164,7 +175,7 @@ abstract class Plugin extends Bundle implements SubscriberInterface
      *
      * @param ContainerInterface|null $container A ContainerInterface instance or null
      */
-    final public function setContainer(ContainerInterface $container = null)
+    final public function setContainer(ContainerInterface $container = null): void
     {
         $this->container = $container;
     }
@@ -177,7 +188,7 @@ abstract class Plugin extends Bundle implements SubscriberInterface
         return $this->camelCaseToUnderscore($this->getName());
     }
 
-    final protected function loadFiles(ContainerBuilder $container)
+    final protected function loadFiles(ContainerBuilder $container): void
     {
         if (!is_file($this->getPath() . '/Resources/services.xml')) {
             return;
@@ -191,26 +202,18 @@ abstract class Plugin extends Bundle implements SubscriberInterface
         $loader->load($this->getPath() . '/Resources/services.xml');
     }
 
-    /**
-     * @param string $string
-     *
-     * @return string
-     */
-    private function camelCaseToUnderscore($string)
+    private function camelCaseToUnderscore(string $string): string
     {
-        return strtolower(ltrim(preg_replace('/[A-Z]/', '_$0', $string), '_'));
+        return (new CamelCaseToSnakeCaseNameConverter())->normalize($string);
     }
 
-    private function registerFilesystems(ContainerBuilder $container)
+    private function registerFilesystems(ContainerBuilder $container): void
     {
         $this->registerFilesystem($container, 'private');
         $this->registerFilesystem($container, 'public');
     }
 
-    /**
-     * @param string $key
-     */
-    private function registerFilesystem(ContainerBuilder $container, $key)
+    private function registerFilesystem(ContainerBuilder $container, string $key): void
     {
         $parameterKey = sprintf('shopware.filesystem.%s', $key);
         $serviceId = sprintf('%s.filesystem.%s', $this->getContainerPrefix(), $key);

@@ -26,6 +26,7 @@ namespace Shopware\Bundle\ContentTypeBundle\Services;
 
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\Query\QueryBuilder;
+use Exception;
 use Shopware\Bundle\ContentTypeBundle\Field\CheckboxField;
 use Shopware\Bundle\ContentTypeBundle\Structs\Criteria;
 use Shopware\Bundle\ContentTypeBundle\Structs\Field;
@@ -33,6 +34,7 @@ use Shopware\Bundle\ContentTypeBundle\Structs\SearchResult;
 use Shopware\Bundle\ContentTypeBundle\Structs\Type;
 use Shopware\Bundle\StoreFrontBundle\Service\ContextServiceInterface;
 use Shopware\Components\Api\Exception\CustomValidationException;
+use Shopware_Components_Translation;
 
 class Repository implements RepositoryInterface
 {
@@ -42,7 +44,7 @@ class Repository implements RepositoryInterface
     private $connection;
 
     /**
-     * @var \Shopware_Components_Translation
+     * @var Shopware_Components_Translation
      */
     private $translation;
 
@@ -64,7 +66,7 @@ class Repository implements RepositoryInterface
     public function __construct(
         Connection $connection,
         Type $type,
-        \Shopware_Components_Translation $translation,
+        Shopware_Components_Translation $translation,
         ContextServiceInterface $contextService,
         TypeFieldResolverInterface $fieldResolver
     ) {
@@ -172,7 +174,7 @@ class Repository implements RepositoryInterface
                     $expression = null;
 
                     if ($item['property'] === 'id') {
-                        $idSearch = is_array($where) ? $where : [$where];
+                        $idSearch = \is_array($where) ? $where : [$where];
                     }
 
                     if (isset($item['expression'])) {
@@ -181,10 +183,10 @@ class Repository implements RepositoryInterface
 
                     if ($expression === null) {
                         switch (true) {
-                            case is_string($where):
+                            case \is_string($where):
                                 $expression = 'LIKE';
                                 break;
-                            case is_array($where):
+                            case \is_array($where):
                                 $expression = 'IN';
                                 break;
                             case $where === null:
@@ -221,7 +223,7 @@ class Repository implements RepositoryInterface
         }
 
         // Sorting result by given ids
-        if ($idSearch && count($filters) === 1) {
+        if ($idSearch && \count($filters) === 1) {
             $idSearch = array_map('intval', $idSearch);
 
             $orderBy = sprintf('FIELD(id, %s)', implode(',', $idSearch));
@@ -236,7 +238,7 @@ class Repository implements RepositoryInterface
     {
         try {
             $context = $this->contextService->getShopContext()->getShop();
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return $items;
         }
 
@@ -269,7 +271,7 @@ class Repository implements RepositoryInterface
         $names[] = 'created_at';
 
         foreach ($fields as $key => $field) {
-            if (!in_array($key, $names, true)) {
+            if (!\in_array($key, $names, true)) {
                 unset($fields[$key]);
             }
         }

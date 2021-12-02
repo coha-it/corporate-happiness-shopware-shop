@@ -24,8 +24,11 @@
 
 namespace Shopware\Bundle\SitemapBundle\Provider;
 
+use DateTime;
 use Doctrine\DBAL\Driver\Connection as ConnectionInterface;
 use Doctrine\DBAL\Query\QueryBuilder;
+use PDO;
+use PDOStatement;
 use Shopware\Bundle\SitemapBundle\Struct\Url;
 use Shopware\Bundle\SitemapBundle\UrlProviderInterface;
 use Shopware\Bundle\StoreFrontBundle\Struct\ShopContextInterface;
@@ -71,7 +74,7 @@ class ManufacturerUrlProvider implements UrlProviderInterface
         }
 
         foreach ($manufacturers as &$manufacturer) {
-            $manufacturer['changed'] = new \DateTime($manufacturer['changed']);
+            $manufacturer['changed'] = new DateTime($manufacturer['changed']);
             $manufacturer['urlParams'] = [
                 'sViewport' => 'listing',
                 'sAction' => 'manufacturer',
@@ -84,7 +87,7 @@ class ManufacturerUrlProvider implements UrlProviderInterface
         $routes = $this->router->generateList(array_column($manufacturers, 'urlParams'), $routingContext);
         $urls = [];
 
-        for ($i = 0, $routeCount = count($routes); $i < $routeCount; ++$i) {
+        for ($i = 0, $routeCount = \count($routes); $i < $routeCount; ++$i) {
             $urls[] = new Url($routes[$i], $manufacturers[$i]['changed'], 'weekly', Supplier::class, $manufacturers[$i]['id']);
         }
 
@@ -121,9 +124,9 @@ class ManufacturerUrlProvider implements UrlProviderInterface
 
         $query->groupBy('manufacturer.id');
 
-        /** @var \PDOStatement $statement */
+        /** @var PDOStatement $statement */
         $statement = $query->execute();
 
-        return $statement->fetchAll(\PDO::FETCH_ASSOC);
+        return $statement->fetchAll(PDO::FETCH_ASSOC);
     }
 }

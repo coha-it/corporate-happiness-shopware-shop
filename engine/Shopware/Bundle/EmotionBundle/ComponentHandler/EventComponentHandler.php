@@ -24,6 +24,7 @@
 
 namespace Shopware\Bundle\EmotionBundle\ComponentHandler;
 
+use Enlight_Event_EventManager;
 use Shopware\Bundle\EmotionBundle\Struct\Collection\PrepareDataCollection;
 use Shopware\Bundle\EmotionBundle\Struct\Collection\ResolvedDataCollection;
 use Shopware\Bundle\EmotionBundle\Struct\Element;
@@ -35,11 +36,11 @@ use Shopware\Bundle\StoreFrontBundle\Struct\ShopContextInterface;
 class EventComponentHandler implements ComponentHandlerInterface
 {
     /**
-     * @var \Enlight_Event_EventManager
+     * @var Enlight_Event_EventManager
      */
     private $eventManager;
 
-    public function __construct(\Enlight_Event_EventManager $eventManager)
+    public function __construct(Enlight_Event_EventManager $eventManager)
     {
         $this->eventManager = $eventManager;
     }
@@ -78,7 +79,7 @@ class EventComponentHandler implements ComponentHandlerInterface
     private function deprecationLog(Element $element)
     {
         $types = ['emotion-components-html-code', 'emotion-components-html-element', 'emotion-components-iframe', 'emotion-components-youtube'];
-        if (!in_array($element->getComponent()->getType(), $types, true)) {
+        if (!\in_array($element->getComponent()->getType(), $types, true)) {
             $message = sprintf('%s is deprecated since 5.3 and will be removed with 6.0. Implement a ComponentHandler instead for performance benefit.', __CLASS__);
             trigger_error($message, E_USER_DEPRECATED);
         }

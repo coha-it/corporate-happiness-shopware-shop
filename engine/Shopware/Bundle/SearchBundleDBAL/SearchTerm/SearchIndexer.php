@@ -25,7 +25,9 @@
 namespace Shopware\Bundle\SearchBundleDBAL\SearchTerm;
 
 use Doctrine\DBAL\Connection;
+use PDO;
 use Shopware\Components\MemoryLimit;
+use Shopware_Components_Config;
 
 class SearchIndexer implements SearchIndexerInterface
 {
@@ -42,7 +44,7 @@ class SearchIndexer implements SearchIndexerInterface
     private $connection;
 
     /**
-     * @var \Shopware_Components_Config
+     * @var Shopware_Components_Config
      */
     private $config;
 
@@ -60,7 +62,7 @@ class SearchIndexer implements SearchIndexerInterface
      * @param int $batchSize
      */
     public function __construct(
-        \Shopware_Components_Config $config,
+        Shopware_Components_Config $config,
         Connection $connection,
         TermHelperInterface $termHelper,
         $batchSize = 4000
@@ -213,7 +215,7 @@ class SearchIndexer implements SearchIndexerInterface
                     }
 
                     // If last row or more then 5000 keywords fetched, write results to index
-                    if ($currentRow == count($getTableKeywords) - 1 || count($keywords) > $this->batchSize) {
+                    if ($currentRow == \count($getTableKeywords) - 1 || \count($keywords) > $this->batchSize) {
                         $keywords = array_unique($keywords); // Remove duplicates
                         $sql_keywords = 'INSERT IGNORE INTO `s_search_keywords` (`keyword`) VALUES';
                         $sql_keywords .= ' (' . implode('), (', $keywords) . ')';
@@ -286,7 +288,7 @@ class SearchIndexer implements SearchIndexerInterface
                 $qb->setParameter('fieldIDs' . $table['tableID'], $table['fieldIDs']);
             }
 
-            if (!in_array($table['reference_table'] ?: $table['table'], $selected)) {
+            if (!\in_array($table['reference_table'] ?: $table['table'], $selected)) {
                 $qb->addSelect(
                     sprintf(
                         '(SELECT COUNT(*) * :threshold FROM %s) AS cnt_%1$s',
@@ -385,7 +387,7 @@ class SearchIndexer implements SearchIndexerInterface
             ->setParameter(':type', 'category')
             ->setParameter(':ids', $ids, Connection::PARAM_INT_ARRAY)
             ->execute()
-            ->fetchAll(\PDO::FETCH_GROUP | \PDO::FETCH_COLUMN);
+            ->fetchAll(PDO::FETCH_GROUP | PDO::FETCH_COLUMN);
 
         $mapping = [];
         foreach ($keywords as $keyword) {

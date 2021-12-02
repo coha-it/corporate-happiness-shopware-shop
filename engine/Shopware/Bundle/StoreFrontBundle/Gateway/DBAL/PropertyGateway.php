@@ -25,6 +25,7 @@
 namespace Shopware\Bundle\StoreFrontBundle\Gateway\DBAL;
 
 use Doctrine\DBAL\Connection;
+use PDO;
 use Shopware\Bundle\StoreFrontBundle\Gateway;
 use Shopware\Bundle\StoreFrontBundle\Struct;
 
@@ -33,17 +34,17 @@ class PropertyGateway implements Gateway\PropertyGatewayInterface
     /**
      * Constant for the alphanumeric sort configuration of the category filters
      */
-    const FILTERS_SORT_ALPHANUMERIC = 0;
+    public const FILTERS_SORT_ALPHANUMERIC = 0;
 
     /**
      * Constant for the numeric sort configuration of the category filters
      */
-    const FILTERS_SORT_NUMERIC = 1;
+    public const FILTERS_SORT_NUMERIC = 1;
 
     /**
      * Constant for the position sort configuration of the category filters
      */
-    const FILTERS_SORT_POSITION = 3;
+    public const FILTERS_SORT_POSITION = 3;
 
     /**
      * @var Hydrator\PropertyHydrator
@@ -122,7 +123,7 @@ class PropertyGateway implements Gateway\PropertyGatewayInterface
 
         /** @var \Doctrine\DBAL\Driver\ResultStatement $statement */
         $statement = $query->execute();
-        $rows = $statement->fetchAll(\PDO::FETCH_ASSOC);
+        $rows = $statement->fetchAll(PDO::FETCH_ASSOC);
 
         return $this->propertyHydrator->hydrateValues($rows);
     }

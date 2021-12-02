@@ -24,6 +24,8 @@
 
 namespace Shopware\Bundle\AttributeBundle\Service;
 
+use Exception;
+use RuntimeException;
 use Shopware\Components\Model\ModelManager;
 use Shopware\Models\Attribute\Configuration;
 
@@ -69,7 +71,7 @@ class CrudService implements CrudServiceInterface
         $column = $this->formatColumnName($column);
 
         if (!$this->tableMapping->isTableColumn($table, $column)) {
-            throw new \RuntimeException(sprintf('Table %s has no column with name %s', $table, $column));
+            throw new RuntimeException(sprintf('Table %s has no column with name %s', $table, $column));
         }
 
         $this->schemaOperator->dropColumn($table, $column);
@@ -227,7 +229,7 @@ class CrudService implements CrudServiceInterface
             $model = $this->entityManager->find('Shopware\Models\Attribute\Configuration', $id);
         }
 
-        if (isset($data['arrayStore']) && is_array($data['arrayStore'])) {
+        if (isset($data['arrayStore']) && \is_array($data['arrayStore'])) {
             $data['arrayStore'] = json_encode($data['arrayStore']);
         }
 
@@ -278,7 +280,7 @@ class CrudService implements CrudServiceInterface
      * @param string                $unifiedType
      * @param string|int|float|null $defaultValue
      *
-     * @throws \Exception
+     * @throws Exception
      */
     private function createAttribute($table, $column, $unifiedType, array $data = [], $defaultValue = null)
     {
@@ -297,7 +299,7 @@ class CrudService implements CrudServiceInterface
         ]);
 
         $configId = null;
-        if (array_key_exists('id', $data)) {
+        if (\array_key_exists('id', $data)) {
             $configId = $data['id'];
         }
 
@@ -311,7 +313,7 @@ class CrudService implements CrudServiceInterface
      * @param string                $unifiedType
      * @param string|int|float|null $defaultValue
      *
-     * @throws \Exception
+     * @throws Exception
      */
     private function changeAttribute(
         $table,

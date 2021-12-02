@@ -28,8 +28,14 @@
  *
  * @category   Enlight
  * @package    Enlight_Plugin
+ *
  * @copyright  Copyright (c) 2011, shopware AG (http://www.shopware.de)
  * @license    http://enlight.de/license     New BSD License
+ *
+ * @method Shopware_Components_Plugin_Namespace Backend()
+ * @method Shopware_Components_Plugin_Namespace Controller()
+ * @method Shopware_Components_Plugin_Namespace Core()
+ * @method Shopware_Components_Plugin_Namespace Frontend()
  */
 class Enlight_Plugin_PluginManager extends Enlight_Plugin_PluginCollection
 {
@@ -43,8 +49,6 @@ class Enlight_Plugin_PluginManager extends Enlight_Plugin_PluginCollection
     /**
      * The Enlight_Plugin_PluginManager class constructor expects an instance of the Shopware, which
      * is set in the internal property.
-     *
-     * @param Shopware $application
      */
     public function __construct(Shopware $application)
     {
@@ -57,25 +61,25 @@ class Enlight_Plugin_PluginManager extends Enlight_Plugin_PluginCollection
      * set into the namespace by using the Enlight_Plugin_Namespace::setManager() function.
      * The namespace name is used as array key.
      *
-     * @param Enlight_Plugin_Namespace $namespace
      * @return Enlight_Plugin_PluginManager
      */
     public function registerNamespace(Enlight_Plugin_Namespace $namespace)
     {
         $namespace->setManager($this);
         $this->plugins[$namespace->getName()] = $namespace;
+
         return $this;
     }
 
     /**
      * Setter for the application property.
      *
-     * @param  Shopware $application
      * @return Enlight_Plugin_PluginManager
      */
     public function setApplication(Shopware $application)
     {
         $this->application = $application;
+
         return $this;
     }
 

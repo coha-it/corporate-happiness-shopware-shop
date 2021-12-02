@@ -24,6 +24,8 @@
 
 namespace Shopware\Bundle\SitemapBundle\Struct;
 
+use DateTimeInterface;
+
 class Url
 {
     /**
@@ -36,7 +38,7 @@ class Url
     /**
      * Date and time of last modification
      *
-     * @var \DateTimeInterface
+     * @var DateTimeInterface
      */
     private $lastmod;
 
@@ -65,12 +67,12 @@ class Url
     private $identifier;
 
     /**
-     * @param string             $loc
-     * @param \DateTimeInterface $lastmod
-     * @param string             $changefreq
-     * @param string             $resource
-     * @param int|null           $identifier
-     * @param float              $priority
+     * @param string            $loc
+     * @param DateTimeInterface $lastmod
+     * @param string            $changefreq
+     * @param string            $resource
+     * @param int|null          $identifier
+     * @param float             $priority
      */
     public function __construct($loc, $lastmod, $changefreq, $resource, $identifier, $priority = 0.5)
     {
@@ -87,7 +89,7 @@ class Url
      */
     public function __toString()
     {
-        return \sprintf(
+        return sprintf(
             '<url><loc>%s</loc><lastmod>%s</lastmod><changefreq>%s</changefreq><priority>%.1f</priority></url>',
             $this->getLoc(),
             $this->getLastmod()->format('Y-m-d'),
@@ -113,7 +115,7 @@ class Url
     }
 
     /**
-     * @return \DateTimeInterface
+     * @return DateTimeInterface
      */
     public function getLastmod()
     {
@@ -121,7 +123,7 @@ class Url
     }
 
     /**
-     * @param \DateTimeInterface $lastmod
+     * @param DateTimeInterface $lastmod
      */
     public function setLastmod($lastmod)
     {

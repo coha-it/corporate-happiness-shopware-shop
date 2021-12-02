@@ -57,7 +57,7 @@ class Shopware_Controllers_Backend_Log extends Shopware_Controllers_Backend_ExtJ
     {
         if ($this->Request()->getActionName() === 'downloadLogFile') {
             $this->Front()->Plugins()->ViewRenderer()->setNoRender();
-        } elseif (!in_array($this->Request()->getActionName(), ['index', 'load'])) {
+        } elseif (!\in_array($this->Request()->getActionName(), ['index', 'load'])) {
             $this->Front()->Plugins()->Json()->setRenderer(true);
         }
     }
@@ -75,7 +75,7 @@ class Shopware_Controllers_Backend_Log extends Shopware_Controllers_Backend_ExtJ
         // Order data
         $order = (array) $this->Request()->getParam('sort', []);
 
-        $builder = Shopware()->Models()->createQueryBuilder();
+        $builder = $this->get('models')->createQueryBuilder();
         $builder->select(
             'log.id as id',
             'log.type as type',
@@ -105,7 +105,7 @@ class Shopware_Controllers_Backend_Log extends Shopware_Controllers_Backend_ExtJ
         $builder->setFirstResult($start)->setMaxResults($limit);
 
         $result = $builder->getQuery()->getArrayResult();
-        $total = Shopware()->Models()->getQueryCount($builder->getQuery());
+        $total = $this->get('models')->getQueryCount($builder->getQuery());
 
         $this->View()->assign(['success' => true, 'data' => $result, 'total' => $total]);
     }
@@ -122,16 +122,16 @@ class Shopware_Controllers_Backend_Log extends Shopware_Controllers_Backend_ExtJ
 
             if ($params[0]) {
                 foreach ($params as $values) {
-                    $logModel = Shopware()->Models()->find(Log::class, $values['id']);
+                    $logModel = $this->get('models')->find(Log::class, $values['id']);
 
-                    Shopware()->Models()->remove($logModel);
-                    Shopware()->Models()->flush();
+                    $this->get('models')->remove($logModel);
+                    $this->get('models')->flush();
                 }
             } else {
-                $logModel = Shopware()->Models()->find(Log::class, $params['id']);
+                $logModel = $this->get('models')->find(Log::class, $params['id']);
 
-                Shopware()->Models()->remove($logModel);
-                Shopware()->Models()->flush();
+                $this->get('models')->remove($logModel);
+                $this->get('models')->flush();
             }
             $this->View()->assign(['success' => true, 'data' => $params]);
         } catch (Exception $e) {
@@ -207,8 +207,8 @@ class Shopware_Controllers_Backend_Log extends Shopware_Controllers_Backend_ExtJ
         $start = $this->Request()->getParam('start', 0);
         $limit = $this->Request()->getParam('limit', 100);
 
-        $count = count($files);
-        $files = array_slice($files, $start, $limit);
+        $count = \count($files);
+        $files = \array_slice($files, $start, $limit);
 
         $this->View()->assign([
             'success' => true,

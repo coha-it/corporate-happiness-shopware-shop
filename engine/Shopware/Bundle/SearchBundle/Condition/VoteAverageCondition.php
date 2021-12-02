@@ -25,11 +25,12 @@
 namespace Shopware\Bundle\SearchBundle\Condition;
 
 use Assert\Assertion;
+use JsonSerializable;
 use Shopware\Bundle\SearchBundle\ConditionInterface;
 
-class VoteAverageCondition implements ConditionInterface, \JsonSerializable
+class VoteAverageCondition implements ConditionInterface, JsonSerializable
 {
-    const STATE_INCLUDES_VOTE_TABLE = 'vote';
+    public const STATE_INCLUDES_VOTE_TABLE = 'vote';
     private const NAME = 'vote_average';
 
     /**

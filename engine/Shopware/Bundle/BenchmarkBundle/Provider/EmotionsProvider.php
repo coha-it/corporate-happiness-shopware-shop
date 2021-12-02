@@ -26,6 +26,7 @@ namespace Shopware\Bundle\BenchmarkBundle\Provider;
 
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\Query\QueryBuilder;
+use PDO;
 use Shopware\Bundle\BenchmarkBundle\BenchmarkProviderInterface;
 use Shopware\Bundle\StoreFrontBundle\Struct\ShopContextInterface;
 
@@ -157,7 +158,7 @@ class EmotionsProvider implements BenchmarkProviderInterface
 
         $deviceCounts = [0, 0, 0, 0, 0];
         foreach ($devicesUsed as $device) {
-            if (array_key_exists($device, $deviceCounts)) {
+            if (\array_key_exists($device, $deviceCounts)) {
                 ++$deviceCounts[$device];
                 continue;
             }
@@ -189,7 +190,7 @@ class EmotionsProvider implements BenchmarkProviderInterface
     private function getEmotionIds()
     {
         $shopId = $this->shopContext->getShop()->getId();
-        if (array_key_exists($shopId, $this->emotionIds)) {
+        if (\array_key_exists($shopId, $this->emotionIds)) {
             return $this->emotionIds[$shopId];
         }
 
@@ -206,7 +207,7 @@ class EmotionsProvider implements BenchmarkProviderInterface
             ->setParameter(':categoryId', $categoryId)
             ->setParameter(':categoryIdPath', '%|' . $categoryId . '|%')
             ->execute()
-            ->fetchAll(\PDO::FETCH_COLUMN);
+            ->fetchAll(PDO::FETCH_COLUMN);
 
         $emoShopIds = $emoShopsQb->select('emotion.id')
             ->from('s_emotion', 'emotion')
@@ -214,7 +215,7 @@ class EmotionsProvider implements BenchmarkProviderInterface
             ->where('emotion.is_landingpage = 1 AND emoShops.shop_id = :shopId')
             ->setParameter(':shopId', $this->shopContext->getShop()->getId())
             ->execute()
-            ->fetchAll(\PDO::FETCH_COLUMN);
+            ->fetchAll(PDO::FETCH_COLUMN);
 
         $this->emotionIds[$shopId] = array_merge($emoShopIds, $emoCategoryIds);
 

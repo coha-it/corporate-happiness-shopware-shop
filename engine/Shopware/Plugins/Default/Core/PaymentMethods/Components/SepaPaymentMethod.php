@@ -24,9 +24,15 @@
 
 namespace ShopwarePlugin\PaymentMethods\Components;
 
+use DateTime;
 use Doctrine\ORM\AbstractQuery;
+use Enlight_Controller_Request_Request;
+use Enlight_Exception;
+use Exception;
 use Mpdf\Mpdf;
 use Shopware\Bundle\MailBundle\Service\LogEntryBuilder;
+use Shopware\Models\Customer\PaymentData;
+use Zend_Mime;
 
 /**
  * Used to handle SEPA payment
@@ -44,10 +50,10 @@ class SepaPaymentMethod extends GenericPaymentMethod
         if (!$paymentData['sSepaIban'] || trim($paymentData['sSepaIban']) === '') {
             $sErrorFlag['sSepaIban'] = true;
         }
-        if (Shopware()->Config()->sepaShowBic && Shopware()->Config()->sepaRequireBic && (!$paymentData['sSepaBic'] || trim($paymentData['sSepaBic']) === '')) {
+        if (Shopware()->Config()->get('sepaShowBic') && Shopware()->Config()->get('sepaRequireBic') && (!$paymentData['sSepaBic'] || trim($paymentData['sSepaBic']) === '')) {
             $sErrorFlag['sSepaBic'] = true;
         }
-        if (Shopware()->Config()->sepaShowBankName && Shopware()->Config()->sepaRequireBankName && (!$paymentData['sSepaBankName'] || trim($paymentData['sSepaBankName']) === '')) {
+        if (Shopware()->Config()->get('sepaShowBankName') && Shopware()->Config()->get('sepaRequireBankName') && (!$paymentData['sSepaBankName'] || trim($paymentData['sSepaBankName']) === '')) {
             $sErrorFlag['sSepaBankName'] = true;
         }
 
@@ -56,7 +62,7 @@ class SepaPaymentMethod extends GenericPaymentMethod
             'paymentData' => $paymentData,
         ]);
 
-        if (count($sErrorFlag)) {
+        if (\count($sErrorFlag)) {
             $sErrorMessages[] = Shopware()->Snippets()->getNamespace('frontend/account/internalMessages')->get('ErrorFillIn', 'Please fill in all red fields');
         }
 
@@ -65,7 +71,7 @@ class SepaPaymentMethod extends GenericPaymentMethod
             $sErrorFlag['sSepaIban'] = true;
         }
 
-        if (count($sErrorMessages)) {
+        if (\count($sErrorMessages)) {
             return [
                 'sErrorFlag' => $sErrorFlag,
                 'sErrorMessages' => $sErrorMessages,
@@ -78,7 +84,7 @@ class SepaPaymentMethod extends GenericPaymentMethod
     /**
      * {@inheritdoc}
      */
-    public function savePaymentData($userId, \Enlight_Controller_Request_Request $request)
+    public function savePaymentData($userId, Enlight_Controller_Request_Request $request)
     {
         $lastPayment = $this->getCurrentPaymentDataAsArray($userId);
 
@@ -98,7 +104,7 @@ class SepaPaymentMethod extends GenericPaymentMethod
         ]);
 
         if (!$lastPayment) {
-            $date = new \DateTime();
+            $date = new DateTime();
             $data['created_at'] = $date->format('Y-m-d');
             $data['payment_mean_id'] = $paymentMean['id'];
             $data['user_id'] = $userId;
@@ -118,7 +124,7 @@ class SepaPaymentMethod extends GenericPaymentMethod
      */
     public function getCurrentPaymentDataAsArray($userId)
     {
-        $paymentData = Shopware()->Models()->getRepository('\Shopware\Models\Customer\PaymentData')
+        $paymentData = Shopware()->Models()->getRepository(PaymentData::class)
             ->getCurrentPaymentDataQueryBuilder($userId, 'sepa')->getQuery()->getOneOrNullResult(AbstractQuery::HYDRATE_ARRAY);
 
         if (isset($paymentData)) {
@@ -129,12 +135,14 @@ class SepaPaymentMethod extends GenericPaymentMethod
                 'sSepaBic' => $paymentData['bic'],
             ];
 
-            $arrayData = Shopware()->Container()->get('events')->filter('Sepa_Payment_Method_Current_Payment_Data_Array', $arrayData, [
-                'subject' => $this,
-                'paymentData' => $paymentData,
-            ]);
-
-            return $arrayData;
+            return Shopware()->Container()->get('events')->filter(
+                'Sepa_Payment_Method_Current_Payment_Data_Array',
+                $arrayData,
+                [
+                    'subject' => $this,
+                    'paymentData' => $paymentData,
+                ]
+            );
         }
 
         return null;
@@ -157,7 +165,7 @@ class SepaPaymentMethod extends GenericPaymentMethod
             ->find($userId)->getDefaultBillingAddress();
         $paymentData = $this->getCurrentPaymentDataAsArray($userId);
 
-        $date = new \DateTime();
+        $date = new DateTime();
         $data = [
             'payment_mean_id' => $paymentId,
             'order_id' => $orderId,
@@ -200,21 +208,21 @@ class SepaPaymentMethod extends GenericPaymentMethod
 
         $teststring = preg_replace('/\s+|\./', '', $value);
 
-        if (strlen($teststring) < 4) {
+        if (\strlen($teststring) < 4) {
             return false;
         }
 
         $teststring = substr($teststring, 4)
-            . (string) (ord($teststring[0]) - 55)
-            . (string) (ord($teststring[1]) - 55)
+            . (string) (\ord($teststring[0]) - 55)
+            . (string) (\ord($teststring[1]) - 55)
             . substr($teststring, 2, 2);
 
-        $teststring = preg_replace_callback('/[A-Za-z]/', function ($letter) {
-            return (int) (ord(strtolower($letter[0])) - 87);
+        $teststring = (string) preg_replace_callback('/[A-Za-z]/', function ($letter) {
+            return (int) (\ord(strtolower($letter[0])) - 87);
         }, $teststring);
 
         $rest = 0;
-        $strlen = strlen($teststring);
+        $strlen = \strlen($teststring);
         for ($pos = 0; $pos < $strlen; $pos += 7) {
             $part = (string) $rest . substr($teststring, $pos, 7);
             $rest = (int) $part % 97;
@@ -266,13 +274,14 @@ class SepaPaymentMethod extends GenericPaymentMethod
         Shopware()->Template()->addTemplateDir(__DIR__ . '/../Views/');
         $data = Shopware()->Template()->fetch('frontend/plugins/sepa/email.tpl');
 
+        /** @var array<string, string> $mpdfConfig */
         $mpdfConfig = Shopware()->Container()->getParameter('shopware.mpdf.defaultConfig');
         $mpdf = new Mpdf($mpdfConfig);
         $mpdf->WriteHTML($data);
         $pdfFileContent = $mpdf->Output('', 'S');
 
         if ($pdfFileContent === false) {
-            throw new \Enlight_Exception('Could not generate SEPA attachment file');
+            throw new Enlight_Exception('Could not generate SEPA attachment file');
         }
 
         $attachmentName = 'SEPA_' . $orderNumber;
@@ -280,8 +289,8 @@ class SepaPaymentMethod extends GenericPaymentMethod
         $mail->createAttachment(
             $pdfFileContent,
             'application/pdf',
-            \Zend_Mime::DISPOSITION_ATTACHMENT,
-            \Zend_Mime::ENCODING_BASE64,
+            Zend_Mime::DISPOSITION_ATTACHMENT,
+            Zend_Mime::ENCODING_BASE64,
             $attachmentName . '.pdf'
         );
 
@@ -289,7 +298,7 @@ class SepaPaymentMethod extends GenericPaymentMethod
 
         try {
             $mail->send();
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             //TODO: Handle email sending failure
         }
     }

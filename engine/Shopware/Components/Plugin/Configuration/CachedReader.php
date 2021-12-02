@@ -31,10 +31,14 @@ use Zend_Cache_Exception;
 
 class CachedReader implements ReaderInterface
 {
-    /** @var ConfigurationLayerInterface */
+    /**
+     * @var ConfigurationLayerInterface
+     */
     private $layer;
 
-    /** @var Zend_Cache_Core */
+    /**
+     * @var Zend_Cache_Core
+     */
     private $cache;
 
     public function __construct(ConfigurationLayerInterface $lastLayer, Zend_Cache_Core $cache)
@@ -50,7 +54,7 @@ class CachedReader implements ReaderInterface
         if ($this->cache->test($cacheKey) !== false) {
             $cacheResult = $this->cache->load($cacheKey, true);
 
-            if (is_array($cacheResult)) {
+            if (\is_array($cacheResult)) {
                 return $cacheResult;
             }
         }

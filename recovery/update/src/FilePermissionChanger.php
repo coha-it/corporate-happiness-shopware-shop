@@ -24,6 +24,9 @@
 
 namespace Shopware\Recovery\Update;
 
+use Exception;
+use Throwable;
+
 /**
  * Changes the permissions defined in the given array.
  */
@@ -53,17 +56,17 @@ class FilePermissionChanger
     public function changePermissions()
     {
         foreach ($this->filePermissions as $filePermission) {
-            if (array_key_exists('filePath', $filePermission)
-                && array_key_exists('chmod', $filePermission)
+            if (\array_key_exists('filePath', $filePermission)
+                && \array_key_exists('chmod', $filePermission)
                 && is_writable($filePermission['filePath'])) {
                 // If the owner of a file is not the user of the currently running process, "is_writable" might return true
                 // while "chmod" below fails. So we suppress any errors in that case.
 
                 try {
                     @chmod($filePermission['filePath'], $filePermission['chmod']);
-                } catch (\Exception $e) {
+                } catch (Exception $e) {
                     // Don't block the update process
-                } catch (\Throwable $e) {
+                } catch (Throwable $e) {
                     // Don't block the update process
                 }
             }

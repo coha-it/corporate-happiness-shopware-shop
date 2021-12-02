@@ -32,9 +32,6 @@ abstract class Enlight_View
 {
     /**
      * Magic setter
-     *
-     * @param       $name
-     * @param mixed $value
      */
     public function __set($name, $value = null)
     {
@@ -103,10 +100,10 @@ abstract class Enlight_View
     /**
      * Assigns a specified value to the template.
      *
-     * @param string $spec
-     * @param mixed  $value
-     * @param bool   $nocache
-     * @param int    $scope
+     * @param array<string, mixed>|string $spec
+     * @param bool                        $nocache
+     * @param int|null                    $scope
+     * @param mixed|null                  $value
      *
      * @return Enlight_View
      */

@@ -61,8 +61,8 @@ class Shopware_Plugins_Core_CronProductExport_Bootstrap extends Shopware_Compone
      */
     public function exportProductFiles()
     {
-        $cacheDir = Shopware()->Container()->getParameter('kernel.cache_dir');
-        $cacheDir .= '/productexport/';
+        /** @var string $cacheDir */
+        $cacheDir = Shopware()->Container()->getParameter('shopware.product_export.cache_dir');
         if (!is_dir($cacheDir)) {
             if (@mkdir($cacheDir, 0777, true) === false) {
                 throw new \RuntimeException(sprintf("Unable to create the %s directory (%s)\n", 'Productexport', $cacheDir));
@@ -78,7 +78,7 @@ class Shopware_Plugins_Core_CronProductExport_Bootstrap extends Shopware_Compone
         $productFeedRepository = Shopware()->Models()->getRepository(ProductFeed::class);
         $activeFeeds = $productFeedRepository->getActiveListQuery()->getResult();
         foreach ($activeFeeds as $feedModel) {
-            /** @var Shopware\Models\ProductFeed\ProductFeed $feedModel */
+            /** @var \Shopware\Models\ProductFeed\ProductFeed $feedModel */
             $fileName = $feedModel->getHash() . '_' . $feedModel->getFileName();
             $filePath = $cacheDir . $fileName;
 

@@ -25,13 +25,13 @@
 namespace Shopware\Bundle\AttributeBundle\Repository\Reader;
 
 use Doctrine\DBAL\Connection;
+use PDO;
 use Shopware\Bundle\StoreFrontBundle\Service\AdditionalTextServiceInterface;
 use Shopware\Bundle\StoreFrontBundle\Service\ContextServiceInterface;
 use Shopware\Bundle\StoreFrontBundle\Service\Core\ContextService;
 use Shopware\Bundle\StoreFrontBundle\Struct\ListProduct;
 use Shopware\Components\Model\ModelManager;
 use Shopware\Models\Article\Detail;
-use Shopware\Models\Shop\Repository;
 use Shopware\Models\Shop\Shop;
 
 class ProductReader extends GenericReader
@@ -121,10 +121,8 @@ class ProductReader extends GenericReader
      */
     private function assignAdditionalText(array $products)
     {
-        /** @var Repository $shopRepo */
         $shopRepo = $this->entityManager->getRepository(Shop::class);
 
-        /** @var Shop $shop */
         $shop = $shopRepo->getActiveDefault();
 
         $context = $this->contextService->createShopContext(
@@ -175,12 +173,12 @@ class ProductReader extends GenericReader
         $query->groupBy('articleID');
         $query->setParameter('ids', $ids, Connection::PARAM_INT_ARRAY);
 
-        $categories = $query->execute()->fetchAll(\PDO::FETCH_KEY_PAIR);
+        $categories = $query->execute()->fetchAll(PDO::FETCH_KEY_PAIR);
 
         foreach ($products as &$product) {
             $mapping = [];
             $id = $product['articleId'];
-            if (array_key_exists($id, $categories)) {
+            if (\array_key_exists($id, $categories)) {
                 $mapping = array_values(array_filter(explode(',', $categories[$id])));
             }
             $product['categoryIds'] = $mapping;
@@ -203,11 +201,11 @@ class ProductReader extends GenericReader
         $query->setParameter('ids', $ids, Connection::PARAM_INT_ARRAY);
         $query->setParameter('variantIds', $variantIds, Connection::PARAM_INT_ARRAY);
 
-        $prices = $query->execute()->fetchAll(\PDO::FETCH_KEY_PAIR);
+        $prices = $query->execute()->fetchAll(PDO::FETCH_KEY_PAIR);
 
         foreach ($products as &$product) {
             $id = $product['variantId'];
-            if (array_key_exists($id, $prices)) {
+            if (\array_key_exists($id, $prices)) {
                 $product['price'] = $prices[$id];
             }
         }

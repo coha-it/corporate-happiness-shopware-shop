@@ -47,6 +47,9 @@ use Shopware\Models\Property\Group as PropertyGroup;
 use Shopware\Models\Tax\Tax;
 use Shopware\Models\Translation\Translation;
 
+/**
+ * @extends ModelRepository<Article|Detail|Price>
+ */
 class Repository extends ModelRepository
 {
     /**
@@ -550,7 +553,7 @@ class Repository extends ModelRepository
             // an two dimensional array with option data, or an one dimensional array with ids.
             if ($option instanceof ConfiguratorOption) {
                 $builder->setParameter($alias, $option->getId());
-            } elseif (is_array($option) && !empty($option['id'])) {
+            } elseif (\is_array($option) && !empty($option['id'])) {
                 $builder->setParameter($alias, $option['id']);
             } else {
                 $builder->setParameter($alias, $option);
@@ -886,7 +889,7 @@ class Repository extends ModelRepository
 
         if ($article instanceof Article && $article->getLastStock()) {
             $builder->andWhere('details.inStock > 0');
-        } elseif (is_array($article) && $article['lastStock']) {
+        } elseif (\is_array($article) && $article['lastStock']) {
             $builder->andWhere('details.inStock > 0');
         }
 
@@ -971,7 +974,7 @@ class Repository extends ModelRepository
 
         if ($article instanceof Article && $article->getLastStock()) {
             $builder->andWhere('details.inStock > 0');
-        } elseif (is_array($article) && $article['lastStock']) {
+        } elseif (\is_array($article) && $article['lastStock']) {
             $builder->andWhere('details.inStock > 0');
         }
 
@@ -1013,7 +1016,7 @@ class Repository extends ModelRepository
                 ->addOrderBy('options.position', 'ASC');
 
         if (!empty($ids)) {
-            if (!is_array($ids)) {
+            if (!\is_array($ids)) {
                 $ids = [$ids];
             }
 
@@ -1991,7 +1994,7 @@ class Repository extends ModelRepository
         $builder->leftJoin('supplier.articles', 'articles');
         $builder->groupBy('supplier.id');
 
-        if (is_array($filter) && ($filter[0]['property'] === 'name')) {
+        if (\is_array($filter) && ($filter[0]['property'] === 'name')) {
             //filter the displayed columns with the passed filter
             $builder
                 ->where('supplier.name LIKE ?1') //Search only the beginning of the customer number.

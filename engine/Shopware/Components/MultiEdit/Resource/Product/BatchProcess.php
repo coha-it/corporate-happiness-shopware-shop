@@ -25,8 +25,11 @@
 namespace Shopware\Components\MultiEdit\Resource\Product;
 
 use Doctrine\ORM\Query\Expr\Literal;
+use Exception;
+use RuntimeException;
 use Shopware\Components\MultiEdit\Resource\Product;
 use Shopware\Models\MultiEdit\Queue;
+use Shopware_Components_Config;
 
 /**
  * The batch process resource handles the batch processes for updating products
@@ -38,7 +41,7 @@ class BatchProcess
      *
      * Due to a problem in PHP (https://bugs.php.net/bug.php?id=70110) long values can lead to a problem parsing the DQL
      */
-    const MAX_VALUE_LENGTH = 2700;
+    public const MAX_VALUE_LENGTH = 2700;
 
     /**
      * Reference to an instance of the DqlHelper
@@ -62,11 +65,11 @@ class BatchProcess
     /**
      * Reference to the config instance
      *
-     * @var \Shopware_Components_Config
+     * @var Shopware_Components_Config
      */
     protected $configResource;
 
-    public function __construct(DqlHelper $dqlHelper, Filter $filter, Product\Queue $queue, \Shopware_Components_Config $config)
+    public function __construct(DqlHelper $dqlHelper, Filter $filter, Product\Queue $queue, Shopware_Components_Config $config)
     {
         $this->dqlHelper = $dqlHelper;
         $this->filterResource = $filter;
@@ -99,7 +102,7 @@ class BatchProcess
     }
 
     /**
-     * @return \Shopware_Components_Config
+     * @return Shopware_Components_Config
      */
     public function getConfig()
     {
@@ -109,7 +112,7 @@ class BatchProcess
     /**
      * Generates a list of editable columns and the known operators
      *
-     * @throws \RuntimeException When the column was not defined
+     * @throws RuntimeException When the column was not defined
      *
      * @return array
      */
@@ -166,7 +169,7 @@ class BatchProcess
                     break;
 
                 default:
-                    throw new \RuntimeException(sprintf('Column with type %s was not configured, yet', $type));
+                    throw new RuntimeException(sprintf('Column with type %s was not configured, yet', $type));
             }
         }
 
@@ -199,7 +202,7 @@ class BatchProcess
             list($prefix, $column) = explode('.', $operation['column']);
 
             $type = $columnInfo[ucfirst($prefix) . ucfirst($column)]['type'];
-            if ($operation['value'] && in_array($type, ['decimal', 'integer', 'float'], true)) {
+            if ($operation['value'] && \in_array($type, ['decimal', 'integer', 'float'], true)) {
                 $operation['value'] = str_replace(',', '.', $operation['value']);
             }
 
@@ -303,7 +306,7 @@ class BatchProcess
      *
      * @param int $queueId
      *
-     * @throws \RuntimeException
+     * @throws RuntimeException
      *
      * @return array
      */
@@ -316,7 +319,7 @@ class BatchProcess
         $queue = $entityManager->find(Queue::class, $queueId);
 
         if (!$queue) {
-            throw new \RuntimeException(sprintf('Queue with ID %s not found', $queueId));
+            throw new RuntimeException(sprintf('Queue with ID %s not found', $queueId));
         }
 
         $operations = json_decode($queue->getOperations(), true);
@@ -332,9 +335,9 @@ class BatchProcess
                 $this->updateDetails($details, $operations);
                 $connection->commit();
             }
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $connection->rollBack();
-            throw new \RuntimeException(sprintf('Error updating details: %s', $e->getMessage()), 0, $e);
+            throw new RuntimeException(sprintf('Error updating details: %s', $e->getMessage()), 0, $e);
         }
         $remaining = $queue->getArticleDetails()->count();
 

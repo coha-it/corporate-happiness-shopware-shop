@@ -24,7 +24,9 @@
 
 namespace Shopware\Bundle\StoreFrontBundle\Struct;
 
-abstract class Extendable extends Struct implements \JsonSerializable
+use JsonSerializable;
+
+abstract class Extendable extends Struct implements JsonSerializable
 {
     /**
      * Contains an array of attribute structs.
@@ -77,7 +79,7 @@ abstract class Extendable extends Struct implements \JsonSerializable
      */
     public function hasAttribute($name)
     {
-        return array_key_exists($name, $this->attributes);
+        return \array_key_exists($name, $this->attributes);
     }
 
     /**

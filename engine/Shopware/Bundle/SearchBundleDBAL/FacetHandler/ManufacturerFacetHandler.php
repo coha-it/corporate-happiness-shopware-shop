@@ -24,10 +24,11 @@
 
 namespace Shopware\Bundle\SearchBundleDBAL\FacetHandler;
 
+use Enlight_Components_Snippet_Namespace;
+use PDO;
 use Shopware\Bundle\SearchBundle\Condition;
 use Shopware\Bundle\SearchBundle\Criteria;
 use Shopware\Bundle\SearchBundle\Facet;
-use Shopware\Bundle\SearchBundle\Facet\ManufacturerFacet;
 use Shopware\Bundle\SearchBundle\FacetInterface;
 use Shopware\Bundle\SearchBundle\FacetResult\ValueListFacetResult;
 use Shopware\Bundle\SearchBundle\FacetResult\ValueListItem;
@@ -38,6 +39,7 @@ use Shopware\Bundle\StoreFrontBundle\Service\ManufacturerServiceInterface;
 use Shopware\Bundle\StoreFrontBundle\Struct\Product\Manufacturer;
 use Shopware\Bundle\StoreFrontBundle\Struct\ShopContextInterface;
 use Shopware\Components\QueryAliasMapper;
+use Shopware_Components_Snippet_Manager;
 
 class ManufacturerFacetHandler implements PartialFacetHandlerInterface
 {
@@ -52,7 +54,7 @@ class ManufacturerFacetHandler implements PartialFacetHandlerInterface
     private $queryBuilderFactory;
 
     /**
-     * @var \Enlight_Components_Snippet_Namespace
+     * @var Enlight_Components_Snippet_Namespace
      */
     private $snippetNamespace;
 
@@ -64,7 +66,7 @@ class ManufacturerFacetHandler implements PartialFacetHandlerInterface
     public function __construct(
         ManufacturerServiceInterface $manufacturerService,
         QueryBuilderFactoryInterface $queryBuilderFactory,
-        \Shopware_Components_Snippet_Manager $snippetManager,
+        Shopware_Components_Snippet_Manager $snippetManager,
         QueryAliasMapper $queryAliasMapper
     ) {
         $this->manufacturerService = $manufacturerService;
@@ -95,7 +97,7 @@ class ManufacturerFacetHandler implements PartialFacetHandlerInterface
         /** @var \Doctrine\DBAL\Driver\ResultStatement $statement */
         $statement = $query->execute();
 
-        $ids = $statement->fetchAll(\PDO::FETCH_COLUMN);
+        $ids = $statement->fetchAll(PDO::FETCH_COLUMN);
         $ids = array_filter($ids);
 
         if (empty($ids)) {
@@ -106,7 +108,6 @@ class ManufacturerFacetHandler implements PartialFacetHandlerInterface
 
         $activeManufacturers = $this->getActiveIds($criteria);
 
-        /* @var ManufacturerFacet $facet */
         return $this->createFacetResult($facet, $manufacturers, $activeManufacturers);
     }
 
@@ -132,7 +133,7 @@ class ManufacturerFacetHandler implements PartialFacetHandlerInterface
             $listItem = new ValueListItem(
                 $manufacturer->getId(),
                 $manufacturer->getName(),
-                in_array($manufacturer->getId(), $activeIds),
+                \in_array($manufacturer->getId(), $activeIds),
                 $manufacturer->getAttributes()
             );
 

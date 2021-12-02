@@ -24,10 +24,10 @@
 
 namespace Shopware\Commands;
 
+use Exception;
 use Shopware\Components\DependencyInjection\Container;
 use Shopware\Components\DependencyInjection\ContainerAwareInterface;
 use Shopware\Components\Model\ModelManager;
-use Shopware\Components\Model\ModelRepository;
 use Shopware\Components\Model\QueryBuilder;
 use Shopware\Models\Plugin\Plugin;
 use Shopware\Models\Shop\Locale;
@@ -146,7 +146,7 @@ abstract class ShopwareCommand extends Command implements ContainerAwareInterfac
 
     /**
      * @param string           $input
-     * @param string           $modelClass
+     * @param class-string     $modelClass
      * @param string           $property
      * @param array|mixed|null $conditionCallback
      *
@@ -160,14 +160,14 @@ abstract class ShopwareCommand extends Command implements ContainerAwareInterfac
             $queryBuilder = $queryBuilder->andWhere($queryBuilder->expr()->like("$alias.$property", ":$parameterAlias"))
                 ->setParameter($parameterAlias, $likePattern);
 
-            return is_callable($conditionCallback) ? call_user_func($conditionCallback, $queryBuilder, $alias) : $queryBuilder;
+            return \is_callable($conditionCallback) ? \call_user_func($conditionCallback, $queryBuilder, $alias) : $queryBuilder;
         };
 
         return $this->queryProperty($modelClass, $property, $checkForPrefix);
     }
 
     /**
-     * @param string           $modelClass
+     * @param class-string     $modelClass
      * @param string           $property
      * @param array|mixed|null $conditionCallback
      *
@@ -177,19 +177,17 @@ abstract class ShopwareCommand extends Command implements ContainerAwareInterfac
     {
         $alias = uniqid('modelAlias');
 
-        /* @var ModelManager $em */
         try {
-            $em = $this->getContainer()->get(\Shopware\Components\Model\ModelManager::class);
-        } catch (\Exception $e) {
+            $em = $this->getContainer()->get(ModelManager::class);
+        } catch (Exception $e) {
             return [];
         }
 
-        /** @var ModelRepository $repository */
         $repository = $em->getRepository($modelClass);
         $queryBuilder = $repository->createQueryBuilder($alias);
 
-        if (is_callable($conditionCallback)) {
-            $queryBuilder = call_user_func($conditionCallback, $queryBuilder, $alias);
+        if (\is_callable($conditionCallback)) {
+            $queryBuilder = \call_user_func($conditionCallback, $queryBuilder, $alias);
         }
 
         $result = $queryBuilder->select(["$alias.$property"])

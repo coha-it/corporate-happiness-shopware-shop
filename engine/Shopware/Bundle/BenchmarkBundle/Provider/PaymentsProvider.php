@@ -25,6 +25,7 @@
 namespace Shopware\Bundle\BenchmarkBundle\Provider;
 
 use Doctrine\DBAL\Connection;
+use PDO;
 use Shopware\Bundle\BenchmarkBundle\BenchmarkProviderInterface;
 use Shopware\Bundle\BenchmarkBundle\Service\MatcherService;
 use Shopware\Bundle\StoreFrontBundle\Struct\ShopContextInterface;
@@ -120,7 +121,7 @@ class PaymentsProvider implements BenchmarkProviderInterface
             ->groupBy('orders.paymentID')
             ->orderBy('usages', 'DESC')
             ->execute()
-            ->fetchAll(\PDO::FETCH_KEY_PAIR);
+            ->fetchAll(PDO::FETCH_KEY_PAIR);
     }
 
     /**
@@ -164,7 +165,7 @@ class PaymentsProvider implements BenchmarkProviderInterface
             unset($payments[$key]);
         }
 
-        return count($payments);
+        return \count($payments);
     }
 
     /**
@@ -190,7 +191,7 @@ class PaymentsProvider implements BenchmarkProviderInterface
             unset($payments[$key]);
         }
 
-        return count($payments);
+        return \count($payments);
     }
 
     /**
@@ -287,7 +288,7 @@ class PaymentsProvider implements BenchmarkProviderInterface
      */
     private function getPossiblePaymentIds()
     {
-        if (array_key_exists($this->shopId, $this->paymentIds)) {
+        if (\array_key_exists($this->shopId, $this->paymentIds)) {
             return $this->paymentIds[$this->shopId];
         }
 
@@ -299,7 +300,7 @@ class PaymentsProvider implements BenchmarkProviderInterface
             ->where('paymentShop.subshopID IS NULL or paymentShop.subshopID = :shopId')
             ->setParameter(':shopId', $this->shopId)
             ->execute()
-            ->fetchAll(\PDO::FETCH_COLUMN);
+            ->fetchAll(PDO::FETCH_COLUMN);
 
         return $this->paymentIds[$this->shopId];
     }

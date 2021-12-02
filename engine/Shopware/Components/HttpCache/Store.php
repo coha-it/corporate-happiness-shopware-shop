@@ -24,6 +24,10 @@
 
 namespace Shopware\Components\HttpCache;
 
+use RecursiveDirectoryIterator;
+use RecursiveIteratorIterator;
+use RuntimeException;
+use SplFileInfo;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\HttpCache\Store as BaseStore;
@@ -81,7 +85,7 @@ class Store extends BaseStore
             return false;
         }
 
-        /** @var \SplFileInfo $file */
+        /** @var SplFileInfo $file */
         foreach ($this->createRecursiveFileIterator($this->root) as $file) {
             if (!$file->isFile()) {
                 continue;
@@ -125,7 +129,7 @@ class Store extends BaseStore
 
         $result = false;
 
-        /** @var \SplFileInfo $headerFile */
+        /** @var SplFileInfo $headerFile */
         foreach ($this->createRecursiveFileIterator($headerDir) as $headerFile) {
             if (!$headerFile->isFile()) {
                 continue;
@@ -199,7 +203,7 @@ class Store extends BaseStore
             $content[$cacheKey] = $headerKey;
 
             if (!$this->save($key, json_encode($content))) {
-                throw new \RuntimeException(sprintf('Could not write cacheKey "%s"', $key));
+                throw new RuntimeException(sprintf('Could not write cacheKey "%s"', $key));
             }
         }
 
@@ -235,7 +239,7 @@ class Store extends BaseStore
     {
         $requestParams = $request->query->all();
 
-        if (count($requestParams) === 0) {
+        if (\count($requestParams) === 0) {
             return $request->getUri();
         }
 
@@ -291,18 +295,18 @@ class Store extends BaseStore
     /**
      * @param string $path the path of the directory to be iterated over
      *
-     * @return \RecursiveIteratorIterator
+     * @return RecursiveIteratorIterator
      */
     private function createRecursiveFileIterator($path)
     {
-        $directoryIterator = new \RecursiveDirectoryIterator(
+        $directoryIterator = new RecursiveDirectoryIterator(
             $path,
-            \RecursiveDirectoryIterator::SKIP_DOTS
+            RecursiveDirectoryIterator::SKIP_DOTS
         );
 
-        return new \RecursiveIteratorIterator(
+        return new RecursiveIteratorIterator(
             $directoryIterator,
-            \RecursiveIteratorIterator::LEAVES_ONLY
+            RecursiveIteratorIterator::LEAVES_ONLY
         );
     }
 
@@ -365,11 +369,11 @@ class Store extends BaseStore
     private function save($key, $data)
     {
         $path = $this->getPath($key);
-        if (!is_dir(dirname($path)) && @mkdir(dirname($path), 0777, true) === false && !is_dir(dirname($path))) {
+        if (!is_dir(\dirname($path)) && @mkdir(\dirname($path), 0777, true) === false && !is_dir(\dirname($path))) {
             return false;
         }
 
-        $tmpFile = tempnam(dirname($path), basename($path));
+        $tmpFile = tempnam(\dirname($path), basename($path));
         if (false === $fp = @fopen($tmpFile, 'wb')) {
             return false;
         }

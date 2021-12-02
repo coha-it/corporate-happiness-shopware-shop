@@ -30,7 +30,9 @@ use Shopware\Models\Order\Detail as OrderDetail;
 
 class StockService implements StockServiceInterface
 {
-    /** @var ModelManager */
+    /**
+     * @var ModelManager
+     */
     protected $entityManager;
 
     public function __construct(ModelManager $entityManager)
@@ -44,7 +46,7 @@ class StockService implements StockServiceInterface
         if ($product) {
             $product->setInStock($product->getInStock() - $detail->getQuantity());
             $this->entityManager->persist($product);
-            $this->entityManager->flush();
+            $this->entityManager->flush($product);
         }
     }
 
@@ -92,7 +94,7 @@ class StockService implements StockServiceInterface
      */
     protected function getProductFromDetail(OrderDetail $detail): ?ProductDetail
     {
-        if (in_array($detail->getMode(), [0, 1], true)) {
+        if (\in_array($detail->getMode(), [0, 1], true)) {
             if ($detail->getArticleDetail() && $detail->getArticleDetail()->getId()) { // After the detail got removed, the association to the product detail does not exist anymore.
                 return $detail->getArticleDetail();
             } elseif ($detail->getArticleNumber()) {
@@ -108,9 +110,9 @@ class StockService implements StockServiceInterface
      */
     protected function getProductByNumber(string $number): ?ProductDetail
     {
-        $product = $this->entityManager->getRepository(\Shopware\Models\Article\Detail::class)->findOneBy(['number' => $number]);
+        $product = $this->entityManager->getRepository(ProductDetail::class)->findOneBy(['number' => $number]);
 
-        if ($product instanceof \Shopware\Models\Article\Detail) {
+        if ($product instanceof ProductDetail) {
             return $product;
         }
 

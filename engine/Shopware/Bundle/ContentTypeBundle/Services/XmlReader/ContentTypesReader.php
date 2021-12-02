@@ -29,6 +29,7 @@ use DOMElement;
 use DOMNode;
 use DOMNodeList;
 use DOMXPath;
+use InvalidArgumentException;
 use Shopware\Components\Plugin\XmlReader\XmlReaderBase;
 use Symfony\Component\Config\Util\XmlUtils;
 
@@ -127,7 +128,7 @@ class ContentTypesReader extends XmlReaderBase
         }
 
         if ($showInFrontend && (empty($viewDescriptionFieldName) || empty($viewImageFieldName) || empty($viewTitleFieldName) || empty($viewMetaTitleFieldName) || empty($viewMetaDescriptionFieldName))) {
-            throw new \InvalidArgumentException('Content-Type with enabled showInFrontend requires a viewTitleFieldName, viewDescriptionFieldName, viewImageFieldName, viewMetaTitleFieldName, viewMetaDescriptionFieldName');
+            throw new InvalidArgumentException('Content-Type with enabled showInFrontend requires a viewTitleFieldName, viewDescriptionFieldName, viewImageFieldName, viewMetaTitleFieldName, viewMetaDescriptionFieldName');
         }
 
         $item['menuParent'] = 'Content';
@@ -154,7 +155,7 @@ class ContentTypesReader extends XmlReaderBase
 
         foreach ($fields as $field) {
             if ($value = self::getElementChildValueByName($element, $field)) {
-                if (in_array($field, $boolFields, true)) {
+                if (\in_array($field, $boolFields, true)) {
                     $value = (bool) XmlUtils::phpize($value);
                 }
 
@@ -229,7 +230,7 @@ class ContentTypesReader extends XmlReaderBase
                 if ($child->nodeType == XML_TEXT_NODE) {
                     $result['_value'] = $child->nodeValue;
 
-                    return count($result) == 1
+                    return \count($result) == 1
                         ? $result['_value']
                         : $result;
                 }
@@ -254,7 +255,7 @@ class ContentTypesReader extends XmlReaderBase
     private static function cleanArray(array $haystack): array
     {
         foreach ($haystack as $key => $value) {
-            if (is_array($value)) {
+            if (\is_array($value)) {
                 $haystack[$key] = self::cleanArray($haystack[$key]);
             }
 

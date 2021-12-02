@@ -24,9 +24,10 @@
 
 namespace Shopware\Bundle\SearchBundle\Condition;
 
+use JsonSerializable;
 use Shopware\Bundle\SearchBundle\ConditionInterface;
 
-class CombinedCondition implements ConditionInterface, \JsonSerializable
+class CombinedCondition implements ConditionInterface, JsonSerializable
 {
     /**
      * @var ConditionInterface[]
@@ -47,7 +48,7 @@ class CombinedCondition implements ConditionInterface, \JsonSerializable
     public function getName()
     {
         $classes = array_map(function ($class) {
-            return get_class($class);
+            return \get_class($class);
         }, $this->conditions);
 
         return 'combined_facet_' . md5(json_encode($this->conditions) . json_encode($classes));

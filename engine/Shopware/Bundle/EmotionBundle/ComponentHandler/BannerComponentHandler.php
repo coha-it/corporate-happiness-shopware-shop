@@ -28,11 +28,12 @@ use Shopware\Bundle\EmotionBundle\Struct\Collection\PrepareDataCollection;
 use Shopware\Bundle\EmotionBundle\Struct\Collection\ResolvedDataCollection;
 use Shopware\Bundle\EmotionBundle\Struct\Element;
 use Shopware\Bundle\StoreFrontBundle\Struct\ShopContextInterface;
+use Shopware_Components_Config;
 
 class BannerComponentHandler implements ComponentHandlerInterface
 {
-    const LEGACY_CONVERT_FUNCTION = 'getBannerMappingLinks';
-    const COMPONENT_NAME = 'emotion-components-banner';
+    public const LEGACY_CONVERT_FUNCTION = 'getBannerMappingLinks';
+    public const COMPONENT_NAME = 'emotion-components-banner';
 
     /**
      * {@inheritdoc}
@@ -150,7 +151,7 @@ class BannerComponentHandler implements ComponentHandlerInterface
                     continue;
                 }
 
-                $mapping['link'] = Shopware()->Container()->get(\Shopware_Components_Config::class)->get('baseFile') . '?sViewport=detail&sArticle=' . $product->getId() . '&number=' . $product->getNumber();
+                $mapping['link'] = Shopware()->Container()->get(Shopware_Components_Config::class)->get('baseFile') . '?sViewport=detail&sArticle=' . $product->getId() . '&number=' . $product->getNumber();
             }
 
             $mappings[$key] = $mapping;

@@ -24,6 +24,8 @@
 
 namespace Shopware\Bundle\BenchmarkBundle\Provider;
 
+use DateTime;
+use DateTimeZone;
 use Doctrine\DBAL\Connection;
 use Shopware\Bundle\BenchmarkBundle\BenchmarkProviderInterface;
 use Shopware\Bundle\StoreFrontBundle\Struct\ShopContextInterface;
@@ -57,7 +59,7 @@ class ShopProvider implements BenchmarkProviderInterface
      */
     public function getBenchmarkData(ShopContextInterface $shopContext)
     {
-        $now = new \DateTime('now', new \DateTimeZone('UTC'));
+        $now = new DateTime('now', new DateTimeZone('UTC'));
 
         $this->shopId = $shopContext->getShop()->getId();
 
@@ -117,7 +119,7 @@ class ShopProvider implements BenchmarkProviderInterface
             ->execute()
             ->fetchColumn();
 
-        if (!in_array($type, ['b2b', 'b2c'])) {
+        if (!\in_array($type, ['b2b', 'b2c'])) {
             $type = 'b2c';
         }
 

@@ -24,6 +24,8 @@
 
 namespace Shopware\Bundle\SitemapBundle\Provider;
 
+use DateTime;
+use DateTimeInterface;
 use Shopware\Bundle\SitemapBundle\Struct\Url;
 use Shopware\Bundle\StoreFrontBundle\Struct\ShopContextInterface;
 use Shopware\Components\Routing;
@@ -47,7 +49,7 @@ class LandingPageUrlProvider extends BaseUrlProvider
         $builder = $emotionRepository->getCampaignsByShopId($shopId);
         $campaigns = $builder->getQuery()->getArrayResult();
 
-        if (count($campaigns) === 0) {
+        if (\count($campaigns) === 0) {
             return [];
         }
 
@@ -70,7 +72,7 @@ class LandingPageUrlProvider extends BaseUrlProvider
         $routes = $this->router->generateList(array_column($campaigns, 'urlParams'), $routingContext);
         $urls = [];
 
-        for ($i = 0, $routeCount = count($routes); $i < $routeCount; ++$i) {
+        for ($i = 0, $routeCount = \count($routes); $i < $routeCount; ++$i) {
             $urls[] = new Url($routes[$i], $campaigns[$i]['changed'], 'weekly', Emotion::class, $campaigns[$i]['id']);
         }
 
@@ -83,14 +85,14 @@ class LandingPageUrlProvider extends BaseUrlProvider
      * Helper function to filter emotion campaigns
      * Returns false, if the campaign starts later or is outdated
      *
-     * @param \DateTimeInterface|null $from
-     * @param \DateTimeInterface|null $to
+     * @param DateTimeInterface|null $from
+     * @param DateTimeInterface|null $to
      *
      * @return bool
      */
     private function filterCampaign($from = null, $to = null)
     {
-        $now = new \DateTime();
+        $now = new DateTime();
 
         if ($from !== null && $now < $from) {
             return false;

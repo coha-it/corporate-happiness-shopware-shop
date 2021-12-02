@@ -25,6 +25,9 @@
 namespace Shopware\Components\Theme;
 
 use Doctrine\Common\Collections\ArrayCollection;
+use Enlight_Event_EventManager;
+use Enlight_Event_Exception;
+use Exception;
 use Shopware\Models\Shop;
 
 class LessCollector
@@ -40,14 +43,14 @@ class LessCollector
     private $inheritance;
 
     /**
-     * @var \Enlight_Event_EventManager
+     * @var Enlight_Event_EventManager
      */
     private $eventManager;
 
     public function __construct(
         PathResolver $pathResolver,
         Inheritance $inheritance,
-        \Enlight_Event_EventManager $eventManager
+        Enlight_Event_EventManager $eventManager
     ) {
         $this->pathResolver = $pathResolver;
         $this->inheritance = $inheritance;
@@ -55,8 +58,8 @@ class LessCollector
     }
 
     /**
-     * @throws \Exception
-     * @throws \Enlight_Event_Exception
+     * @throws Exception
+     * @throws Enlight_Event_Exception
      *
      * @return LessDefinition[]
      */
@@ -92,7 +95,7 @@ class LessCollector
         );
 
         $discardLess = [];
-        for ($i = count($definitions) - 1; $i >= 0; --$i) {
+        for ($i = \count($definitions) - 1; $i >= 0; --$i) {
             $definition = $definitions[$i];
             $theme = $definition->getTheme();
 
@@ -100,10 +103,10 @@ class LessCollector
                 continue;
             }
 
-            $themeClassName = get_class($theme);
+            $themeClassName = \get_class($theme);
             $discardLess = array_merge($discardLess, $theme->getDiscardedLessThemes());
 
-            if (in_array($themeClassName, $discardLess)) {
+            if (\in_array($themeClassName, $discardLess)) {
                 $definitions[$i]->setFiles([]);
             }
         }
@@ -121,7 +124,7 @@ class LessCollector
     }
 
     /**
-     * @throws \Exception
+     * @throws Exception
      *
      * @return LessDefinition[]
      */
@@ -148,7 +151,7 @@ class LessCollector
     }
 
     /**
-     * @throws \Exception
+     * @throws Exception
      *
      * @return LessDefinition[]
      */
@@ -172,7 +175,7 @@ class LessCollector
     }
 
     /**
-     * @throws \Enlight_Event_Exception
+     * @throws Enlight_Event_Exception
      *
      * @return LessDefinition[]
      */
@@ -189,7 +192,7 @@ class LessCollector
     }
 
     /**
-     * @throws \Enlight_Event_Exception
+     * @throws Enlight_Event_Exception
      *
      * @return LessDefinition[]
      */
@@ -202,7 +205,7 @@ class LessCollector
             ['shop' => $shop, 'template' => $template]
         );
 
-        if (count($collection) <= 0) {
+        if (\count($collection) <= 0) {
             return [];
         }
 

@@ -24,6 +24,8 @@
 
 namespace Shopware\Bundle\PluginInstallerBundle;
 
+use Exception;
+use RuntimeException;
 use Shopware\Bundle\PluginInstallerBundle\Exception\AccountException;
 use Shopware\Bundle\PluginInstallerBundle\Exception\AuthenticationException;
 use Shopware\Bundle\PluginInstallerBundle\Exception\DomainVerificationException;
@@ -90,7 +92,7 @@ class StoreClient
      * @param string $shopwareId
      * @param string $password
      *
-     * @throws \Exception
+     * @throws Exception
      *
      * @return AccessTokenStruct
      */
@@ -112,7 +114,7 @@ class StoreClient
      * @param array  $params
      * @param array  $headers
      *
-     * @throws \Exception
+     * @throws Exception
      *
      * @return array
      */
@@ -132,7 +134,7 @@ class StoreClient
      * @param array  $params
      * @param array  $headers
      *
-     * @throws \Exception
+     * @throws Exception
      *
      * @return array
      */
@@ -157,7 +159,7 @@ class StoreClient
      * @param array  $params
      * @param array  $headers
      *
-     * @throws \Exception
+     * @throws Exception
      */
     public function doGetRequestRaw($resource, $params = [], $headers = [])
     {
@@ -175,7 +177,7 @@ class StoreClient
      * @param array  $params
      * @param array  $headers
      *
-     * @throws \Exception
+     * @throws Exception
      *
      * @return string
      */
@@ -200,7 +202,7 @@ class StoreClient
      * @param array  $params
      * @param array  $headers
      *
-     * @throws \Exception
+     * @throws Exception
      *
      * @return array
      */
@@ -219,7 +221,7 @@ class StoreClient
      * @param string $resource
      * @param array  $params
      *
-     * @throws \Exception
+     * @throws Exception
      *
      * @return array
      */
@@ -242,7 +244,7 @@ class StoreClient
      * @param string $resource
      * @param array  $params
      *
-     * @throws \Exception
+     * @throws Exception
      *
      * @return Response
      */
@@ -301,7 +303,7 @@ class StoreClient
      * @param array  $params
      * @param array  $headers
      *
-     * @throws \Exception
+     * @throws Exception
      *
      * @return Response
      *
@@ -318,7 +320,7 @@ class StoreClient
             $header['X-Shopware-Token'] = $token->getToken();
         }
 
-        if (count($headers) > 0) {
+        if (\count($headers) > 0) {
             $header = array_merge($header, $headers);
         }
 
@@ -341,7 +343,7 @@ class StoreClient
      * @param AccessTokenStruct $token
      *
      * @throws StoreException
-     * @throws \Exception
+     * @throws Exception
      *
      * @return Response
      */
@@ -354,7 +356,7 @@ class StoreClient
             $header['X-Shopware-Token'] = $token->getToken();
         }
 
-        if (count($headers) > 0) {
+        if (\count($headers) > 0) {
             $header = array_merge($header, $headers);
         }
 
@@ -378,7 +380,7 @@ class StoreClient
      * Parses it to detect and extract details provided
      * by SBP about what happened
      *
-     * @throws \Exception
+     * @throws Exception
      * @throws SbpServerException
      * @throws AuthenticationException
      * @throws AccountException
@@ -399,7 +401,7 @@ class StoreClient
             throw $requestException;
         }
 
-        $httpCode = array_key_exists('error', $data) ? $data['error'] : 0;
+        $httpCode = \array_key_exists('error', $data) ? $data['error'] : 0;
         $sbpCode = $data['code'];
 
         switch ($sbpCode) {
@@ -501,7 +503,7 @@ class StoreClient
                 throw new MissingDoubleOptInConfirmationException($sbpCode, 'missing_doi_confirmation', $httpCode, $requestException);
         }
 
-        $reason = array_key_exists('reason', $data) ? $data['reason'] : sprintf('Unknown error occurred. (%s)', $sbpCode);
+        $reason = \array_key_exists('reason', $data) ? $data['reason'] : sprintf('Unknown error occurred. (%s)', $sbpCode);
 
         throw new StoreException($sbpCode, $reason, $httpCode, $requestException);
     }
@@ -512,7 +514,7 @@ class StoreClient
         $signature = $response->getHeader($signatureHeaderName);
 
         if (empty($signature)) {
-            throw new \RuntimeException(sprintf('Signature not found in header "%s"', $signatureHeaderName));
+            throw new RuntimeException(sprintf('Signature not found in header "%s"', $signatureHeaderName));
         }
 
         if (!$this->openSSLVerifier->isSystemSupported()) {
@@ -523,6 +525,6 @@ class StoreClient
             return;
         }
 
-        throw new \RuntimeException('Signature not valid');
+        throw new RuntimeException('Signature not valid');
     }
 }

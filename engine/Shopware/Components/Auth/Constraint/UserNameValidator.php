@@ -25,6 +25,7 @@
 namespace Shopware\Components\Auth\Constraint;
 
 use Doctrine\DBAL\Connection;
+use PDO;
 use Shopware\Components\Validator\UserNameValidatorInterface;
 use Shopware_Components_Snippet_Manager;
 use Symfony\Component\Validator\Constraint;
@@ -32,13 +33,13 @@ use Symfony\Component\Validator\ConstraintValidator;
 
 class UserNameValidator extends ConstraintValidator
 {
-    const SNIPPET_NAME_FAILURE = [
+    public const SNIPPET_NAME_FAILURE = [
         'namespace' => 'frontend/account/internalMessages',
         'name' => 'NameFailure',
         'default' => 'Please enter a valid user name',
     ];
 
-    const SNIPPET_NAME_DUPLICATE = [
+    public const SNIPPET_NAME_DUPLICATE = [
         'namespace' => 'frontend/account/internalMessages',
         'name' => 'NameFailureAlreadyRegistered',
         'default' => 'This user name already exists',
@@ -122,7 +123,7 @@ class UserNameValidator extends ConstraintValidator
             $builder->setParameter('userId', $userId);
         }
 
-        $id = $builder->execute()->fetch(\PDO::FETCH_COLUMN);
+        $id = $builder->execute()->fetch(PDO::FETCH_COLUMN);
 
         return $id == 1;
     }

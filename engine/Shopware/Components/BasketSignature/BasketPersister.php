@@ -24,11 +24,13 @@
 
 namespace Shopware\Components\BasketSignature;
 
+use DateTime;
 use Doctrine\DBAL\Connection;
+use Exception;
 
 class BasketPersister
 {
-    const DBAL_TABLE = 's_order_basket_signatures';
+    public const DBAL_TABLE = 's_order_basket_signatures';
 
     /**
      * @var Connection
@@ -46,13 +48,13 @@ class BasketPersister
      * @param string $signature
      * @param array  $basket
      *
-     * @throws \Exception
+     * @throws Exception
      */
     public function persist($signature, $basket)
     {
         $this->connection->transactional(
             function () use ($signature, $basket) {
-                $createdAt = new \DateTime();
+                $createdAt = new DateTime();
 
                 $this->delete($signature);
 

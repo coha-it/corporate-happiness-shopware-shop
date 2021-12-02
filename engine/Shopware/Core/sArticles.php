@@ -22,11 +22,15 @@
  * our trademarks remain entirely with us.
  */
 
+use Doctrine\DBAL\Connection;
 use Doctrine\ORM\AbstractQuery;
+use Shopware\Bundle\MediaBundle\MediaServiceInterface;
 use Shopware\Bundle\SearchBundle;
 use Shopware\Bundle\SearchBundle\Condition\VariantCondition;
 use Shopware\Bundle\SearchBundle\Criteria;
+use Shopware\Bundle\SearchBundle\ProductNumberSearchInterface;
 use Shopware\Bundle\SearchBundle\ProductNumberSearchResult;
+use Shopware\Bundle\SearchBundle\ProductSearchInterface;
 use Shopware\Bundle\SearchBundle\Sorting\PopularitySorting;
 use Shopware\Bundle\SearchBundle\Sorting\ReleaseDateSorting;
 use Shopware\Bundle\SearchBundle\SortingInterface;
@@ -36,10 +40,12 @@ use Shopware\Bundle\StoreFrontBundle\Service\ConfiguratorServiceInterface;
 use Shopware\Bundle\StoreFrontBundle\Service\ContextServiceInterface;
 use Shopware\Bundle\StoreFrontBundle\Service\Core\ConfiguratorService;
 use Shopware\Bundle\StoreFrontBundle\Service\Core\ListingLinkRewriteService;
+use Shopware\Bundle\StoreFrontBundle\Service\ListingLinkRewriteServiceInterface;
 use Shopware\Bundle\StoreFrontBundle\Service\ListProductServiceInterface;
 use Shopware\Bundle\StoreFrontBundle\Service\ProductNumberServiceInterface;
 use Shopware\Bundle\StoreFrontBundle\Service\ProductServiceInterface;
 use Shopware\Bundle\StoreFrontBundle\Service\PropertyServiceInterface;
+use Shopware\Bundle\StoreFrontBundle\Service\VariantListingPriceServiceInterface;
 use Shopware\Bundle\StoreFrontBundle\Struct\BaseProduct;
 use Shopware\Bundle\StoreFrontBundle\Struct\ListProduct;
 use Shopware\Bundle\StoreFrontBundle\Struct\Product;
@@ -47,6 +53,8 @@ use Shopware\Bundle\StoreFrontBundle\Struct\ProductContextInterface;
 use Shopware\Bundle\StoreFrontBundle\Struct\ShopContextInterface;
 use Shopware\Components\Compatibility\LegacyEventManager;
 use Shopware\Components\Compatibility\LegacyStructConverter;
+use Shopware\Components\ProductStream\CriteriaFactoryInterface;
+use Shopware\Components\ProductStream\Repository;
 use Shopware\Components\QueryAliasMapper;
 use Shopware\Models\Article\Article;
 use Shopware\Models\Article\Repository as ArticleRepository;
@@ -59,7 +67,7 @@ use Shopware\Models\Media\Repository as MediaRepository;
 /**
  * Shopware Class that handle products
  */
-class sArticles implements \Enlight_Hook
+class sArticles implements Enlight_Hook
 {
     /**
      * Pointer to sSystem object
@@ -164,12 +172,12 @@ class sArticles implements \Enlight_Hook
     private $queryAliasMapper;
 
     /**
-     * @var Enlight_Controller_Front|null
+     * @var Enlight_Controller_Front
      */
     private $frontController;
 
     /**
-     * @var SearchBundle\ProductNumberSearchInterface
+     * @var ProductNumberSearchInterface
      */
     private $productNumberSearch;
 
@@ -215,25 +223,25 @@ class sArticles implements \Enlight_Hook
         $this->translationId = $translationId ?: (!Shopware()->Shop()->getDefault() ? Shopware()->Shop()->getId() : null);
         $this->customerGroupId = $customerGroupId ?: ((int) Shopware()->Modules()->System()->sUSERGROUPDATA['id']);
 
-        $this->config = $container->get(\Shopware_Components_Config::class);
+        $this->config = $container->get(Shopware_Components_Config::class);
         $this->db = $container->get('db');
         $this->eventManager = $container->get('events');
-        $this->contextService = $container->get(\Shopware\Bundle\StoreFrontBundle\Service\ContextServiceInterface::class);
-        $this->listProductService = $container->get(\Shopware\Bundle\StoreFrontBundle\Service\ListProductServiceInterface::class);
-        $this->productService = $container->get(\Shopware\Bundle\StoreFrontBundle\Service\ProductServiceInterface::class);
-        $this->productNumberSearch = $container->get(\Shopware\Bundle\SearchBundle\ProductNumberSearchInterface::class);
-        $this->configuratorService = $container->get(\Shopware\Bundle\StoreFrontBundle\Service\ConfiguratorServiceInterface::class);
-        $this->propertyService = $container->get(\Shopware\Bundle\StoreFrontBundle\Service\PropertyServiceInterface::class);
-        $this->additionalTextService = $container->get(\Shopware\Bundle\StoreFrontBundle\Service\AdditionalTextServiceInterface::class);
-        $this->searchService = $container->get(\Shopware\Bundle\SearchBundle\ProductSearchInterface::class);
+        $this->contextService = $container->get(ContextServiceInterface::class);
+        $this->listProductService = $container->get(ListProductServiceInterface::class);
+        $this->productService = $container->get(ProductServiceInterface::class);
+        $this->productNumberSearch = $container->get(ProductNumberSearchInterface::class);
+        $this->configuratorService = $container->get(ConfiguratorServiceInterface::class);
+        $this->propertyService = $container->get(PropertyServiceInterface::class);
+        $this->additionalTextService = $container->get(AdditionalTextServiceInterface::class);
+        $this->searchService = $container->get(ProductSearchInterface::class);
         $this->queryAliasMapper = $container->get(QueryAliasMapper::class);
         $this->frontController = $container->get('front');
         $this->legacyStructConverter = $container->get(LegacyStructConverter::class);
         $this->legacyEventManager = $container->get(LegacyEventManager::class);
         $this->session = $container->get('session');
-        $this->storeFrontCriteriaFactory = $container->get(\Shopware\Bundle\SearchBundle\StoreFrontCriteriaFactoryInterface::class);
-        $this->productNumberService = $container->get(\Shopware\Bundle\StoreFrontBundle\Service\ProductNumberServiceInterface::class);
-        $this->listingLinkRewriteService = $container->get(\Shopware\Bundle\StoreFrontBundle\Service\ListingLinkRewriteServiceInterface::class);
+        $this->storeFrontCriteriaFactory = $container->get(StoreFrontCriteriaFactoryInterface::class);
+        $this->productNumberService = $container->get(ProductNumberServiceInterface::class);
+        $this->listingLinkRewriteService = $container->get(ListingLinkRewriteServiceInterface::class);
 
         $this->productComparisons = new sArticlesComparisons($this, $container);
     }
@@ -397,7 +405,7 @@ class sArticles implements \Enlight_Hook
             $shopId = $container->get('shop')->getId();
         }
 
-        $connection = $container->get(\Doctrine\DBAL\Connection::class);
+        $connection = $container->get(Connection::class);
         $query = $connection->createQueryBuilder();
         $query->insert('s_articles_vote');
         $query->values([
@@ -855,7 +863,7 @@ class sArticles implements \Enlight_Hook
         $getGroups = $this->db->fetchAll($sql, [(int) $groupID, $customergroup]);
         $priceMatrix = [];
 
-        if (count($getGroups)) {
+        if (\count($getGroups)) {
             foreach ($getGroups as $group) {
                 $priceMatrix[$group['discountstart']] = ['percent' => $group['discount']];
                 if (!empty($group['discount'])) {
@@ -871,7 +879,7 @@ class sArticles implements \Enlight_Hook
                 return;
             }
 
-            if (!empty($doMatrix) && count($priceMatrix) == 1) {
+            if (!empty($doMatrix) && \count($priceMatrix) == 1) {
                 return;
             }
 
@@ -904,7 +912,7 @@ class sArticles implements \Enlight_Hook
                     $getBlockPricings[$i]['to'] = $percent['to'];
                     if ($i === 0 && $ignore) {
                         $getBlockPricings[$i]['price'] = $this->sCalculatingPrice(
-                            ($listprice / 100 * (100)),
+                            ($listprice / 100 * 100),
                             $articleData['tax'],
                             $articleData['taxID'],
                             $articleData
@@ -995,7 +1003,7 @@ class sArticles implements \Enlight_Hook
             [$fetchGroup, $article]
         );
 
-        if (count($queryCheapestPrice) > 1) {
+        if (\count($queryCheapestPrice) > 1) {
             $cheapestPrice = $queryCheapestPrice[0]['price'];
             if (empty($cheapestPrice)) {
                 // No Price for this customer-group fetch defaultprice
@@ -1013,7 +1021,7 @@ class sArticles implements \Enlight_Hook
                 ";
 
                 $queryCheapestPrice = $this->db->fetchAll($sql);
-                if (count($queryCheapestPrice) > 1) {
+                if (\count($queryCheapestPrice) > 1) {
                     $cheapestPrice = $queryCheapestPrice[0]['price'];
                 } else {
                     $cheapestPrice = 0;
@@ -1203,8 +1211,8 @@ class sArticles implements \Enlight_Hook
         $price = str_replace('.', ',', (string) $price); // Replaces points with commas
         $commaPos = strpos((string) $price, ',');
         if ($commaPos) {
-            $part = substr((string) $price, $commaPos + 1, strlen((string) $price) - $commaPos);
-            switch (strlen($part)) {
+            $part = substr((string) $price, $commaPos + 1, \strlen((string) $price) - $commaPos);
+            switch (\strlen($part)) {
                 case 1:
                     $price .= '0';
                     break;
@@ -1238,7 +1246,7 @@ class sArticles implements \Enlight_Hook
         if (empty($money_str[1])) {
             $money_str[1] = 0;
         }
-        $money_str[1] = substr($money_str[1], 0, 3); // convert to rounded (to the nearest thousandth) string
+        $money_str[1] = substr((string) $money_str[1], 0, 3); // convert to rounded (to the nearest thousandth) string
 
         $value = (float) ($money_str[0] . '.' . $money_str[1]);
 
@@ -1490,7 +1498,7 @@ class sArticles implements \Enlight_Hook
         // First we add all variant images, this images has a higher priority as the normal product images
         foreach ($variantImages as $variantImage) {
             // If the image wasn't added already, we can add the image
-            if (!in_array($variantImage['id'], $addedImages)) {
+            if (!\in_array($variantImage['id'], $addedImages)) {
                 // First we have to convert the image data, to resolve the image path and get the thumbnail configuration
                 $image = $this->getDataOfProductImage($variantImage, $articleAlbum);
 
@@ -1504,7 +1512,7 @@ class sArticles implements \Enlight_Hook
         foreach ($productImages as $productImage) {
             // Add only normal images without any configuration
             // If the image wasn't added already, we can add the image
-            if (!in_array($productImage['id'], $addedImages)) {
+            if (!\in_array($productImage['id'], $addedImages)) {
                 // First we have to convert the image data, to resolve the image path and get the thumbnail configuration
                 $image = $this->getDataOfProductImage($productImage, $articleAlbum);
 
@@ -1754,7 +1762,7 @@ class sArticles implements \Enlight_Hook
                 } else {
                     $key = $translateKey;
                 }
-                if (!empty($value) && array_key_exists($key, $data[$productId])) {
+                if (!empty($value) && \array_key_exists($key, $data[$productId])) {
                     $data[$productId][$key] = $value;
                 }
             }
@@ -1896,12 +1904,13 @@ class sArticles implements \Enlight_Hook
                         $optionVal = $option['optionnameOrig'] ? $option['optionnameOrig'] : $option['optionname'];
                         $optionVal = str_replace(['/', ' '], '', $optionVal);
                         if (!empty($option['selected'])) {
-                            $referenceImages[strtolower($groupVal . ':' . str_replace(' ', '', $optionVal))] = true;
+                            $replacedOptionVal = str_replace(' ', '', $optionVal);
+                            $referenceImages[strtolower($groupVal . ':' . $optionVal)] = true;
                         }
                     }
                 }
 
-                foreach (array_merge($sArticle['images'] ?? [], [count($sArticle['images'] ?? []) => $sArticle['image']]) as $value) {
+                foreach (array_merge($sArticle['images'] ?? [], [\count($sArticle['images'] ?? []) => $sArticle['image']]) as $value) {
                     if (preg_match('/(.*){(.*)}/', $value['relations'])) {
                         $configuratorImages = true;
 
@@ -1930,7 +1939,7 @@ class sArticles implements \Enlight_Hook
             }
 
             if (!empty($configuratorImages)) {
-                $sArticle['images'] = array_merge($sArticle['images'], [count($sArticle['images']) => $sArticle['image']]);
+                $sArticle['images'] = array_merge($sArticle['images'], [\count($sArticle['images']) => $sArticle['image']]);
 
                 unset($sArticle['image']);
 
@@ -1950,7 +1959,7 @@ class sArticles implements \Enlight_Hook
                     $relation = $stringParsed[1];
                     $available = explode('/', $stringParsed[2]);
 
-                    if (!@count($available)) {
+                    if (!@\count($available)) {
                         $available = [0 => $stringParsed[2]];
                     }
 
@@ -1965,13 +1974,13 @@ class sArticles implements \Enlight_Hook
                             $imageFailedCheck[] = true;
                         }
                     }
-                    if ($relation === '||' && count($imageFailedCheck) && count($imageFailedCheck) >= 1 && count($available) >= 1) { // OR combination
+                    if ($relation === '||' && \count($imageFailedCheck) && \count($imageFailedCheck) >= 1 && \count($available) >= 1) { // OR combination
                         if (!empty($debug)) {
                             echo $string . " matching combination\n";
                         }
                         $sArticle['images'][$imageKey]['relations'] = '';
                         $positions[$image['position']] = $imageKey;
-                    } elseif ($relation === '&' && count($imageFailedCheck) === count($available)) { // AND combination
+                    } elseif ($relation === '&' && \count($imageFailedCheck) === \count($available)) { // AND combination
                         $sArticle['images'][$imageKey]['relations'] = '';
                         $positions[$image['position']] = $imageKey;
                     } else {
@@ -2090,7 +2099,7 @@ class sArticles implements \Enlight_Hook
     /**
      * @param int $categoryId
      *
-     * @throws \Exception
+     * @throws Exception
      *
      * @return Criteria
      */
@@ -2108,13 +2117,11 @@ class sArticles implements \Enlight_Hook
             );
         }
 
-        /** @var \Shopware\Components\ProductStream\CriteriaFactoryInterface $factory */
-        $factory = Shopware()->Container()->get(\Shopware\Components\ProductStream\CriteriaFactoryInterface::class);
+        $factory = Shopware()->Container()->get(CriteriaFactoryInterface::class);
         $criteria = $factory->createCriteria($request, $context);
         $criteria->limit(null);
 
-        /** @var \Shopware\Components\ProductStream\RepositoryInterface $streamRepository */
-        $streamRepository = Shopware()->Container()->get(\Shopware\Components\ProductStream\Repository::class);
+        $streamRepository = Shopware()->Container()->get(Repository::class);
         $streamRepository->prepareCriteria($criteria, $streamId);
 
         return $criteria;
@@ -2154,7 +2161,6 @@ class sArticles implements \Enlight_Hook
             return [];
         }
 
-        /** @var BaseProduct $currentProduct */
         foreach ($products as $index => $currentProduct) {
             if ($currentProduct->getNumber() != $orderNumber) {
                 continue;
@@ -2296,7 +2302,7 @@ class sArticles implements \Enlight_Hook
     {
         // Initial the data array
         $imageData = [];
-        $mediaService = Shopware()->Container()->get(\Shopware\Bundle\MediaBundle\MediaServiceInterface::class);
+        $mediaService = Shopware()->Container()->get(MediaServiceInterface::class);
 
         if (empty($image['path'])) {
             return $imageData;
@@ -2442,7 +2448,7 @@ class sArticles implements \Enlight_Hook
             return $condition->expandVariants();
         });
 
-        if (count($conditions) > 0) {
+        if (\count($conditions) > 0) {
             $this->config->offsetSet('forceArticleMainImageInListing', 0);
             $searchResult = $this->searchService->search($criteria, $context);
             $this->config->offsetSet('forceArticleMainImageInListing', 1);
@@ -2547,7 +2553,7 @@ class sArticles implements \Enlight_Hook
         );
 
         $isSelectionSpecified = false;
-        if (isset($data['isSelectionSpecified']) || array_key_exists('isSelectionSpecified', $data)) {
+        if (isset($data['isSelectionSpecified']) || \array_key_exists('isSelectionSpecified', $data)) {
             $isSelectionSpecified = $data['isSelectionSpecified'];
         }
 
@@ -2564,7 +2570,7 @@ class sArticles implements \Enlight_Hook
             );
         }
 
-        $service = Shopware()->Container()->get(\Shopware\Bundle\StoreFrontBundle\Service\VariantListingPriceServiceInterface::class);
+        $service = Shopware()->Container()->get(VariantListingPriceServiceInterface::class);
 
         $result = new SearchBundle\ProductSearchResult(
             [$product->getNumber() => $product],
@@ -2641,14 +2647,14 @@ class sArticles implements \Enlight_Hook
         $badWords = explode(',', $this->config->get('badwords'));
         $words = array_count_values(array_diff($words, $badWords));
         foreach (array_keys($words) as $word) {
-            if (strlen($word) < 2) {
+            if (\strlen($word) < 2) {
                 unset($words[$word]);
             }
         }
         arsort($words);
 
         return htmlspecialchars(
-            implode(', ', array_slice(array_keys($words), 0, 20)),
+            implode(', ', \array_slice(array_keys($words), 0, 20)),
             ENT_QUOTES,
             'UTF-8',
             false
@@ -2668,7 +2674,7 @@ class sArticles implements \Enlight_Hook
      */
     private function getCurrentSelection(array $selection)
     {
-        if (empty($selection) && $this->frontController && $this->frontController->Request()->has('group')) {
+        if (empty($selection) && $this->frontController->Request()->has('group')) {
             $selection = $this->frontController->Request()->getParam('group');
         }
 

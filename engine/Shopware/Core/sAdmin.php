@@ -258,7 +258,7 @@ class sAdmin implements \Enlight_Hook
         $sEsd = $this->moduleManager->Basket()->sCheckForESD();
         $isMobile = $this->front->Request()->getDeviceType() === 'mobile';
 
-        if (!is_array($user)) {
+        if (!\is_array($user)) {
             $user = [];
         }
 
@@ -457,7 +457,7 @@ class sAdmin implements \Enlight_Hook
         }
 
         // If no payment is left use always the fallback payment no matter if it has any restrictions too
-        if (!count($paymentMeans)) {
+        if (!\count($paymentMeans)) {
             $paymentMeans[] = ['id' => $this->config->offsetGet('paymentdefault')];
         }
 
@@ -490,8 +490,8 @@ class sAdmin implements \Enlight_Hook
     {
         $dirs = [];
 
-        if (substr($paymentData['class'], -strlen('.php')) === '.php') {
-            $index = substr($paymentData['class'], 0, strpos($paymentData['class'], '.php'));
+        if (substr($paymentData['class'], -\strlen('.php')) === '.php') {
+            $index = substr($paymentData['class'], 0, (int) strpos($paymentData['class'], '.php'));
         } else {
             $index = $paymentData['class'];
         }
@@ -502,7 +502,7 @@ class sAdmin implements \Enlight_Hook
             ['subject' => $this]
         );
 
-        $class = array_key_exists($index, $dirs) ? $dirs[$index] : $dirs['default'];
+        $class = \array_key_exists($index, $dirs) ? $dirs[$index] : $dirs['default'];
         if (!$class) {
             throw new Enlight_Exception('sValidateStep3 #02: Payment classes dir not loaded');
         }
@@ -536,7 +536,7 @@ class sAdmin implements \Enlight_Hook
         $checkPayment = null;
         $sPaymentObject = null;
 
-        if (!count($paymentData)) {
+        if (!\count($paymentData)) {
             throw new Enlight_Exception('sValidateStep3 #01: Could not load paymentmean');
         }
         // Include management class and check input data
@@ -733,14 +733,14 @@ class sAdmin implements \Enlight_Hook
     public function sLogin($ignoreAccountMode = false)
     {
         if (
-            $this->eventManager->notifyUntil(
-                'Shopware_Modules_Admin_Login_Start',
-                [
+        $this->eventManager->notifyUntil(
+            'Shopware_Modules_Admin_Login_Start',
+            [
                 'subject' => $this,
                 'ignoreAccountMode' => $ignoreAccountMode,
                 'post' => $this->front->Request()->getPost(),
-                ]
-            )
+            ]
+        )
         ) {
             return false;
         }
@@ -771,12 +771,11 @@ class sAdmin implements \Enlight_Hook
             $sErrorMessages[] = $this->snippetManager->getNamespace('frontend/account/internalMessages')
                 ->get('LoginFailure', 'Wrong email or password');
             $this->session->offsetUnset('sUserMail');
-            $this->session->offsetUnset('sUserPassword');
             $this->session->offsetUnset('sUserId');
         }
 
         if ($sErrorMessages) {
-            list($sErrorMessages, $sErrorFlag) = $this->eventManager->filter(
+            [$sErrorMessages, $sErrorFlag] = $this->eventManager->filter(
                 'Shopware_Modules_Admin_Login_FilterResult',
                 [$sErrorMessages, $sErrorFlag],
                 ['subject' => $this, 'email' => null, 'password' => null, 'error' => $sErrorMessages]
@@ -818,7 +817,7 @@ class sAdmin implements \Enlight_Hook
         $plaintext = null;
         $encoderName = null;
 
-        if (!count($getUser)) {
+        if (!\count($getUser)) {
             $isValidLogin = false;
         } else {
             if ($isPreHashed) {
@@ -845,7 +844,7 @@ class sAdmin implements \Enlight_Hook
             $sErrorMessages = $this->failedLoginUser($addScopeSql, $email, $sErrorMessages, $password);
         }
 
-        list($sErrorMessages, $sErrorFlag) = $this->eventManager->filter(
+        [$sErrorMessages, $sErrorFlag] = $this->eventManager->filter(
             'Shopware_Modules_Admin_Login_FilterResult',
             [$sErrorMessages, $sErrorFlag],
             ['subject' => $this, 'email' => $email, 'password' => $password, 'error' => $sErrorMessages]
@@ -862,24 +861,21 @@ class sAdmin implements \Enlight_Hook
     public function sCheckUser()
     {
         if (
-            $this->eventManager->notifyUntil(
-                'Shopware_Modules_Admin_CheckUser_Start',
-                ['subject' => $this]
-            )
+        $this->eventManager->notifyUntil(
+            'Shopware_Modules_Admin_CheckUser_Start',
+            ['subject' => $this]
+        )
         ) {
             return false;
         }
 
         $userId = $this->session->offsetGet('sUserId');
         $userMail = $this->session->offsetGet('sUserMail');
-        $userPassword = $this->session->offsetGet('sUserPassword');
 
         if (empty($userMail)
-            || empty($userPassword)
             || empty($userId)
         ) {
             $this->session->offsetUnset('sUserMail');
-            $this->session->offsetUnset('sUserPassword');
             $this->session->offsetUnset('sUserId');
 
             return false;
@@ -887,14 +883,13 @@ class sAdmin implements \Enlight_Hook
 
         $sql = '
             SELECT * FROM s_user
-            WHERE password = ? AND email = ? AND id = ?
+            WHERE email = ? AND id = ?
             AND UNIX_TIMESTAMP(lastlogin) >= (UNIX_TIMESTAMP(NOW())-?)
         ';
 
         $getUser = $this->db->fetchRow(
             $sql,
             [
-                $userPassword,
                 $userMail,
                 $userId,
                 (int) ini_get('session.gc_maxlifetime'),
@@ -932,7 +927,6 @@ class sAdmin implements \Enlight_Hook
             return true;
         }
         $this->session->offsetUnset('sUserMail');
-        $this->session->offsetUnset('sUserPassword');
         $this->session->offsetUnset('sUserId');
         $this->eventManager->notify(
             'Shopware_Modules_Admin_CheckUser_Failure',
@@ -948,12 +942,11 @@ class sAdmin implements \Enlight_Hook
      * returns the provided country's translation
      * Used internally in sAdmin
      *
-     * @param array|string $country Optional array containing country data
-     *                              for translation
+     * @param array<string, mixed> $country Optional array containing country data for translation
      *
-     * @return array Translated country/ies data
+     * @return array<array-key, mixed> Translated country/ies data
      */
-    public function sGetCountryTranslation($country = '')
+    public function sGetCountryTranslation($country = [])
     {
         $languageId = $this->contextService->getShopContext()->getShop()->getId();
         $fallbackId = $this->contextService->getShopContext()->getShop()->getFallbackId();
@@ -990,12 +983,11 @@ class sAdmin implements \Enlight_Hook
      * returns the provided shipping methods translation
      * Used internally in sAdmin
      *
-     * @param array|string $dispatch Optional array containing shipping method
-     *                               data for translation
+     * @param array<string, mixed> $dispatch Optional array containing shipping method data for translation
      *
-     * @return array Translated shipping method(s) data
+     * @return array<array-key, mixed> Translated shipping method(s) data
      */
-    public function sGetDispatchTranslation($dispatch = '')
+    public function sGetDispatchTranslation($dispatch = [])
     {
         $languageId = $this->contextService->getShopContext()->getShop()->getId();
         $fallbackId = $this->contextService->getShopContext()->getShop()->getFallbackId();
@@ -1027,12 +1019,11 @@ class sAdmin implements \Enlight_Hook
      * returns the provided payment means translation
      * Used internally in sAdmin
      *
-     * @param array|string $payment Optional array containing payment mean
-     *                              data for translation
+     * @param array<string, mixed> $payment Optional array containing payment mean data for translation
      *
-     * @return array Translated payment mean(s) data
+     * @return array<array-key, mixed> Translated payment mean(s) data
      */
-    public function sGetPaymentTranslation($payment = '')
+    public function sGetPaymentTranslation($payment = [])
     {
         $languageId = $this->contextService->getShopContext()->getShop()->getId();
         $fallbackId = $this->contextService->getShopContext()->getShop()->getFallbackId();
@@ -1103,7 +1094,7 @@ class sAdmin implements \Enlight_Hook
         $countryList = array_map(function ($country) {
             $request = $this->front->Request();
             $countryId = (int) $country['id'];
-            $country['flag'] = ((int) $request->getPost('country') === $countryId || (int) $request->getPost('countryID') === $countryId);
+            $country['flag'] = (int) $request->getPost('country') === $countryId || (int) $request->getPost('countryID') === $countryId;
 
             return $country;
         }, $countryList);
@@ -1128,10 +1119,10 @@ class sAdmin implements \Enlight_Hook
     public function sSaveRegisterSendConfirmation($email)
     {
         if (
-            $this->eventManager->notifyUntil(
-                'Shopware_Modules_Admin_SaveRegisterSendConfirmation_Start',
-                ['subject' => $this, 'email' => $email]
-            )
+        $this->eventManager->notifyUntil(
+            'Shopware_Modules_Admin_SaveRegisterSendConfirmation_Start',
+            ['subject' => $this, 'email' => $email]
+        )
         ) {
             return false;
         }
@@ -1140,7 +1131,7 @@ class sAdmin implements \Enlight_Hook
             return false;
         }
 
-        /** @var Shopware\Bundle\StoreFrontBundle\Struct\Shop $shop */
+        /** @var \Shopware\Bundle\StoreFrontBundle\Struct\Shop $shop */
         $shop = $this->contextService->getShopContext()->getShop();
         $shopUrl = 'http://' . $shop->getHost() . $shop->getUrl();
 
@@ -1166,11 +1157,11 @@ class sAdmin implements \Enlight_Hook
             $context[$key] = $value;
         }
 
-        if (array_key_exists('password', $context)) {
+        if (\array_key_exists('password', $context)) {
             unset($context['password']);
         }
 
-        if (array_key_exists('passwordConfirmation', $context)) {
+        if (\array_key_exists('passwordConfirmation', $context)) {
             unset($context['passwordConfirmation']);
         }
 
@@ -1238,7 +1229,7 @@ class sAdmin implements \Enlight_Hook
                 [$orderValue['id']]
             );
 
-            if (!count($getOrderDetails)) {
+            if (!\count($getOrderDetails)) {
                 unset($getOrders[$orderKey]);
             } else {
                 $foundESD = false;
@@ -1292,12 +1283,12 @@ class sAdmin implements \Enlight_Hook
 
         if ($perPage != 0) {
             // Make Array with page-structure to render in template
-            $numberOfPages = ceil(count($getOrders) / $perPage);
+            $numberOfPages = ceil(\count($getOrders) / $perPage);
         } else {
             $numberOfPages = 0;
         }
         $offset = ($destinationPage - 1) * $perPage;
-        $orderData['orderData'] = array_slice($getOrders, $offset, $perPage, true);
+        $orderData['orderData'] = \array_slice($getOrders, $offset, $perPage, true);
         $orderData['numberOfPages'] = $numberOfPages;
         $orderData['pages'] = $this->getPagerStructure($destinationPage, $numberOfPages);
 
@@ -1396,7 +1387,7 @@ class sAdmin implements \Enlight_Hook
         $baseFile = $this->config->get('sBASEFILE');
         if ($numberOfPages > 1) {
             for ($i = 1; $i <= $numberOfPages; ++$i) {
-                $pagesStructure['numbers'][$i]['markup'] = ($i == $destinationPage);
+                $pagesStructure['numbers'][$i]['markup'] = $i == $destinationPage;
                 $pagesStructure['numbers'][$i]['value'] = $i;
                 $pagesStructure['numbers'][$i]['link'] = $baseFile . $this->moduleManager->Core()
                         ->sBuildLink($additionalParams + ['sPage' => $i]);
@@ -1475,10 +1466,10 @@ class sAdmin implements \Enlight_Hook
     public function sGetUserData()
     {
         if (
-            $this->eventManager->notifyUntil(
-                'Shopware_Modules_Admin_GetUserData_Start',
-                ['subject' => $this]
-            )
+        $this->eventManager->notifyUntil(
+            'Shopware_Modules_Admin_GetUserData_Start',
+            ['subject' => $this]
+        )
         ) {
             return false;
         }
@@ -1497,8 +1488,8 @@ class sAdmin implements \Enlight_Hook
           WHERE c.id = ?';
 
         // If user is logged in
-        $userId = $this->session->offsetGet('sUserId');
-        if (!empty($userId)) {
+        $userId = (int) $this->session->offsetGet('sUserId');
+        if ($userId !== 0) {
             $userData = $this->getUserBillingData($userId, $userData);
 
             $userData = $this->getUserCountryData($userData, $userId);
@@ -1614,16 +1605,16 @@ class sAdmin implements \Enlight_Hook
     public function executeRiskRule($rule, $user, $basket, $value, $paymentID = null)
     {
         if (
-            $event = $this->eventManager->notifyUntil(
-                'Shopware_Modules_Admin_Execute_Risk_Rule_' . $rule,
-                [
+        $event = $this->eventManager->notifyUntil(
+            'Shopware_Modules_Admin_Execute_Risk_Rule_' . $rule,
+            [
                 'rule' => $rule,
                 'user' => $user,
                 'basket' => $basket,
                 'value' => $value,
                 'paymentID' => $paymentID,
-                ]
-            )
+            ]
+        )
         ) {
             return $event->getReturn();
         }
@@ -1889,7 +1880,7 @@ class sAdmin implements \Enlight_Hook
      */
     public function sRiskORDERPOSITIONSMORE($user, $order, $value)
     {
-        return is_array($order['content']) ? count($order['content']) : $order['content'] >= $value;
+        return \is_array($order['content']) ? \count($order['content']) : $order['content'] >= $value;
     }
 
     /**
@@ -1974,19 +1965,19 @@ class sAdmin implements \Enlight_Hook
     public function sRiskCUSTOMERATTRISNOT($user, array $order, string $value)
     {
         if (!isset($user['additional']['user'])) {
-            return;
+            return true;
         }
 
         $values = explode('|', $value);
         if (!isset($values[0], $values[1])) {
-            return;
+            return true;
         }
 
         $attribute = $values[0];
         $value = $values[1];
 
         if (!isset($user['additional']['user'][$attribute])) {
-            return;
+            return true;
         }
 
         return $user['additional']['user'][$attribute] !== $value;
@@ -2123,7 +2114,7 @@ class sAdmin implements \Enlight_Hook
                 [$this->session->offsetGet('sUserId')]
             );
 
-            return count($checkOrder) <= $value;
+            return \count($checkOrder) <= $value;
         }
 
         return true;
@@ -2372,7 +2363,7 @@ class sAdmin implements \Enlight_Hook
             }
         }
 
-        if (!empty($result['code']) && in_array($result['code'], [2, 3])) {
+        if (!empty($result['code']) && \in_array($result['code'], [2, 3])) {
             $voteConfirmed = $this->front->getParam('voteConfirmed');
             $now = $this->front->getParam('optinNow');
             $now = isset($now) ? $now : (new DateTime())->format('Y-m-d H:i:s');
@@ -2470,7 +2461,7 @@ class sAdmin implements \Enlight_Hook
 
         if (is_numeric($country)) {
             $sql = $this->db->quoteInto('c.id = ?', $country);
-        } elseif (is_string($country)) {
+        } elseif (\is_string($country)) {
             $sql = $this->db->quoteInto('c.countryiso = ?', $country);
         } else {
             return false;
@@ -2505,7 +2496,7 @@ class sAdmin implements \Enlight_Hook
         }
         if (is_numeric($payment)) {
             $sql = $this->db->quoteInto('id = ?', $payment);
-        } elseif (is_string($payment)) {
+        } elseif (\is_string($payment)) {
             $sql = $this->db->quoteInto('name = ?', $payment);
         } else {
             return false;
@@ -2520,7 +2511,7 @@ class sAdmin implements \Enlight_Hook
         $this->cache['payment'][$payment]['country_surcharge'] = [];
         if (!empty($this->cache['payment'][$payment]['surchargestring'])) {
             foreach (explode(';', $this->cache['payment'][$payment]['surchargestring']) as $countrySurcharge) {
-                list($key, $value) = explode(':', $countrySurcharge);
+                [$key, $value] = explode(':', $countrySurcharge);
                 $value = (float) str_replace(',', '.', $value);
                 if (!empty($value)) {
                     $this->cache['payment'][$payment]['country_surcharge'][$key] = $value;
@@ -2539,7 +2530,7 @@ class sAdmin implements \Enlight_Hook
      * @param int $paymentID Payment mean id
      * @param int $stateId   Country state id
      *
-     * @return array|false Array with dispatch data for the basket, or false if no basket
+     * @return false|array Array with dispatch data for the basket, or false if no basket
      */
     public function sGetDispatchBasket($countryID = null, $paymentID = null, $stateId = null)
     {
@@ -2633,7 +2624,7 @@ class sAdmin implements \Enlight_Hook
         foreach ($paymentMeans as $paymentMean) {
             $paymentIDs[] = $paymentMean['id'];
         }
-        if (!in_array($paymentID, $paymentIDs)) {
+        if (!\in_array($paymentID, $paymentIDs)) {
             $paymentID = reset($paymentIDs);
         }
 
@@ -2827,7 +2818,7 @@ class sAdmin implements \Enlight_Hook
 
         $names = [];
         foreach ($dispatches as $dispatchID => $dispatch) {
-            if (in_array($dispatch['name'], $names)) {
+            if (\in_array($dispatch['name'], $names)) {
                 unset($dispatches[$dispatchID]);
             } else {
                 $names[] = $dispatch['name'];
@@ -3254,7 +3245,6 @@ class sAdmin implements \Enlight_Hook
         }
 
         $this->session->offsetSet('sUserMail', $email);
-        $this->session->offsetSet('sUserPassword', $hash);
         $this->session->offsetSet('sUserId', $userId);
         $this->session->offsetSet('sNotesQuantity', $this->moduleManager->Basket()->sCountNotes());
 
@@ -3352,10 +3342,10 @@ class sAdmin implements \Enlight_Hook
         $oldSessionId = $this->session->getId();
 
         if (
-            $this->eventManager->notifyUntil(
-                'Shopware_Modules_Admin_regenerateSessionId_Start',
-                ['subject' => $this, 'sessionId' => $oldSessionId]
-            )
+        $this->eventManager->notifyUntil(
+            'Shopware_Modules_Admin_regenerateSessionId_Start',
+            ['subject' => $this, 'sessionId' => $oldSessionId]
+        )
         ) {
             return;
         }
@@ -3464,7 +3454,7 @@ class sAdmin implements \Enlight_Hook
     /**
      * Converts an address to the array key structure of a legacy billing or shipping address
      *
-     * @return array
+     * @return array<string, mixed>
      */
     private function convertToLegacyAddressArray(Address $address)
     {
@@ -3632,7 +3622,6 @@ SQL;
         );
 
         $this->session->offsetUnset('sUserMail');
-        $this->session->offsetUnset('sUserPassword');
         $this->session->offsetUnset('sUserId');
 
         return $sErrorMessages;
@@ -3685,7 +3674,7 @@ SQL;
             [$orderValue['id']]
         );
 
-        if (!count($orderDetails)) {
+        if (!\count($orderDetails)) {
             unset($orders[$orderKey]);
 
             return $orders;
@@ -3716,7 +3705,7 @@ SQL;
                 $tmpProduct = $listProducts[$orderDetailsValue['articleordernumber']];
             }
 
-            if (!empty($tmpProduct) && is_array($tmpProduct)) {
+            if (!empty($tmpProduct) && \is_array($tmpProduct)) {
                 // Set product in activate state
                 $orderDetails[$orderDetailsKey]['active'] = 1;
                 $orderDetails[$orderDetailsKey]['article'] = $tmpProduct;
@@ -3732,7 +3721,7 @@ SQL;
                     $orderDetails[$orderDetailsKey]['referenceprice'] = $tmpProduct['referenceprice'];
                 }
 
-                if (!empty($tmpProduct['sUnit']) && is_array($tmpProduct['sUnit'])) {
+                if (!empty($tmpProduct['sUnit']) && \is_array($tmpProduct['sUnit'])) {
                     $orderDetails[$orderDetailsKey]['sUnit'] = $tmpProduct['sUnit'];
                 }
 
@@ -3825,16 +3814,22 @@ SQL;
      * Helper function for sAdmin::sGetUserData()
      * Gets user shipping data (address, payment)
      *
-     * @param int    $userId
-     * @param array  $userData
-     * @param string $countryQuery
+     *  @return array<string, mixed>
      */
-    private function getUserShippingData($userId, $userData, $countryQuery)
+    private function getUserShippingData(int $userId, array $userData, string $countryQuery): array
     {
         $entityManager = Shopware()->Container()->get(ModelManager::class);
-        $customer = $entityManager->find(Shopware\Models\Customer\Customer::class, $userId);
-        $shipping = $this->convertToLegacyAddressArray($customer->getDefaultShippingAddress());
-        $shipping['attributes'] = $this->attributeLoader->load('s_user_addresses_attributes', $shipping['id']);
+
+        $customer = $entityManager->find(Customer::class, $userId);
+        if (!$customer instanceof Customer) {
+            throw new \InvalidArgumentException('User with provided id not found');
+        }
+
+        $shipping = $this->getShippingAddressData($entityManager, $customer);
+        if ($shipping === null) {
+            throw new \UnexpectedValueException('No shipping address found for user with provided userId');
+        }
+
         $userData['shippingaddress'] = $shipping;
 
         if (!isset($userData['shippingaddress']['firstname'])) {
@@ -3910,7 +3905,7 @@ SQL;
             'SELECT * FROM s_campaigns_mailaddresses WHERE email = ?',
             [$email]
         );
-        $isEmailExists = count($result) === 0;
+        $isEmailExists = \count($result) === 0;
 
         if ($result === false) {
             $result = [
@@ -3920,7 +3915,7 @@ SQL;
             ];
 
             return $result;
-        } elseif (count($result) === 0) {
+        } elseif (\count($result) === 0) {
             $customer = $this->db->fetchOne(
                 'SELECT id FROM s_user WHERE email = ? LIMIT 1',
                 [$email]
@@ -4158,7 +4153,7 @@ SQL;
 
         // Percentage surcharge
         if (!empty($payment['debit_percent']) && (empty($dispatch) || $dispatch['surcharge_calculation'] != 2)) {
-            $amount = $this->db->fetchOne(
+            $amount = (float) $this->db->fetchOne(
                 'SELECT SUM(quantity*price) AS amount
                 FROM s_order_basket
                 WHERE sessionID = ? GROUP BY sessionID',
@@ -4318,5 +4313,39 @@ SQL;
             ->groupBy('b.sessionID');
 
         return $queryBuilder;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function getShippingAddressData(ModelManager $entityManager, Customer $customer): ?array
+    {
+        $shippingAddress = null;
+
+        if ($this->session->offsetExists('checkoutShippingAddressId')) {
+            $shippingId = (int) $this->session->offsetGet('checkoutShippingAddressId');
+            $shippingAddress = $entityManager->find(Address::class, $shippingId);
+        }
+
+        if ($shippingAddress === null) {
+            $shippingAddress = $customer->getDefaultShippingAddress();
+        }
+
+        if (!$shippingAddress instanceof Address) {
+            return null;
+        }
+
+        if ($shippingAddress->getCustomer()->getId() !== $customer->getId()) {
+            throw new \UnexpectedValueException('Address did not match the user');
+        }
+
+        $shippingAddressArray = $this->convertToLegacyAddressArray($shippingAddress);
+
+        $shippingAddressArray['attributes'] = $this->attributeLoader->load(
+            's_user_addresses_attributes',
+            $shippingAddress->getid()
+        );
+
+        return $shippingAddressArray;
     }
 }

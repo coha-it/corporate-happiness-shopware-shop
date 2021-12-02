@@ -41,14 +41,13 @@ class Shopware_Controllers_Backend_Notification extends Shopware_Controllers_Bac
             //order data
             $order = (array) $this->Request()->getParam('sort', []);
 
-            /** @var \Shopware\Models\Article\Repository $repository */
-            $repository = Shopware()->Models()->getRepository(Article::class);
+            $repository = $this->get('models')->getRepository(Article::class);
             $dataQuery = $repository->getArticlesWithRegisteredNotificationsQuery($filter, $offset, $limit, $order);
             $data = $dataQuery->getArrayResult();
 
-            // manually calc the totalAmount cause the paginate(Shopware()->Models()->getQueryCount) doesn't work with this query
+            // manually calc the totalAmount cause the paginate($this->get('models')->getQueryCount) doesn't work with this query
             $dataQuery->setFirstResult(0);
-            $totalCount = count($dataQuery->getArrayResult());
+            $totalCount = \count($dataQuery->getArrayResult());
 
             $summaryQuery = $repository->getArticlesWithRegisteredNotificationsQuery($filter, $offset, $limit, $order, true);
             $summaryData = $summaryQuery->getOneOrNullResult(\Doctrine\ORM\AbstractQuery::HYDRATE_ARRAY);
@@ -83,10 +82,9 @@ class Shopware_Controllers_Backend_Notification extends Shopware_Controllers_Bac
             //order data
             $order = (array) $this->Request()->getParam('sort', []);
 
-            /** @var \Shopware\Models\Article\Repository $repository */
-            $repository = Shopware()->Models()->getRepository(Article::class);
+            $repository = $this->get('models')->getRepository(Article::class);
             $dataQuery = $repository->getNotificationCustomerByArticleQuery($productOrderNumber, $filter, $offset, $limit, $order);
-            $totalCount = Shopware()->Models()->getQueryCount($dataQuery);
+            $totalCount = $this->get('models')->getQueryCount($dataQuery);
             $data = $dataQuery->getArrayResult();
 
             $this->View()->assign(['success' => true, 'data' => $data, 'totalCount' => $totalCount]);

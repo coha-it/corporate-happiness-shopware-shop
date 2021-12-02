@@ -24,7 +24,10 @@
 
 namespace Shopware\Bundle\EsBackendBundle;
 
+use DateTime;
 use Elasticsearch\Client;
+use IteratorAggregate;
+use Shopware\Bundle\AttributeBundle\Service\TypeMappingInterface;
 use Shopware\Bundle\ESIndexingBundle\Console\EvaluationHelperInterface;
 use Shopware\Bundle\ESIndexingBundle\Console\ProgressHelperInterface;
 use Shopware\Bundle\ESIndexingBundle\Struct\IndexConfiguration;
@@ -34,7 +37,7 @@ class EsBackendIndexer
     /**
      * @deprecated Use IndexNameBuilderInterface instead
      */
-    const INDEX_NAME = 'backend_index';
+    public const INDEX_NAME = 'backend_index';
 
     /**
      * @var Client
@@ -42,7 +45,7 @@ class EsBackendIndexer
     private $client;
 
     /**
-     * @var EsAwareRepository[]|\IteratorAggregate
+     * @var EsAwareRepository[]|IteratorAggregate
      */
     private $repositories;
 
@@ -58,7 +61,7 @@ class EsBackendIndexer
 
     public function __construct(
         Client $client,
-        \IteratorAggregate $repositories,
+        IteratorAggregate $repositories,
         EvaluationHelperInterface $evaluation,
         IndexFactoryInterface $indexFactory
     ) {
@@ -101,15 +104,15 @@ class EsBackendIndexer
         foreach ($data as $row) {
             $documents[] = ['index' => ['_id' => $row['id']]];
             foreach ($row as $key => &$value) {
-                if ($value instanceof \DateTime) {
-                    $value = $value->format('Y-m-d');
+                if ($value instanceof DateTime) {
+                    $value = $value->format('Y-m-d H:i:s');
                 }
 
-                if (in_array($key, $booleanFields, true)) {
+                if (\in_array($key, $booleanFields, true)) {
                     $value = (bool) $value;
                 }
 
-                if (is_string($value)) {
+                if (\is_string($value)) {
                     $value = mb_strtolower($value);
                 }
             }
@@ -176,7 +179,7 @@ class EsBackendIndexer
         while ($ids = $iterator->fetch()) {
             $this->indexEntities($index, $repository, $ids);
 
-            $progress->advance(count($ids));
+            $progress->advance(\count($ids));
         }
 
         $this->client->indices()->refresh(['index' => $index]);
@@ -220,14 +223,14 @@ class EsBackendIndexer
     {
         $mapping = [
             'properties' => [
-                'id' => ['type' => 'long'],
+                'id' => TypeMappingInterface::MAPPING_LONG_FIELD,
             ],
         ];
 
         $own = $entity->getMapping();
 
         $merged = $mapping;
-        if (is_array($own)) {
+        if (\is_array($own)) {
             $merged = array_replace_recursive($mapping, $own);
         }
 

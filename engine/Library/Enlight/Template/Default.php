@@ -35,25 +35,25 @@ class Enlight_Template_Default extends Smarty_Internal_Template
     /**
      * Constant to overwrite smarty blocks.
      */
-    const BLOCK_REPLACE = 'replace';
+    public const BLOCK_REPLACE = 'replace';
 
     /**
      * Constant to add a content before the smarty block
      */
-    const BLOCK_APPEND = 'append';
+    public const BLOCK_APPEND = 'append';
 
     /**
      * Constant to add a content after the smarty block
      */
-    const BLOCK_PREPEND = 'prepend';
+    public const BLOCK_PREPEND = 'prepend';
 
     /**
      * Assigns a smarty variable.
      *
      * @param array|string $tpl_var the template variable name(s)
-     * @param mixed        $value   the value to assign
+     * @param mixed|null   $value   the value to assign
      * @param bool         $nocache if true any output of this variable will be not cached
-     * @param bool         $scope   the scope the variable will have  (local,parent or root)
+     * @param int|null     $scope   the scope the variable will have  (local,parent or root)
      *
      * @return Enlight_Template_Default
      */
@@ -114,8 +114,6 @@ class Enlight_Template_Default extends Smarty_Internal_Template
     /**
      * Extends a template block by name.
      *
-     * @param        $spec
-     * @param        $content
      * @param string $mode
      */
     public function extendsBlock($spec, $content, $mode = self::BLOCK_REPLACE)
@@ -168,7 +166,7 @@ class Enlight_Template_Default extends Smarty_Internal_Template
      */
     public function setCacheId($cacheId = null)
     {
-        if (is_array($cacheId)) {
+        if (\is_array($cacheId)) {
             $cacheId = implode('|', $cacheId);
         }
         $this->cache_id = (string) $cacheId;
@@ -185,7 +183,7 @@ class Enlight_Template_Default extends Smarty_Internal_Template
      */
     public function addCacheId($cacheId)
     {
-        if (is_array($cacheId)) {
+        if (\is_array($cacheId)) {
             $cacheId = implode('|', $cacheId);
         } else {
             $cacheId = (string) $cacheId;

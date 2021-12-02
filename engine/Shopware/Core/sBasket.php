@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Shopware 5
  * Copyright (c) shopware AG
@@ -23,8 +24,13 @@
  */
 
 use Doctrine\DBAL\Connection;
+use Shopware\Bundle\CartBundle\CartPositionsMode;
 use Shopware\Bundle\OrderBundle\Service\OrderListProductServiceInterface;
 use Shopware\Bundle\StoreFrontBundle;
+use Shopware\Bundle\StoreFrontBundle\Gateway\ListProductGatewayInterface;
+use Shopware\Bundle\StoreFrontBundle\Service\AdditionalTextServiceInterface;
+use Shopware\Bundle\StoreFrontBundle\Service\ContextServiceInterface;
+use Shopware\Bundle\StoreFrontBundle\Service\ListProductServiceInterface;
 use Shopware\Bundle\StoreFrontBundle\Struct\ListProduct;
 use Shopware\Components\Cart\BasketHelperInterface;
 use Shopware\Components\Cart\CartOrderNumberProviderInterface;
@@ -103,12 +109,12 @@ class sBasket implements \Enlight_Hook
     private $moduleManager;
 
     /**
-     * @var StoreFrontBundle\Service\ContextServiceInterface
+     * @var ContextServiceInterface
      */
     private $contextService;
 
     /**
-     * @var StoreFrontBundle\Service\AdditionalTextServiceInterface
+     * @var AdditionalTextServiceInterface
      */
     private $additionalTextService;
 
@@ -154,8 +160,8 @@ class sBasket implements \Enlight_Hook
         Enlight_Controller_Front $front = null,
         Shopware_Components_Modules $moduleManager = null,
         sSystem $systemModule = null,
-        StoreFrontBundle\Service\ContextServiceInterface $contextService = null,
-        StoreFrontBundle\Service\AdditionalTextServiceInterface $additionalTextService = null
+        ContextServiceInterface $contextService = null,
+        AdditionalTextServiceInterface $additionalTextService = null
     ) {
         $this->db = $db ?: Shopware()->Db();
         $this->eventManager = $eventManager ?: Shopware()->Events();
@@ -168,18 +174,18 @@ class sBasket implements \Enlight_Hook
 
         $this->contextService = $contextService;
         $this->additionalTextService = $additionalTextService;
-        $this->connection = Shopware()->Container()->get(\Doctrine\DBAL\Connection::class);
+        $this->connection = Shopware()->Container()->get(Connection::class);
 
         if ($this->contextService === null) {
-            $this->contextService = Shopware()->Container()->get(\Shopware\Bundle\StoreFrontBundle\Service\ContextServiceInterface::class);
+            $this->contextService = Shopware()->Container()->get(ContextServiceInterface::class);
         }
 
         if ($this->additionalTextService === null) {
-            $this->additionalTextService = Shopware()->Container()->get(\Shopware\Bundle\StoreFrontBundle\Service\AdditionalTextServiceInterface::class);
+            $this->additionalTextService = Shopware()->Container()->get(AdditionalTextServiceInterface::class);
         }
 
         if ($this->basketHelper === null) {
-            $this->basketHelper = Shopware()->Container()->get(\Shopware\Components\Cart\BasketHelperInterface::class);
+            $this->basketHelper = Shopware()->Container()->get(BasketHelperInterface::class);
         }
 
         $this->proportionalTaxCalculation = $this->config->get('proportionalTaxCalculation');
@@ -289,19 +295,19 @@ class sBasket implements \Enlight_Hook
      */
     public function sGetAmountRestrictedArticles($articles, $supplier)
     {
-        if (!is_array($articles) && empty($supplier)) {
+        if (!\is_array($articles) && empty($supplier)) {
             return $this->sGetAmountArticles();
         }
 
         $extraConditions = [];
-        if (!empty($articles) && is_array($articles)) {
+        if (!empty($articles) && \is_array($articles)) {
             $extraConditions[] = $this->db->quoteInto('ordernumber IN (?) ', $articles);
         }
         if (!empty($supplier)) {
             $extraConditions[] = $this->db->quoteInto('s_articles.supplierID = ?', $supplier);
         }
 
-        if (count($extraConditions)) {
+        if (\count($extraConditions)) {
             $sqlExtra = ' AND ( ' . implode(' OR ', $extraConditions) . ' ) ';
         } else {
             $sqlExtra = '';
@@ -335,7 +341,7 @@ class sBasket implements \Enlight_Hook
         $voucher = $this->sGetVoucher();
         if ($voucher) {
             $this->sDeleteArticle('voucher');
-            if (is_array($this->sAddVoucher($voucher['code']))) {
+            if (\is_array($this->sAddVoucher($voucher['code']))) {
                 $this->session->offsetSet('sBasketVoucherRemovedInCart', true);
             }
         }
@@ -366,7 +372,7 @@ class sBasket implements \Enlight_Hook
         );
 
         // No discounts
-        if (!count($getDiscounts)) {
+        if (!\count($getDiscounts)) {
             return;
         }
 
@@ -738,7 +744,7 @@ SQL;
             $voucherCodeDetails = $this->db->fetchRow(
                 'SELECT id, voucherID, code as vouchercode FROM s_emarketing_voucher_codes c WHERE c.code = ? AND c.cashed != 1 LIMIT 1;',
                 [$voucherCode]
-            );
+            ) ?: [];
 
             if ($voucherCodeDetails && $voucherCodeDetails['voucherID']) {
                 $voucherDetails = $this->db->fetchRow(
@@ -752,10 +758,10 @@ SQL;
                       OR valid_to is NULL
                 ) LIMIT 1',
                     [(int) $voucherCodeDetails['voucherID']]
-                );
+                ) ?: [];
                 unset($voucherCodeDetails['voucherID']);
                 $voucherDetails = array_merge($voucherCodeDetails, $voucherDetails);
-                $individualCode = ($voucherDetails && $voucherDetails['description']);
+                $individualCode = $voucherDetails && $voucherDetails['description'];
             }
         }
         $streams = array_filter(explode('|', $voucherDetails['customer_stream_ids']));
@@ -1544,12 +1550,12 @@ SQL;
 
         $numbers = array_column($notes, 'ordernumber');
 
-        $context = Shopware()->Container()->get(\Shopware\Bundle\StoreFrontBundle\Service\ContextServiceInterface::class)->getShopContext();
+        $context = Shopware()->Container()->get(ContextServiceInterface::class)->getShopContext();
 
-        $products = Shopware()->Container()->get(\Shopware\Bundle\StoreFrontBundle\Service\ListProductServiceInterface::class)
+        $products = Shopware()->Container()->get(ListProductServiceInterface::class)
             ->getList($numbers, $context);
 
-        $products = Shopware()->Container()->get(\Shopware\Bundle\StoreFrontBundle\Service\AdditionalTextServiceInterface::class)
+        $products = Shopware()->Container()->get(AdditionalTextServiceInterface::class)
             ->buildAdditionalTextLists($products, $context);
 
         $promotions = [];
@@ -1716,7 +1722,7 @@ SQL;
                 $additionalInfo = $cartItem->getAdditionalInfo();
                 $updatedPrice = $cartItem->getUpdatedPrice();
 
-                if (in_array($customerGroupId, $additionalInfo['blocked_customer_groups'])) {
+                if (\in_array($customerGroupId, $additionalInfo['blocked_customer_groups'])) {
                     // if blocked for current customer group, delete product from basket
                     $this->sDeleteArticle($id);
                     $errors = true;
@@ -1938,6 +1944,8 @@ SQL;
         if (!$product) {
             return false;
         }
+
+        $quantity = max($quantity, (int) $product['minpurchase']);
 
         $chkBasketForProduct = $this->checkIfProductIsInBasket(
             $product['articleID'],
@@ -2308,7 +2316,7 @@ SQL;
                 ]
             );
 
-            if (!$voucherDetails['modus'] && count($queryVoucher) >= $voucherDetails['numorder']) {
+            if (!$voucherDetails['modus'] && \count($queryVoucher) >= $voucherDetails['numorder']) {
                 $sErrorMessages[] = $this->snippetManager
                     ->getNamespace('frontend/basket/internalMessages')->get(
                         'VoucherFailureAlreadyUsed',
@@ -2400,7 +2408,7 @@ SQL;
 
         if (!empty($voucherDetails['restrictarticles'])) {
             $restrictedProducts = array_filter(explode(';', $voucherDetails['restrictarticles']));
-            if (count($restrictedProducts) === 0) {
+            if (\count($restrictedProducts) === 0) {
                 $restrictedProducts[] = $voucherDetails['restrictarticles'];
             }
 
@@ -2584,7 +2592,7 @@ SQL;
                 ['subject' => $this, 'getArticles' => $getProducts]
             );
 
-            $getProducts[$key]['shippinginfo'] = (empty($getProducts[$key]['modus']));
+            $getProducts[$key]['shippinginfo'] = empty($getProducts[$key]['modus']);
 
             if (!empty($getProducts[$key]['releasedate'])
                 && strtotime($getProducts[$key]['releasedate']) <= time()
@@ -2613,7 +2621,7 @@ SQL;
             }
 
             // Get additional basket meta data for each product
-            if ($getProducts[$key]['modus'] == 0) {
+            if ($getProducts[$key]['modus'] == CartPositionsMode::PRODUCT) {
                 if (isset($additionalDetails[$getProducts[$key]['ordernumber']])) {
                     $getProducts[$key]['additional_details'] = $additionalDetails[$getProducts[$key]['ordernumber']];
                     $getProducts[$key]['shippingtime'] = $additionalDetails[$getProducts[$key]['ordernumber']]['shippingtime'];
@@ -2679,16 +2687,18 @@ SQL;
                     if ($this->sSYSTEM->sUSERGROUPDATA['basketdiscount'] && $this->sCheckForDiscount()) {
                         $discount += ($getProducts[$key]['amountWithTax'] / 100 * $this->sSYSTEM->sUSERGROUPDATA['basketdiscount']);
                     }
-                } elseif ($getProducts[$key]['modus'] == 3) {
+                } elseif ($getProducts[$key]['modus'] == CartPositionsMode::CUSTOMER_GROUP_DISCOUNT) {
                     $getProducts[$key]['amountWithTax'] = round(1 * (round($price, 2) / 100 * (100 + $tax)), 2);
                 // Basket discount
-                } elseif ($getProducts[$key]['modus'] == 2) {
+                } elseif ($getProducts[$key]['modus'] == CartPositionsMode::VOUCHER) {
                     $getProducts[$key]['amountWithTax'] = round(1 * (round($price, 2) / 100 * (100 + $tax)), 2);
 
                     if ($this->sSYSTEM->sUSERGROUPDATA['basketdiscount'] && $this->sCheckForDiscount()) {
                         $discount += ($getProducts[$key]['amountWithTax'] / 100 * ($this->sSYSTEM->sUSERGROUPDATA['basketdiscount']));
                     }
-                } elseif ($getProducts[$key]['modus'] == 4 || $getProducts[$key]['modus'] == 10) {
+                } elseif ($getProducts[$key]['modus'] == CartPositionsMode::PAYMENT_SURCHARGE_OR_DISCOUNT
+                                 || $getProducts[$key]['modus'] == CartPositionsMode::SWAG_BUNDLE_DISCOUNT
+                ) {
                     $getProducts[$key]['amountWithTax'] = round(1 * ($price / 100 * (100 + $tax)), 2);
                     if ($this->sSYSTEM->sUSERGROUPDATA['basketdiscount'] && $this->sCheckForDiscount()) {
                         $discount += ($getProducts[$key]['amountWithTax'] / 100 * $this->sSYSTEM->sUSERGROUPDATA['basketdiscount']);
@@ -2713,8 +2723,7 @@ SQL;
                 $getProducts[$key]['itemInfoArray']['price'] = $this->moduleManager->Articles()->sFormatPrice($getProducts[$key]['amount'] / $quantity * $getProducts[$key]['purchaseunit']);
             }
 
-            if ($getProducts[$key]['modus'] == 2) {
-                // Vouchers
+            if ($getProducts[$key]['modus'] == CartPositionsMode::VOUCHER) {
                 if (!$this->sSYSTEM->sUSERGROUPDATA['tax'] && $this->sSYSTEM->sUSERGROUPDATA['id']) {
                     $getProducts[$key]['amountnet'] = $quantity * round($price, 2);
                 } else {
@@ -2758,8 +2767,7 @@ SQL;
 
             if (!empty($getProducts[$key]['additional_details']['image'])) {
                 $getProducts[$key]['image'] = $this->getBasketImage($getProducts[$key]['additional_details']['image']);
-            } elseif ((int) $getProducts[$key]['modus'] === 1 && !empty($getProducts[$key]['articleID'])) {
-                // Premium product image
+            } elseif ((int) $getProducts[$key]['modus'] === CartPositionsMode::PREMIUM_PRODUCT && !empty($getProducts[$key]['articleID'])) {
                 $getProducts[$key]['image'] = $this->moduleManager->Articles()
                     ->sGetArticlePictures(
                         $getProducts[$key]['articleID'],
@@ -2771,7 +2779,7 @@ SQL;
 
             // Links to details, basket
             $getProducts[$key]['linkDetails'] = $this->config->get('sBASEFILE') . '?sViewport=detail&sArticle=' . $getProducts[$key]['articleID'];
-            if ($getProducts[$key]['modus'] == 2) {
+            if ($getProducts[$key]['modus'] == CartPositionsMode::VOUCHER) {
                 $getProducts[$key]['linkDelete'] = $this->config->get('sBASEFILE') . '?sViewport=basket&sDelete=voucher';
             } else {
                 $getProducts[$key]['linkDelete'] = $this->config->get('sBASEFILE') . '?sViewport=basket&sDelete=' . $getProducts[$key]['id'];
@@ -2893,7 +2901,7 @@ SQL;
         );
 
         $additionalInformation = $stmt->fetchAll(\PDO::FETCH_GROUP | \PDO::FETCH_UNIQUE);
-        $products = Shopware()->Container()->get(\Shopware\Bundle\StoreFrontBundle\Gateway\ListProductGatewayInterface::class)->getList(
+        $products = Shopware()->Container()->get(ListProductGatewayInterface::class)->getList(
             array_column($additionalInformation, 'ordernumber'),
             $this->contextService->getShopContext()
         );
@@ -2961,7 +2969,7 @@ SQL;
     /**
      * Gets product base price info for sUpdateArticle
      *
-     * @param \Shopware\Components\Cart\Struct\CartItemStruct[] $cartItems
+     * @param CartItemStruct[] $cartItems
      *
      * @throws \Enlight_Event_Exception
      */
@@ -3209,6 +3217,7 @@ SQL;
             SELECT s_articles.id AS articleID, s_articles.main_detail_id, name AS articleName, taxID,
               additionaltext, s_articles_details.shippingfree, s_articles_details.laststock, instock,
               s_articles_details.id as articledetailsID, ordernumber,
+              s_articles_details.minpurchase,
               s_articles.configurator_set_id
             FROM s_articles, s_articles_details
             WHERE s_articles_details.ordernumber = ?
@@ -3254,7 +3263,7 @@ SQL;
 
         if ($product['configurator_set_id'] > 0) {
             $context = $this->contextService->getShopContext();
-            $productStruct = Shopware()->Container()->get(\Shopware\Bundle\StoreFrontBundle\Service\ListProductServiceInterface::class)
+            $productStruct = Shopware()->Container()->get(ListProductServiceInterface::class)
                 ->get($product['ordernumber'], $context);
             if ($productStruct === null) {
                 return false;
@@ -3266,12 +3275,7 @@ SQL;
         return $product;
     }
 
-    /**
-     * @param int $quantity
-     *
-     * @return int
-     */
-    private function getBasketQuantity($quantity, array $basketProduct, array $product)
+    private function getBasketQuantity(int $quantity, array $basketProduct, array $product): int
     {
         $newQuantity = ($quantity + $basketProduct['quantity']) ?: 0;
 
@@ -3279,6 +3283,6 @@ SQL;
             return (int) $product['instock'];
         }
 
-        return $newQuantity;
+        return (int) $newQuantity;
     }
 }

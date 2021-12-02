@@ -24,8 +24,10 @@
 
 namespace Shopware\Bundle\CustomerSearchBundleDBAL\Indexing;
 
+use DateTime;
 use Doctrine\DBAL\Connection;
 use Enlight\Event\SubscriberInterface;
+use PDO;
 use Shopware\Bundle\ESIndexingBundle\LastIdQuery;
 use Shopware\Components\Api\Resource\CustomerStream;
 use Shopware\Components\CustomerStream\StreamIndexerInterface;
@@ -60,6 +62,9 @@ class CronJobSubscriber implements SubscriberInterface
         $this->customerStream = $customerStream;
     }
 
+    /**
+     * @return array<string, string>
+     */
     public static function getSubscribedEvents()
     {
         return [
@@ -67,6 +72,9 @@ class CronJobSubscriber implements SubscriberInterface
         ];
     }
 
+    /**
+     * @return bool
+     */
     public function refresh()
     {
         $helper = new CronJobProgressHelper();
@@ -89,7 +97,9 @@ class CronJobSubscriber implements SubscriberInterface
 
         foreach ($streams as $stream) {
             if ($stream['freeze_up']) {
-                $stream['freeze_up'] = new \DateTime($stream['freeze_up']);
+                $stream['freeze_up'] = new DateTime($stream['freeze_up']);
+            } else {
+                $stream['freeze_up'] = null;
             }
             $result = $this->customerStream->updateFrozenState($stream['id'], $stream['freeze_up'], $stream['conditions']);
             if ($result) {
@@ -106,19 +116,16 @@ class CronJobSubscriber implements SubscriberInterface
         return true;
     }
 
-    /**
-     * @return array
-     */
-    private function fetchStreams()
+    private function fetchStreams(): array
     {
         $query = $this->connection->createQueryBuilder();
         $query->select(['id', 'name', 'conditions', 'freeze_up', 'static']);
         $query->from('s_customer_streams', 'streams');
 
-        return $query->execute()->fetchAll(\PDO::FETCH_ASSOC);
+        return $query->execute()->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    private function createQuery()
+    private function createQuery(): LastIdQuery
     {
         $query = $this->connection->createQueryBuilder();
         $query->select(['id', 'id']);

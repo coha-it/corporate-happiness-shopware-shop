@@ -70,30 +70,30 @@ class Shopware_Controllers_Backend_Login extends Shopware_Controllers_Backend_Ex
         $result = $auth->login($username, $password);
         $user = $auth->getIdentity();
         if (!empty($user->roleID)) {
-            $user->role = Shopware()->Models()->find(
+            $user->role = $this->get('models')->find(
                 Role::class,
                 $user->roleID
             );
         }
         if ($user && ($locale = $this->Request()->get('locale')) !== null) {
-            $user->locale = Shopware()->Models()->getRepository(
+            $user->locale = $this->get('models')->getRepository(
                 Locale::class
             )->find($locale);
         }
         if (!isset($user->locale) && !empty($user->localeID)) {
-            $user->locale = Shopware()->Models()->find(
+            $user->locale = $this->get('models')->find(
                 Locale::class,
                 $user->localeID
             );
         }
         if ($user && !isset($user->locale)) {
-            $user->locale = Shopware()->Models()->getRepository(
+            $user->locale = $this->get('models')->getRepository(
                 Locale::class
             )->find($this->getPlugin()->getDefaultLocale());
         }
 
         $messages = $result->getMessages();
-        /* @var Zend_Date $lockedUntil */
+
         if (isset($messages['lockedUntil'])) {
             $lockedUntil = isset($messages['lockedUntil']) ? $messages['lockedUntil'] : null;
             $lockedUntil = $lockedUntil->toString(Zend_Date::ISO_8601);
@@ -154,7 +154,7 @@ class Shopware_Controllers_Backend_Login extends Shopware_Controllers_Backend_Ex
         $this->View()->assign([
             'success' => true,
             'data' => $data,
-            'total' => count($data),
+            'total' => \count($data),
         ]);
     }
 

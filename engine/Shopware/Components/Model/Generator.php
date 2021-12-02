@@ -25,23 +25,28 @@
 namespace Shopware\Components\Model;
 
 use Doctrine\DBAL\Schema\AbstractSchemaManager;
+use Exception;
+use RecursiveDirectoryIterator;
+use RecursiveIteratorIterator;
+use RuntimeException;
+use SplFileInfo;
 
 class Generator
 {
     /**
      * Definition of the "create target directory failure" exception.
      */
-    const CREATE_TARGET_DIRECTORY_FAILED = 1;
+    public const CREATE_TARGET_DIRECTORY_FAILED = 1;
 
     /**
      * Contains the standard php file header tag
      */
-    const PHP_FILE_HEADER = '<?php';
+    public const PHP_FILE_HEADER = '<?php';
 
     /**
      * Contains the AGPLv3 licence
      */
-    const SHOPWARE_LICENCE = '
+    public const SHOPWARE_LICENCE = '
 /**
  * Shopware 5
  * Copyright (c) shopware AG
@@ -69,7 +74,7 @@ class Generator
     /**
      * Contains the required namespaces for a shopware model
      */
-    const NAMESPACE_HEADER = '
+    public const NAMESPACE_HEADER = '
 namespace Shopware\Models\Attribute;
 use Shopware\Components\Model\ModelEntity,
     Doctrine\ORM\Mapping AS ORM,
@@ -80,7 +85,7 @@ use Shopware\Components\Model\ModelEntity,
     /**
      * Definition of the standard shopware model class header.
      */
-    const CLASS_HEADER = '
+    public const CLASS_HEADER = '
 /**
  * @ORM\Entity
  * @ORM\Table(name="%tableName%")
@@ -92,7 +97,7 @@ class %className% extends ModelEntity
     /**
      * Definition of the standard shopware model property
      */
-    const COLUMN_PROPERTY = '
+    public const COLUMN_PROPERTY = '
     /**
      * @var %propertyType% $%propertyName%
     %ID%
@@ -104,13 +109,13 @@ class %className% extends ModelEntity
     /**
      * Definition of the standard shopware id property.
      */
-    const PRIMARY_KEY = ' * @ORM\Id
+    public const PRIMARY_KEY = ' * @ORM\Id
      * @ORM\GeneratedValue(strategy="IDENTITY")';
 
     /**
      * Definition of a standard shopware association property.
      */
-    const ASSOCIATION_PROPERTY = '
+    public const ASSOCIATION_PROPERTY = '
     /**
      * @var \%foreignClass%
      *
@@ -125,7 +130,7 @@ class %className% extends ModelEntity
     /**
      * Definition of a constructor for initializing properties.
      */
-    const CONSTRUCTOR = '
+    public const CONSTRUCTOR = '
     public function __construct()
     {
         %propertyInitializations%
@@ -136,7 +141,7 @@ class %className% extends ModelEntity
      * Definition of the standard shopware getter and setter
      * functions of a single model column property.
      */
-    const COLUMN_FUNCTIONS = '
+    public const COLUMN_FUNCTIONS = '
     public function get%upperPropertyName%()
     {
         return $this->%lowerPropertyName%;
@@ -153,7 +158,7 @@ class %className% extends ModelEntity
      * Definition of the standard shopware getter and setter
      * functions of a single model association property.
      */
-    const ASSOCIATION_FUNCTIONS = '
+    public const ASSOCIATION_FUNCTIONS = '
     public function get%upperPropertyName%()
     {
         return $this->%lowerPropertyName%;
@@ -267,7 +272,7 @@ class %className% extends ModelEntity
      *
      * @param string[] $tableNames
      *
-     * @throws \Exception
+     * @throws Exception
      *
      * @return array
      */
@@ -279,13 +284,13 @@ class %className% extends ModelEntity
 
         try {
             $this->createTargetDirectory($this->getPath());
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return ['success' => false, 'error' => self::CREATE_TARGET_DIRECTORY_FAILED, 'message' => $e->getMessage()];
         }
 
         $errors = [];
         foreach ($this->getSchemaManager()->listTableNames() as $tableName) {
-            if (!empty($tableNames) && !in_array($tableName, $tableNames)) {
+            if (!empty($tableNames) && !\in_array($tableName, $tableNames)) {
                 continue;
             }
 
@@ -309,7 +314,7 @@ class %className% extends ModelEntity
      * @param \Doctrine\DBAL\Schema\Table $table
      * @param string                      $sourceCode
      *
-     * @throws \Exception
+     * @throws Exception
      *
      * @return bool
      */
@@ -329,7 +334,7 @@ class %className% extends ModelEntity
         $file = $this->getPath() . $className . '.php';
 
         if (file_exists($file) && !is_writable($file)) {
-            throw new \Exception(sprintf('File: "%s" isn\'t writable, please check the file permissions for this model!', $file), 501);
+            throw new Exception(sprintf('File: "%s" isn\'t writable, please check the file permissions for this model!', $file), 501);
         }
 
         $result = file_put_contents($file, $sourceCode);
@@ -364,14 +369,14 @@ class %className% extends ModelEntity
      */
     public function createTableMapping()
     {
-        $iterator = new \RecursiveIteratorIterator(
-            new \RecursiveDirectoryIterator($this->getModelPath()),
-            \RecursiveIteratorIterator::SELF_FIRST
+        $iterator = new RecursiveIteratorIterator(
+            new RecursiveDirectoryIterator($this->getModelPath()),
+            RecursiveIteratorIterator::SELF_FIRST
         );
 
         $classes = [];
 
-        /** @var \SplFileInfo $file */
+        /** @var SplFileInfo $file */
         foreach ($iterator as $file) {
             $extension = pathinfo($file->getFilename(), PATHINFO_EXTENSION);
             if ($extension !== 'php' || $file->isDir()) {
@@ -383,7 +388,7 @@ class %className% extends ModelEntity
             // preg match for the model class name!
             $matches = [];
             preg_match('/class\s+([a-zA-Z0-9_]+)/', $content, $matches);
-            if (count($matches) === 0) {
+            if (\count($matches) === 0) {
                 continue;
             }
             $className = $matches[1];
@@ -391,7 +396,7 @@ class %className% extends ModelEntity
             // preg match for the model namespace!
             $matches = [];
             preg_match('/namespace\s+(.*);/', $content, $matches);
-            if (count($matches) === 0) {
+            if (\count($matches) === 0) {
                 continue;
             }
             $namespace = $matches[1];
@@ -401,7 +406,7 @@ class %className% extends ModelEntity
             preg_match('/@ORM\\\Table\\(name="(.*)"\\)/', $content, $matches);
 
             // Repository has no table annotation
-            if (count($matches) === 0) {
+            if (\count($matches) === 0) {
                 continue;
             }
             $tableName = $matches[1];
@@ -430,10 +435,10 @@ class %className% extends ModelEntity
     {
         if (!is_dir($dir)) {
             if (@mkdir($dir, 0777, true) === false && !is_dir($dir)) {
-                throw new \RuntimeException(sprintf("Unable to create directory (%s)\n", $dir));
+                throw new RuntimeException(sprintf("Unable to create directory (%s)\n", $dir));
             }
         } elseif (!is_writable($dir)) {
-            throw new \RuntimeException(sprintf("Unable to write in directory (%s)\n", $dir));
+            throw new RuntimeException(sprintf("Unable to write in directory (%s)\n", $dir));
         }
     }
 
@@ -511,7 +516,7 @@ class %className% extends ModelEntity
             $className = $this->getClassNameOfTableName($parentClass);
 
         // If the passed table is not an attribute table, we have to check if the table is already declared
-        } elseif (array_key_exists($table->getName(), $this->getTableMapping())) {
+        } elseif (\array_key_exists($table->getName(), $this->getTableMapping())) {
             // If this is the case we will use the already declared class name
             $className = $this->tableMapping[$table->getName()]['class'];
         }
@@ -534,7 +539,7 @@ class %className% extends ModelEntity
      */
     protected function getClassNameOfTableName($tableName)
     {
-        if (!array_key_exists($tableName, $this->tableMapping)) {
+        if (!\array_key_exists($tableName, $this->tableMapping)) {
             return '';
         }
 
@@ -760,7 +765,7 @@ class %className% extends ModelEntity
     {
         $source = self::ASSOCIATION_PROPERTY;
 
-        if (!array_key_exists($foreignKey->getForeignTableName(), $this->tableMapping)) {
+        if (!\array_key_exists($foreignKey->getForeignTableName(), $this->tableMapping)) {
             return '';
         }
 
@@ -803,7 +808,7 @@ class %className% extends ModelEntity
             // Make sure not to set default values for foreign key properties
             $isForeignKeyColumn = false;
             foreach ($table->getForeignKeys() as $foreignKey) {
-                if (in_array($column->getName(), $foreignKey->getLocalColumns())) {
+                if (\in_array($column->getName(), $foreignKey->getLocalColumns())) {
                     $isForeignKeyColumn = true;
                     break;
                 }
@@ -821,7 +826,7 @@ class %className% extends ModelEntity
                     $default = '"' . $default . '"';
                     break;
                 case 'boolean':
-                    $default = ($default) ? 'true' : 'false';
+                    $default = $default ? 'true' : 'false';
                     break;
                 case 'date':
                 case 'datetime':
@@ -832,7 +837,7 @@ class %className% extends ModelEntity
 
             $initializations[] = '$this->' . lcfirst($property) . ' = ' . $default . ';';
         }
-        if (count($initializations) === 0) {
+        if (\count($initializations) === 0) {
             // No need for a constructor
             return '';
         }
@@ -935,7 +940,7 @@ class %className% extends ModelEntity
      */
     private function stringEndsWith($haystack, $needle)
     {
-        $length = strlen($needle);
+        $length = \strlen($needle);
         if ($length === 0) {
             return true;
         }

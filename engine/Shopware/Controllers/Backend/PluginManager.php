@@ -24,8 +24,13 @@
 
 namespace Shopware\Controllers\Backend;
 
+use DateTime;
 use Doctrine\DBAL\Connection;
 use Doctrine\ORM\AbstractQuery;
+use Enlight_Components_Snippet_Namespace;
+use Exception;
+use PDO;
+use RuntimeException;
 use Shopware\Bundle\PluginInstallerBundle\Context\LicenceRequest;
 use Shopware\Bundle\PluginInstallerBundle\Context\ListingRequest;
 use Shopware\Bundle\PluginInstallerBundle\Context\MetaRequest;
@@ -50,11 +55,12 @@ use Shopware\Bundle\PluginInstallerBundle\Struct\PluginInformationResultStruct;
 use Shopware\Bundle\PluginInstallerBundle\Struct\PluginInformationStruct;
 use Shopware\Components\Plugin\Context\InstallContext;
 use Shopware\Models\Plugin\Plugin;
+use Shopware_Controllers_Backend_ExtJs;
 use ShopwarePlugins\SwagUpdate\Components\Steps\FinishResult;
 
-class PluginManager extends \Shopware_Controllers_Backend_ExtJs
+class PluginManager extends Shopware_Controllers_Backend_ExtJs
 {
-    const FALLBACK_LOCALE = 'en_GB';
+    public const FALLBACK_LOCALE = 'en_GB';
 
     public function preDispatch()
     {
@@ -78,7 +84,7 @@ class PluginManager extends \Shopware_Controllers_Backend_ExtJs
             $service = $this->get('shopware_plugininstaller.plugin_download_service');
             $result = $service->getMetaInformation($request);
             $this->get('backendsession')->offsetSet('plugin_manager_meta_download', $result);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $this->handleException($e);
 
             return;
@@ -100,6 +106,10 @@ class PluginManager extends \Shopware_Controllers_Backend_ExtJs
         $offset = (int) $this->Request()->getParam('offset');
 
         $downloadsDir = $this->container->getParameter('shopware.app.downloadsDir');
+        if (!\is_string($downloadsDir)) {
+            throw new RuntimeException('Parameter shopware.app.downloadsdir has to be an string');
+        }
+
         $destination = rtrim($downloadsDir, '/') . DIRECTORY_SEPARATOR . $metaStruct->getFileName();
         if ($offset === 0) {
             unlink($destination);
@@ -117,7 +127,7 @@ class PluginManager extends \Shopware_Controllers_Backend_ExtJs
             /** @var DownloadService $service */
             $service = $this->get('shopware_plugininstaller.plugin_download_service');
             $result = $service->downloadRange($request);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $this->handleException($e);
 
             return;
@@ -126,7 +136,6 @@ class PluginManager extends \Shopware_Controllers_Backend_ExtJs
         if ($result instanceof FinishResult) {
             $this->View()->assign(['success' => true, 'finish' => true, 'destination' => $destination]);
         } else {
-            /* @var \Shopware\Recovery\Update\Steps\ValidResult $result */
             $this->View()->assign(['success' => true, 'finish' => false, 'offset' => $result->getOffset()]);
         }
     }
@@ -142,6 +151,10 @@ class PluginManager extends \Shopware_Controllers_Backend_ExtJs
         }
 
         $downloadsDir = $this->container->getParameter('shopware.app.downloadsDir');
+        if (!\is_string($downloadsDir)) {
+            throw new RuntimeException('Parameter shopware.app.downloadsdir has to be an string');
+        }
+
         $filePath = rtrim($downloadsDir, '/') . DIRECTORY_SEPARATOR . $metaStruct->getFileName();
         $service = Shopware()->Container()->get('shopware_plugininstaller.plugin_download_service');
 
@@ -151,7 +164,7 @@ class PluginManager extends \Shopware_Controllers_Backend_ExtJs
             /** @var InstallerService $pluginManager */
             $pluginManager = $this->get(\Shopware\Bundle\PluginInstallerBundle\Service\InstallerService::class);
             $pluginManager->refreshPluginList();
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $this->View()->assign(['success' => false, 'message' => $e->getMessage()]);
 
             return;
@@ -169,7 +182,7 @@ class PluginManager extends \Shopware_Controllers_Backend_ExtJs
 
     public function checkIonCubeLoaderAction()
     {
-        $this->View()->assign(['success' => extension_loaded('ionCube Loader')]);
+        $this->View()->assign(['success' => \extension_loaded('ionCube Loader')]);
     }
 
     public function getCategoriesAction()
@@ -197,7 +210,7 @@ class PluginManager extends \Shopware_Controllers_Backend_ExtJs
         if (empty($secret)) {
             try {
                 $subscriptionService->setShopSecret();
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 $this->View()->assign(['success' => false, 'error' => $e->getMessage()]);
             }
         } else {
@@ -218,7 +231,7 @@ class PluginManager extends \Shopware_Controllers_Backend_ExtJs
             try {
                 $pluginInformationStructs = $pluginLicenseService->getExpiringLicenses();
                 $pluginInformation = new PluginInformationResultStruct($pluginInformationStructs);
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 $this->View()->assign(['success' => false, 'message' => $e->getMessage()]);
 
                 return;
@@ -283,7 +296,7 @@ class PluginManager extends \Shopware_Controllers_Backend_ExtJs
             /** @var PluginViewService $pluginViewService */
             $pluginViewService = $this->get('shopware_plugininstaller.plugin_service_view');
             $listingResult = $pluginViewService->getStoreListing($context);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $this->handleException($e);
 
             return;
@@ -315,7 +328,7 @@ class PluginManager extends \Shopware_Controllers_Backend_ExtJs
             /** @var InstallerService $pluginManager */
             $pluginManager = $this->get(\Shopware\Bundle\PluginInstallerBundle\Service\InstallerService::class);
             $pluginManager->refreshPluginList();
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $error = $e->getMessage();
         }
 
@@ -443,7 +456,7 @@ class PluginManager extends \Shopware_Controllers_Backend_ExtJs
             /** @var PluginStoreService $pluginStoreService */
             $pluginStoreService = $this->get(\Shopware\Bundle\PluginInstallerBundle\Service\PluginStoreService::class);
             $licences = $pluginStoreService->getLicences($context);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $this->handleException($e);
 
             return;
@@ -480,7 +493,7 @@ class PluginManager extends \Shopware_Controllers_Backend_ExtJs
             /** @var PluginViewService $pluginViewService */
             $pluginViewService = $this->get('shopware_plugininstaller.plugin_service_view');
             $updates = $pluginViewService->getUpdates($context);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $this->handleException($e);
 
             return;
@@ -509,7 +522,7 @@ class PluginManager extends \Shopware_Controllers_Backend_ExtJs
             ->andWhere('name IN (:names)')
             ->setParameter('names', $expiredPlugins, Connection::PARAM_STR_ARRAY)
             ->execute()
-            ->fetchAll(\PDO::FETCH_ASSOC | \PDO::FETCH_GROUP | \PDO::FETCH_UNIQUE);
+            ->fetchAll(PDO::FETCH_ASSOC | PDO::FETCH_GROUP | PDO::FETCH_UNIQUE);
 
         $context = new PluginsByTechnicalNameRequest(
             $this->getLocale(),
@@ -527,14 +540,14 @@ class PluginManager extends \Shopware_Controllers_Backend_ExtJs
                     $date = $installDates[$plugin->getTechnicalName()]['installation_date'];
 
                     if ($date) {
-                        $plugin->setInstallationDate(new \DateTime($date));
+                        $plugin->setInstallationDate(new DateTime($date));
                     }
                     $plugin->setCapabilitySecureUninstall($installDates[$plugin->getTechnicalName()]['capability_secure_uninstall']);
                 }
             }
 
             $this->View()->assign(['success' => true, 'data' => array_values($plugins)]);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $this->View()->assign(['success' => false, 'message' => $e->getMessage()]);
         }
     }
@@ -567,7 +580,7 @@ class PluginManager extends \Shopware_Controllers_Backend_ExtJs
             $this->handleException($e);
 
             return;
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $this->handleException($e);
 
             return;
@@ -601,7 +614,7 @@ class PluginManager extends \Shopware_Controllers_Backend_ExtJs
             $this->handleException($e);
 
             return;
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $this->handleException($e);
 
             return;
@@ -737,12 +750,15 @@ class PluginManager extends \Shopware_Controllers_Backend_ExtJs
         return $this->container->get('shopware_plugininstaller.account_manager_service')->getDomain();
     }
 
-    /**
-     * @return string
-     */
-    private function getVersion()
+    private function getVersion(): string
     {
-        return $this->container->getParameter('shopware.release.version');
+        $version = $this->container->getParameter('shopware.release.version');
+
+        if (!\is_string($version)) {
+            throw new RuntimeException('Parameter shopware.release.version has to be an string');
+        }
+
+        return $version;
     }
 
     /**
@@ -750,7 +766,7 @@ class PluginManager extends \Shopware_Controllers_Backend_ExtJs
      */
     private function getExceptionMessage(StoreException $exception)
     {
-        /** @var \Enlight_Components_Snippet_Namespace $namespace */
+        /** @var Enlight_Components_Snippet_Namespace $namespace */
         $namespace = $this->get('snippets')
             ->getNamespace('backend/plugin_manager/exceptions');
 
@@ -799,7 +815,7 @@ class PluginManager extends \Shopware_Controllers_Backend_ExtJs
         try {
             $this->get('shopware_plugininstaller.account_manager_service')->pingServer();
             $this->get('backendsession')->offsetSet('sbp_available', 1);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $this->get('backendsession')->offsetSet('sbp_available', 0);
         }
 
@@ -856,7 +872,7 @@ class PluginManager extends \Shopware_Controllers_Backend_ExtJs
         return null;
     }
 
-    private function handleException(\Exception $e)
+    private function handleException(Exception $e)
     {
         if (!($e instanceof StoreException)) {
             $this->View()->assign(['success' => false, 'message' => $e->getMessage()]);

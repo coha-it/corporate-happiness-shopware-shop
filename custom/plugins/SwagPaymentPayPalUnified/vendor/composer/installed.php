@@ -1,24 +1,23 @@
-<?php return array (
-  'root' => 
-  array (
-    'pretty_version' => 'dev-master',
-    'version' => 'dev-master',
-    'aliases' => 
-    array (
+<?php return array(
+    'root' => array(
+        'pretty_version' => 'dev-master',
+        'version' => 'dev-master',
+        'type' => 'shopware-plugin',
+        'install_path' => __DIR__ . '/../../',
+        'aliases' => array(),
+        'reference' => '3b78a740ff07944a3744960849b9706140e91845',
+        'name' => 'shopware-labs/swag-payment-paypal-unified',
+        'dev' => false,
     ),
-    'reference' => '0098b34dba0579cf06692c5e448ad90dc2edf805',
-    'name' => 'shopware-labs/swag-payment-paypal-unified',
-  ),
-  'versions' => 
-  array (
-    'shopware-labs/swag-payment-paypal-unified' => 
-    array (
-      'pretty_version' => 'dev-master',
-      'version' => 'dev-master',
-      'aliases' => 
-      array (
-      ),
-      'reference' => '0098b34dba0579cf06692c5e448ad90dc2edf805',
+    'versions' => array(
+        'shopware-labs/swag-payment-paypal-unified' => array(
+            'pretty_version' => 'dev-master',
+            'version' => 'dev-master',
+            'type' => 'shopware-plugin',
+            'install_path' => __DIR__ . '/../../',
+            'aliases' => array(),
+            'reference' => '3b78a740ff07944a3744960849b9706140e91845',
+            'dev_requirement' => false,
+        ),
     ),
-  ),
 );

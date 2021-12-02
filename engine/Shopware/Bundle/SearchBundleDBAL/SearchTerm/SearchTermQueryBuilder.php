@@ -28,11 +28,12 @@ use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\Query\QueryBuilder;
 use Shopware\Bundle\SearchBundleDBAL\KeywordFinderInterface;
 use Shopware\Bundle\SearchBundleDBAL\SearchTermQueryBuilderInterface;
+use Shopware_Components_Config;
 
 class SearchTermQueryBuilder implements SearchTermQueryBuilderInterface
 {
     /**
-     * @var \Shopware_Components_Config
+     * @var Shopware_Components_Config
      */
     private $config;
 
@@ -52,7 +53,7 @@ class SearchTermQueryBuilder implements SearchTermQueryBuilderInterface
     private $termHelper;
 
     public function __construct(
-        \Shopware_Components_Config $config,
+        Shopware_Components_Config $config,
         Connection $connection,
         KeywordFinderInterface $keywordFinder,
         SearchIndexerInterface $searchIndexer,
@@ -171,7 +172,7 @@ class SearchTermQueryBuilder implements SearchTermQueryBuilderInterface
 
         $query = $this->connection->createQueryBuilder();
         $query->from('(' . $subQuery->getSQL() . ')', 'sr')
-            ->innerJoin('sr', 's_articles', 'a', 'a.id = sr.articleID');
+            ->innerJoin('sr', 's_articles', 'a', 'a.id = sr.articleID AND a.active = 1');
 
         return $query;
     }
@@ -223,6 +224,6 @@ class SearchTermQueryBuilder implements SearchTermQueryBuilderInterface
     private function addAndSearchLogic($query, $term)
     {
         $searchTerms = $this->termHelper->splitTerm($term);
-        $query->andWhere('termCount >= ' . count($searchTerms));
+        $query->andWhere('termCount >= ' . \count($searchTerms));
     }
 }

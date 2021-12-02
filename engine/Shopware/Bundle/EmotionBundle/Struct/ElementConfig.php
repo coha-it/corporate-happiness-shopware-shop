@@ -24,7 +24,9 @@
 
 namespace Shopware\Bundle\EmotionBundle\Struct;
 
-class ElementConfig implements \JsonSerializable
+use JsonSerializable;
+
+class ElementConfig implements JsonSerializable
 {
     /**
      * Internal storage which contains all struct data.
@@ -64,7 +66,7 @@ class ElementConfig implements \JsonSerializable
      */
     public function get($name, $default = null)
     {
-        return array_key_exists($name, $this->storage) ? $this->storage[$name] : $default;
+        return \array_key_exists($name, $this->storage) ? $this->storage[$name] : $default;
     }
 
     /**

@@ -25,6 +25,7 @@
 namespace Shopware\Bundle\EmotionBundle\ComponentHandler;
 
 use Doctrine\DBAL\Connection;
+use PDO;
 use Shopware\Bundle\EmotionBundle\Struct\Collection\PrepareDataCollection;
 use Shopware\Bundle\EmotionBundle\Struct\Collection\ResolvedDataCollection;
 use Shopware\Bundle\EmotionBundle\Struct\Element;
@@ -40,11 +41,11 @@ use Shopware\Bundle\StoreFrontBundle\Struct\ShopContextInterface;
 
 class CategoryTeaserComponentHandler implements ComponentHandlerInterface
 {
-    const TYPE_IMAGE = 'selected_image';
-    const TYPE_ARTICLE_OR_BLOG = 'random_article_image';
+    public const TYPE_IMAGE = 'selected_image';
+    public const TYPE_ARTICLE_OR_BLOG = 'random_article_image';
 
-    const LEGACY_CONVERT_FUNCTION = 'getCategoryTeaser';
-    const COMPONENT_NAME = 'emotion-components-category-teaser';
+    public const LEGACY_CONVERT_FUNCTION = 'getCategoryTeaser';
+    public const COMPONENT_NAME = 'emotion-components-category-teaser';
 
     /**
      * @var StoreFrontCriteriaFactoryInterface
@@ -212,7 +213,7 @@ class CategoryTeaserComponentHandler implements ComponentHandlerInterface
             ->setParameter('categoryId', $categoryId)
             ->setParameter('path', '%|' . $categoryId . '|%');
 
-        $blogIds = $builder->execute()->fetchAll(\PDO::FETCH_COLUMN);
+        $blogIds = $builder->execute()->fetchAll(PDO::FETCH_COLUMN);
         shuffle($blogIds);
 
         return (int) reset($blogIds);

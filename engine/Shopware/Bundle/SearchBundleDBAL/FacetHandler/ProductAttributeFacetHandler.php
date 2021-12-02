@@ -24,6 +24,7 @@
 
 namespace Shopware\Bundle\SearchBundleDBAL\FacetHandler;
 
+use PDO;
 use Shopware\Bundle\AttributeBundle\Service\ConfigurationStruct;
 use Shopware\Bundle\AttributeBundle\Service\CrudServiceInterface;
 use Shopware\Bundle\AttributeBundle\Service\TypeMappingInterface;
@@ -163,7 +164,7 @@ class ProductAttributeFacetHandler implements PartialFacetHandlerInterface
             $actives = $condition->getValue();
         }
 
-        if (!is_array($actives)) {
+        if (!\is_array($actives)) {
             $actives = [$actives];
         }
 
@@ -174,7 +175,7 @@ class ProductAttributeFacetHandler implements PartialFacetHandlerInterface
                 $viewName = $translation;
             }
 
-            return new ValueListItem($row[$facet->getField()], $viewName, in_array($row[$facet->getField()], $actives));
+            return new ValueListItem($row[$facet->getField()], $viewName, \in_array($row[$facet->getField()], $actives));
         }, $result);
 
         if ($facet->getMode() == ProductAttributeFacet::MODE_RADIO_LIST_RESULT) {
@@ -213,7 +214,7 @@ class ProductAttributeFacetHandler implements PartialFacetHandlerInterface
 
         /** @var \Doctrine\DBAL\Driver\ResultStatement $statement */
         $statement = $query->execute();
-        $result = $statement->fetch(\PDO::FETCH_ASSOC);
+        $result = $statement->fetch(PDO::FETCH_ASSOC);
 
         if (empty($result)) {
             return null;
@@ -226,15 +227,25 @@ class ProductAttributeFacetHandler implements PartialFacetHandlerInterface
             return null;
         }
 
+        /** @var float $activeMin */
         $activeMin = $result['minValues'];
+
+        /** @var float $activeMax */
         $activeMax = $result['maxValues'];
 
         /** @var ProductAttributeCondition|null $condition */
         $condition = $criteria->getCondition($facet->getName());
         if ($condition !== null) {
+            /** @var array{'min'?: float, 'max'?: float} $data */
             $data = $condition->getValue();
-            $activeMin = $data['min'];
-            $activeMax = $data['max'];
+
+            if (isset($data['min'])) {
+                $activeMin = $data['min'];
+            }
+
+            if (isset($data['max'])) {
+                $activeMax = $data['max'];
+            }
         }
 
         return new RangeFacetResult(
@@ -267,7 +278,7 @@ class ProductAttributeFacetHandler implements PartialFacetHandlerInterface
 
         /** @var \Doctrine\DBAL\Driver\ResultStatement $statement */
         $statement = $query->execute();
-        $result = $statement->fetch(\PDO::FETCH_COLUMN);
+        $result = $statement->fetch(PDO::FETCH_COLUMN);
 
         if (empty($result)) {
             return null;

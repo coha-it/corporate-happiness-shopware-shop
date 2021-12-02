@@ -24,11 +24,14 @@
 
 namespace Shopware\Components\License\Service\Exceptions;
 
+use RuntimeException;
 use Shopware\Components\License\Struct\LicenseInformation;
 
-class LicenseHostException extends \RuntimeException
+class LicenseHostException extends RuntimeException
 {
-    /** @var LicenseInformation */
+    /**
+     * @var LicenseInformation
+     */
     private $licenseInformation;
 
     public function __construct(LicenseInformation $licenseInformation, $message = '')

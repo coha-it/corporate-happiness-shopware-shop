@@ -24,6 +24,8 @@
 
 namespace Shopware\Components\Api\Resource;
 
+use DateTime;
+use DateTimeInterface;
 use Doctrine\DBAL\Connection;
 use Shopware\Bundle\CustomerSearchBundle\Condition\AssignedToStreamCondition;
 use Shopware\Bundle\CustomerSearchBundle\CustomerNumberSearchInterface;
@@ -178,7 +180,7 @@ class CustomerStream extends Resource
 
         foreach ($data as &$row) {
             $id = (int) $row['id'];
-            if (!array_key_exists($id, $counts)) {
+            if (!\array_key_exists($id, $counts)) {
                 $row['customer_count'] = 0;
                 $row['newsletter_count'] = 0;
             } else {
@@ -224,7 +226,7 @@ class CustomerStream extends Resource
             $this->indexStream($stream);
         }
 
-        if (array_key_exists('customers', $data) && $stream->isStatic()) {
+        if (\array_key_exists('customers', $data) && $stream->isStatic()) {
             $this->insertCustomers($data['customers'], $stream->getId());
         }
 
@@ -271,7 +273,7 @@ class CustomerStream extends Resource
             $this->indexStream($stream);
         }
 
-        if (array_key_exists('customers', $data) && $stream->isStatic()) {
+        if (\array_key_exists('customers', $data) && $stream->isStatic()) {
             $this->insertCustomers($data['customers'], $stream->getId());
         }
 
@@ -371,9 +373,9 @@ class CustomerStream extends Resource
      *
      * @return array|bool
      */
-    public function updateFrozenState($streamId, \DateTimeInterface $freezeUp = null, $conditions)
+    public function updateFrozenState($streamId, DateTimeInterface $freezeUp = null, $conditions)
     {
-        $now = new \DateTime();
+        $now = new DateTime();
         if (!$freezeUp || $freezeUp >= $now) {
             return false;
         }

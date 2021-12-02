@@ -26,12 +26,13 @@ namespace ShopwarePlugins\SwagUpdate\Components\Checks;
 
 use Doctrine\DBAL\Connection;
 use Enlight_Components_Snippet_Namespace as SnippetNamespace;
+use PDO;
 use ShopwarePlugins\SwagUpdate\Components\CheckInterface;
 use ShopwarePlugins\SwagUpdate\Components\Validation;
 
 class EmotionTemplateCheck implements CheckInterface
 {
-    const CHECK_TYPE = 'emotiontemplate';
+    public const CHECK_TYPE = 'emotiontemplate';
 
     /**
      * @var SnippetNamespace
@@ -97,6 +98,6 @@ class EmotionTemplateCheck implements CheckInterface
             ->innerJoin('template', 's_core_shops', 'shop', 'shop.template_id = template.id')
             ->andWhere('template.version < 3');
 
-        return $query->execute()->fetchAll(\PDO::FETCH_ASSOC);
+        return $query->execute()->fetchAll(PDO::FETCH_ASSOC);
     }
 }

@@ -22,16 +22,25 @@
  * our trademarks remain entirely with us.
  */
 
+use Shopware\Bundle\AttributeBundle\Service\DataLoader;
+use Shopware\Bundle\AttributeBundle\Service\DataPersister;
+use Shopware\Bundle\CartBundle\CartPositionsMode;
 use Shopware\Bundle\StoreFrontBundle\Service\ContextServiceInterface;
+use Shopware\Components\Model\Exception\ModelNotFoundException;
+use Shopware\Components\Model\ModelManager;
 use Shopware\Components\NumberRangeIncrementerInterface;
+use Shopware\Components\Privacy\IpAnonymizerInterface;
+use Shopware\Components\ShopRegistrationServiceInterface;
+use Shopware\Models\Customer\Address;
 use Shopware\Models\Customer\Customer;
 use Shopware\Models\Mail\Mail;
 use Shopware\Models\Shop\Shop;
+use ShopwarePlugin\PaymentMethods\Components\BasePaymentMethod;
 
 /**
  * Deprecated Shopware Class that handles frontend orders
  */
-class sOrder implements \Enlight_Hook
+class sOrder implements Enlight_Hook
 {
     /**
      * Array with user data
@@ -114,7 +123,7 @@ class sOrder implements \Enlight_Hook
     /**
      * Pointer to sSystem object
      *
-     * @var \sSystem
+     * @var sSystem
      */
     public $sSYSTEM;
 
@@ -241,12 +250,12 @@ class sOrder implements \Enlight_Hook
         $this->db = Shopware()->Db();
         $this->eventManager = Shopware()->Events();
         $this->config = Shopware()->Config();
-        $this->numberRangeIncrementer = $container->get(\Shopware\Components\NumberRangeIncrementerInterface::class);
+        $this->numberRangeIncrementer = $container->get(NumberRangeIncrementerInterface::class);
 
-        $this->contextService = $contextService ?: Shopware()->Container()->get(\Shopware\Bundle\StoreFrontBundle\Service\ContextServiceInterface::class);
-        $this->attributeLoader = Shopware()->Container()->get(\Shopware\Bundle\AttributeBundle\Service\DataLoader::class);
-        $this->attributePersister = Shopware()->Container()->get(\Shopware\Bundle\AttributeBundle\Service\DataPersister::class);
-        $this->modelManager = $container->get(\Shopware\Components\Model\ModelManager::class);
+        $this->contextService = $contextService ?: Shopware()->Container()->get(ContextServiceInterface::class);
+        $this->attributeLoader = Shopware()->Container()->get(DataLoader::class);
+        $this->attributePersister = Shopware()->Container()->get(DataPersister::class);
+        $this->modelManager = $container->get(ModelManager::class);
     }
 
     /**
@@ -303,7 +312,7 @@ class sOrder implements \Enlight_Hook
 
         $availableSerials = $this->getAvailableSerialsOfEsd($esdProduct['id']);
 
-        if ((count($availableSerials) <= $this->config->get('esdMinSerials')) || count($availableSerials) <= $quantity) {
+        if ((\count($availableSerials) <= $this->config->get('esdMinSerials')) || \count($availableSerials) <= $quantity) {
             // Not enough serial numbers anymore, inform merchant
             $context = [
                 'sArticleName' => $basketRow['articlename'],
@@ -322,7 +331,7 @@ class sOrder implements \Enlight_Hook
         }
 
         // Check if enough serials are available, if not, an email has been sent, and we can return
-        if (count($availableSerials) < $quantity) {
+        if (\count($availableSerials) < $quantity) {
             return $basketRow;
         }
 
@@ -582,7 +591,7 @@ class sOrder implements \Enlight_Hook
             $this->sUserData['additional']['user']['affiliate']
         );
 
-        $ip = Shopware()->Container()->get(\Shopware\Components\Privacy\IpAnonymizerInterface::class)
+        $ip = Shopware()->Container()->get(IpAnonymizerInterface::class)
             ->anonymize(
                 (string) Shopware()->Container()->get('request_stack')->getCurrentRequest()->getClientIp()
             );
@@ -640,14 +649,14 @@ class sOrder implements \Enlight_Hook
             $paymentData = Shopware()->Modules()->Admin()
                 ->sGetPaymentMeanById($this->getPaymentId(), Shopware()->Modules()->Admin()->sGetUserData());
             $paymentClass = Shopware()->Modules()->Admin()->sInitiatePaymentClass($paymentData);
-            if ($paymentClass instanceof \ShopwarePlugin\PaymentMethods\Components\BasePaymentMethod) {
+            if ($paymentClass instanceof BasePaymentMethod) {
                 $paymentClass->createPaymentInstance(
                     $orderID,
                     $this->sUserData['additional']['user']['id'],
                     $this->getPaymentId()
                 );
             }
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             //Payment method code failure
         }
 
@@ -689,7 +698,7 @@ class sOrder implements \Enlight_Hook
                 pack_unit,
                 articleDetailID
                 )
-                VALUES (%d, %s, %d, %s, %f, %d, %s, %d, %s, %d, %d, %d, %f, %s, %s, %s, %d)
+                VALUES (%d, %s, %d, %s, %f, %d, %s, %d, %s, %d, %d, %d, %f, %s, %s, %s, %s)
             ';
 
             $sql = sprintf(
@@ -710,7 +719,7 @@ class sOrder implements \Enlight_Hook
                 $this->db->quote((string) $basketRow['ean']),
                 $this->db->quote((string) $basketRow['itemUnit']),
                 $this->db->quote((string) $basketRow['packunit']),
-                $basketRow['additional_details']['articleDetailsID']
+                $basketRow['additional_details']['articleDetailsID'] ?? 'null'
             );
 
             $sql = $this->eventManager->filter('Shopware_Modules_Order_SaveOrder_FilterDetailsSQL', $sql, [
@@ -721,7 +730,7 @@ class sOrder implements \Enlight_Hook
             ]);
 
             // Check for individual voucher - code
-            if ($basketRow['modus'] == 2) {
+            if ($basketRow['modus'] == CartPositionsMode::VOUCHER) {
                 //reserve the basket voucher for the current user.
                 $this->reserveVoucher(
                     $basketRow['ordernumber'],
@@ -834,7 +843,7 @@ class sOrder implements \Enlight_Hook
         $confirmMailDeliveryFailed = false;
         try {
             $this->sendMail($variables);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $confirmMailDeliveryFailed = true;
             $email = $this->sUserData['additional']['user']['email'];
             $this->logOrderMailException($e, $orderNumber, $email);
@@ -943,7 +952,7 @@ class sOrder implements \Enlight_Hook
             $mail = $event->getReturn();
         }
 
-        if (!($mail instanceof \Zend_Mail)) {
+        if (!($mail instanceof Zend_Mail)) {
             $mail = Shopware()->TemplateMail()->createMail('sORDER', $context);
         }
 
@@ -959,7 +968,7 @@ class sOrder implements \Enlight_Hook
             'variables' => $variables,
         ]);
 
-        if (!($mail instanceof \Zend_Mail)) {
+        if (!($mail instanceof Zend_Mail)) {
             return;
         }
 
@@ -1087,12 +1096,16 @@ class sOrder implements \Enlight_Hook
         }
 
         if ($billingAddressId === null) {
-            $billingAddressId = $customer->getDefaultBillingAddress()->getId();
+            $defaultBillingAddress = $customer->getDefaultBillingAddress();
+            if (!$defaultBillingAddress instanceof Address) {
+                throw new RuntimeException('Customer does not have a default billing address');
+            }
+            $billingAddressId = $defaultBillingAddress->getId();
         }
 
         $attributes = $this->attributeLoader->load('s_user_addresses_attributes', $billingAddressId);
 
-        if (!is_array($attributes)) {
+        if (!\is_array($attributes)) {
             $attributes = [];
         }
 
@@ -1192,9 +1205,12 @@ class sOrder implements \Enlight_Hook
 
         if ($shippingAddressId === null) {
             /** @var Customer $customer */
-            $customer = $this->modelManager->getRepository(\Shopware\Models\Customer\Customer::class)
-                ->find($address['userID']);
-            $shippingAddressId = $customer->getDefaultShippingAddress()->getId();
+            $customer = $this->modelManager->getRepository(Customer::class)->find($address['userID']);
+            $defaultShippingAddress = $customer->getDefaultShippingAddress();
+            if (!$defaultShippingAddress instanceof Address) {
+                throw new RuntimeException('Customer does not have a default billing address');
+            }
+            $shippingAddressId = $defaultShippingAddress->getId();
         }
 
         $attributes = $this->attributeLoader->load('s_user_addresses_attributes', $shippingAddressId);
@@ -1309,7 +1325,10 @@ class sOrder implements \Enlight_Hook
         $shopId = is_numeric($order['language']) ? $order['language'] : $order['subshopID'];
         // The (sub-)shop might be inactive by now, so that's why we use `getById` instead of `getActiveById`
         $shop = $repository->getById($shopId);
-        Shopware()->Container()->get(\Shopware\Components\ShopRegistrationServiceInterface::class)->registerShop($shop);
+        if ($shop === null) {
+            throw new ModelNotFoundException(Shop::class, $shopId);
+        }
+        Shopware()->Container()->get(ShopRegistrationServiceInterface::class)->registerShop($shop);
 
         $dispatch = Shopware()->Modules()->Admin()->sGetDispatchTranslation($dispatch);
         $payment = Shopware()->Modules()->Admin()->sGetPaymentTranslation(['id' => $order['paymentID']]);
@@ -1327,7 +1346,6 @@ class sOrder implements \Enlight_Hook
             $order['payment_description'] = $payment['description'];
         }
 
-        /* @var \Shopware\Models\Mail\Mail $mailModel */
         $mailModel = $this->modelManager->getRepository(Mail::class)->findOneBy(
             ['name' => $templateName]
         );
@@ -1480,7 +1498,7 @@ class sOrder implements \Enlight_Hook
     /**
      * Setter for config
      *
-     * @param \Shopware_Components_Config $config
+     * @param Shopware_Components_Config $config
      */
     public function setConfig($config)
     {
@@ -1490,7 +1508,7 @@ class sOrder implements \Enlight_Hook
     /**
      * Getter for config
      *
-     * @return \Shopware_Components_Config
+     * @return Shopware_Components_Config
      */
     public function getConfig()
     {
@@ -1782,7 +1800,7 @@ EOT;
      */
     private function isTransactionExist($transactionId)
     {
-        if (strlen($transactionId) <= 3) {
+        if (\strlen($transactionId) <= 3) {
             return false;
         }
 
@@ -1849,7 +1867,7 @@ EOT;
             [$orderCode]
         );
 
-        if ($getVoucher['modus'] == 1) {
+        if ($getVoucher['modus'] == CartPositionsMode::PREMIUM_PRODUCT) {
             $this->db->executeUpdate(
                 'UPDATE s_emarketing_voucher_codes SET cashed = 1, userID= ? WHERE id = ?',
                 [$customerId, $voucherCodeId]
@@ -1981,7 +1999,7 @@ EOT;
         }
 
         $func = static function ($item) use (&$func) {
-            return is_array($item) ? array_map($func, $item) : html_entity_decode($item);
+            return \is_array($item) ? array_map($func, $item) : html_entity_decode($item);
         };
 
         return array_map($func, $data);

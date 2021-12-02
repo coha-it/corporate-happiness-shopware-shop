@@ -49,7 +49,9 @@ class Enlight_Plugin_Bootstrap_Config extends Enlight_Plugin_Bootstrap
     public function Config()
     {
         if ($this->config === null
-          && $this->collection instanceof Enlight_Plugin_Namespace_Config) {
+            && $this->collection instanceof Enlight_Plugin_Namespace_Config
+            && \is_string($this->getName())
+        ) {
             $this->config = $this->collection->getConfig($this->getName());
         }
 
@@ -74,8 +76,8 @@ class Enlight_Plugin_Bootstrap_Config extends Enlight_Plugin_Bootstrap
      * This Enlight_Event_Handler_Plugin is subscribed over the namespace subscriber.
      *
      * @param string|Enlight_Event_Handler|Enlight_Hook_HookHandler $event
-     * @param string|callable|null         $listener
-     * @param int                          $position
+     * @param string|callable|null                                  $listener
+     * @param int                                                   $position
      *
      * @return Enlight_Plugin_Bootstrap_Config
      */

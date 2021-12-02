@@ -745,7 +745,7 @@
             var tempParams = {};
 
             $.each(formData, function (index, item) {
-                if (item['value']) {
+                if (item['value'] !== null) {
                     tempParams[item['name']] = item['value'];
                 }
             });
@@ -974,7 +974,7 @@
             var formData = this.$filterForm.serializeArray();
 
             $.each(formData, function (index, item) {
-                if (!params.hasOwnProperty(item.name)) {
+                if (!Object.prototype.hasOwnProperty.call(params, item.name)) {
                     if (!item.value || (typeof item.value === 'string' && item.value.length <= 0)) {
                         return;
                     }
@@ -1010,8 +1010,8 @@
                         listing = $textResponse.find('#listing').html(),
                         pagination = $textResponse.find('#pagination').html(),
                         response = {
-                            totalCount: parseInt(ajaxResponse.getResponseHeader('Shopware-Listing-Total')),
-                    };
+                            totalCount: parseInt(ajaxResponse.getResponseHeader('Shopware-Listing-Total'))
+                        };
 
                     if (facets) {
                         response.facets = JSON.parse(facets);
@@ -1152,7 +1152,7 @@
                 listing = this.$listing,
                 pages;
 
-            if (!response.hasOwnProperty('listing')) {
+            if (!Object.prototype.hasOwnProperty.call(response, 'listing')) {
                 listing.removeClass(this.opts.isLoadingCls);
                 return;
             }
@@ -1374,8 +1374,8 @@
          */
         createActiveFilterElement: function (param, label) {
             this.activeFilterElements[param] = $('<span>', {
-                'class': this.opts.activeFilterCls,
-                'html': this.getLabelIcon() + label,
+                class: this.opts.activeFilterCls,
+                html: this.getLabelIcon() + label,
                 'data-filter-param': param
             }).appendTo(this.$activeFilterCont);
 

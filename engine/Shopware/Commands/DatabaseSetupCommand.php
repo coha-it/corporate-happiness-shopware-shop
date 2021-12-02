@@ -24,6 +24,10 @@
 
 namespace Shopware\Commands;
 
+use InvalidArgumentException;
+use PDO;
+use PDOException;
+use RuntimeException;
 use Shopware\Components\Install\Database;
 use Shopware\Components\Migrations\Manager;
 use Stecman\Component\Symfony\Console\BashCompletion\Completion\CompletionAwareInterface;
@@ -114,18 +118,24 @@ class DatabaseSetupCommand extends ShopwareCommand implements CompletionAwareInt
             return 1;
         }
 
+        /** @var array<string, string> $dbConfig */
         $dbConfig = $this->getContainer()->getParameter('shopware.db');
         $rootDir = $this->getContainer()->getParameter('kernel.root_dir');
+
+        if (!\is_string($rootDir)) {
+            throw new RuntimeException('Parameter kernel.root_dir has to be an string');
+        }
 
         $connection = $this->createConnection($dbConfig);
         $database = new Database($connection);
 
+        /** @var string $steps */
         $steps = $input->getOption('steps');
         /** @var string[] $steps */
         $steps = array_filter(explode(',', $steps));
 
         foreach ($steps as $step) {
-            if (!in_array($step, $this->validSteps, true)) {
+            if (!\in_array($step, $this->validSteps, true)) {
                 $io->error(
                     sprintf("Unknown install step (%s). Valid steps: %s\n", $step, implode(', ', $this->validSteps))
                 );
@@ -214,7 +224,7 @@ class DatabaseSetupCommand extends ShopwareCommand implements CompletionAwareInt
     }
 
     /**
-     * @return \PDO
+     * @return PDO
      */
     private function createConnection(array $dbConfig)
     {
@@ -222,18 +232,18 @@ class DatabaseSetupCommand extends ShopwareCommand implements CompletionAwareInt
         $connectionString = $this->buildConnectionString($dbConfig);
 
         try {
-            $conn = new \PDO(
+            $conn = new PDO(
                 'mysql:' . $connectionString,
                 $dbConfig['username'],
                 $password
             );
 
-            $conn->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
-            $conn->setAttribute(\PDO::ATTR_DEFAULT_FETCH_MODE, \PDO::FETCH_ASSOC);
+            $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+            $conn->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
 
             // Reset sql_mode "STRICT_TRANS_TABLES" that will be default in MySQL 5.6
             $conn->exec('SET @@session.sql_mode = ""');
-        } catch (\PDOException $e) {
+        } catch (PDOException $e) {
             echo 'Could not connect to database: ' . $e->getMessage();
             exit(1);
         }
@@ -250,7 +260,7 @@ class DatabaseSetupCommand extends ShopwareCommand implements CompletionAwareInt
 
         if (!empty($url)) {
             if (parse_url($url) === false) {
-                throw new \InvalidArgumentException(
+                throw new InvalidArgumentException(
                     sprintf('Invalid Shop URL (%s).', $url)
                 );
             }
@@ -264,7 +274,7 @@ class DatabaseSetupCommand extends ShopwareCommand implements CompletionAwareInt
         }
 
         $path = $input->getOption('path');
-        $path = !empty($path) ? $path : '';
+        $path = \is_string($path) ? $path : '';
         if ($path === '/') {
             $path = '';
         }

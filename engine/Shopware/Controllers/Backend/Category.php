@@ -134,7 +134,7 @@ class Shopware_Controllers_Backend_Category extends Shopware_Controllers_Backend
             $data[$key]['leaf'] = empty($data[$key]['childrenCount']);
             $data[$key]['allowDrag'] = true;
             if ($preselectedNodes !== null) {
-                $data[$key]['checked'] = in_array($category['id'], $preselectedNodes);
+                $data[$key]['checked'] = \in_array($category['id'], $preselectedNodes);
             }
         }
 
@@ -203,7 +203,7 @@ class Shopware_Controllers_Backend_Category extends Shopware_Controllers_Backend
 
         if (($ids = $this->Request()->getParam('id')) !== null) {
             $result = [];
-            if (is_string($ids)) {
+            if (\is_string($ids)) {
                 $ids = explode(', ', $ids);
             }
             foreach ($ids as $id) {
@@ -225,7 +225,7 @@ class Shopware_Controllers_Backend_Category extends Shopware_Controllers_Backend
             $data[] = ['id' => $id, 'name' => $name];
         }
 
-        $this->View()->assign(['success' => true, 'data' => $data, 'total' => count($data)]);
+        $this->View()->assign(['success' => true, 'data' => $data, 'total' => \count($data)]);
     }
 
     /**
@@ -244,7 +244,7 @@ class Shopware_Controllers_Backend_Category extends Shopware_Controllers_Backend
             $data[] = $separator . $this->getRepository()->getPathById($categoryId, 'id', $separator);
         }
 
-        $this->View()->assign(['success' => true, 'data' => $data, 'total' => count($data)]);
+        $this->View()->assign(['success' => true, 'data' => $data, 'total' => \count($data)]);
     }
 
     /**
@@ -304,13 +304,13 @@ class Shopware_Controllers_Backend_Category extends Shopware_Controllers_Backend
      */
     public function getTemplateSettingsAction()
     {
-        $categoryTemplates = array_filter(explode(';', Shopware()->Config()->categoryTemplates));
+        $categoryTemplates = array_filter(explode(';', Shopware()->Config()->get('categoryTemplates')));
         $data = [];
         foreach ($categoryTemplates as $templateConfigRaw) {
             [$template, $name] = explode(':', $templateConfigRaw);
             $data[] = ['template' => $template, 'name' => $name];
         }
-        $this->View()->assign(['success' => true, 'data' => $data, 'total' => count($data)]);
+        $this->View()->assign(['success' => true, 'data' => $data, 'total' => \count($data)]);
     }
 
     /**
@@ -434,7 +434,6 @@ class Shopware_Controllers_Backend_Category extends Shopware_Controllers_Backend
         $offset = (int) $this->Request()->getParam('start');
         $limit = (int) $this->Request()->getParam('limit', 20);
 
-        /** @var \Shopware\Models\Customer\Repository $customerRepository */
         $customerRepository = $this->getCustomerRepository();
         $dataQuery = $customerRepository->getCustomerGroupsWithoutIdsQuery($usedIds, $offset, $limit);
 
@@ -588,7 +587,7 @@ class Shopware_Controllers_Backend_Category extends Shopware_Controllers_Backend
 
         unset($params['articles'], $params['emotion'], $params['imagePath'], $params['parentId'], $params['parent']);
 
-        if (!array_key_exists('template', $params)) {
+        if (!\array_key_exists('template', $params)) {
             $params['template'] = null;
         }
 
@@ -605,7 +604,7 @@ class Shopware_Controllers_Backend_Category extends Shopware_Controllers_Backend
         $data = $data[0];
         $data['imagePath'] = $data['media']['path'];
 
-        $this->View()->assign(['success' => true, 'data' => $data, 'total' => count($data)]);
+        $this->View()->assign(['success' => true, 'data' => $data, 'total' => \count($data)]);
     }
 
     /**
@@ -755,7 +754,7 @@ class Shopware_Controllers_Backend_Category extends Shopware_Controllers_Backend
 
         $copyProductAssociations = $this->Request()->getParam('reassignArticleAssociations');
         $categoryIds = $this->Request()->getParam('children');
-        if (!is_array($categoryIds)) {
+        if (!\is_array($categoryIds)) {
             $categoryIds = [$categoryIds];
         }
         $newParentId = (int) $this->Request()->getParam('categoryId');
@@ -773,7 +772,7 @@ class Shopware_Controllers_Backend_Category extends Shopware_Controllers_Backend
             $childrenStmt->execute([':parent' => $categoryId]);
             $children = $childrenStmt->fetchAll(PDO::FETCH_COLUMN);
 
-            if (count($children)) {
+            if (\count($children)) {
                 $result[] = [
                     'categoryId' => $newCategoryId,
                     'children' => $children,
@@ -784,7 +783,7 @@ class Shopware_Controllers_Backend_Category extends Shopware_Controllers_Backend
         $this->view->assign(
             [
                 'success' => true,
-                'processed' => count($categoryIds),
+                'processed' => \count($categoryIds),
                 'needsRebuild' => true,
                 'result' => $result,
             ]

@@ -25,6 +25,8 @@
 namespace Shopware\Components\Routing\Generators;
 
 use Doctrine\DBAL\Connection;
+use Enlight_Event_EventManager;
+use PDO;
 use Shopware\Components\QueryAliasMapper;
 use Shopware\Components\Routing\Context;
 use Shopware\Components\Routing\GeneratorListInterface;
@@ -42,14 +44,14 @@ class RewriteGenerator implements GeneratorListInterface
     private $queryAliasMapper;
 
     /**
-     * @var \Enlight_Event_EventManager
+     * @var Enlight_Event_EventManager
      */
     private $eventManager;
 
     public function __construct(
         Connection $connection,
         QueryAliasMapper $queryAliasMapper,
-        \Enlight_Event_EventManager $eventManager
+        Enlight_Event_EventManager $eventManager
     ) {
         $this->connection = $connection;
         $this->queryAliasMapper = $queryAliasMapper;
@@ -61,17 +63,17 @@ class RewriteGenerator implements GeneratorListInterface
      */
     public function generate(array $params, Context $context)
     {
-        if (array_key_exists('_seo', $params) && !$params['_seo']) {
+        if (\array_key_exists('_seo', $params) && !$params['_seo']) {
             return $params;
         }
 
-        if (array_key_exists('_seo', $params)) {
+        if (\array_key_exists('_seo', $params)) {
             unset($params['_seo']);
         }
 
         $orgQuery = $this->preAssemble($params, $context);
 
-        if (!is_array($orgQuery)) {
+        if (!\is_array($orgQuery)) {
             return false;
         }
 
@@ -109,7 +111,7 @@ class RewriteGenerator implements GeneratorListInterface
             return $this->preAssemble($params, $context);
         }, $list);
 
-        if (count($orgQueryList) === 0 || max($orgQueryList) === false) {
+        if (\count($orgQueryList) === 0 || max($orgQueryList) === false) {
             return $list;
         }
 
@@ -262,12 +264,12 @@ class RewriteGenerator implements GeneratorListInterface
                 ':orgPath' => $list,
             ],
             [
-                ':shopId' => \PDO::PARAM_INT,
+                ':shopId' => PDO::PARAM_INT,
                 ':orgPath' => Connection::PARAM_STR_ARRAY,
             ]
         );
 
-        $rows = $statement->fetchAll(\PDO::FETCH_KEY_PAIR);
+        $rows = $statement->fetchAll(PDO::FETCH_KEY_PAIR);
 
         foreach ($list as $key => $orgPath) {
             if (isset($rows[$orgPath])) {

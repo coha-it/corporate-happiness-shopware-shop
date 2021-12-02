@@ -24,6 +24,7 @@
 
 namespace Shopware\Bundle\EmotionBundle\ComponentHandler;
 
+use Enlight_Event_EventManager;
 use Shopware\Bundle\EmotionBundle\Struct\Collection\PrepareDataCollection;
 use Shopware\Bundle\EmotionBundle\Struct\Collection\ResolvedDataCollection;
 use Shopware\Bundle\EmotionBundle\Struct\Element;
@@ -31,14 +32,14 @@ use Shopware\Bundle\StoreFrontBundle\Struct\ShopContextInterface;
 
 class IFrameComponentHandler implements ComponentHandlerInterface
 {
-    const COMPONENT_NAME = 'emotion-components-iframe';
+    public const COMPONENT_NAME = 'emotion-components-iframe';
 
     /**
-     * @var \Enlight_Event_EventManager
+     * @var Enlight_Event_EventManager
      */
     private $eventManager;
 
-    public function __construct(\Enlight_Event_EventManager $eventManager)
+    public function __construct(Enlight_Event_EventManager $eventManager)
     {
         $this->eventManager = $eventManager;
     }

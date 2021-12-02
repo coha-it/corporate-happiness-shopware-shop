@@ -25,12 +25,13 @@
 namespace Shopware\Bundle\SearchBundle\Condition;
 
 use Assert\Assertion;
+use JsonSerializable;
 use Shopware\Bundle\SearchBundle\ConditionInterface;
 
-class ReleaseDateCondition implements ConditionInterface, \JsonSerializable
+class ReleaseDateCondition implements ConditionInterface, JsonSerializable
 {
-    const DIRECTION_PAST = 'past';
-    const DIRECTION_FUTURE = 'future';
+    public const DIRECTION_PAST = 'past';
+    public const DIRECTION_FUTURE = 'future';
     private const NAME = 'release_date_condition';
 
     /**

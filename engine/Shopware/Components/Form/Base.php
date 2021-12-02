@@ -25,6 +25,7 @@
 namespace Shopware\Components\Form;
 
 use Shopware\Components\Form\Interfaces\Element;
+use Traversable;
 
 class Base implements Element
 {
@@ -60,10 +61,10 @@ class Base implements Element
      */
     public function toArray()
     {
-        $properties = get_class_vars(get_class($this));
+        $properties = get_class_vars(\get_class($this));
 
         $data = [
-            'type' => get_class($this),
+            'type' => \get_class($this),
         ];
 
         foreach ($properties as $property => $value) {
@@ -75,7 +76,7 @@ class Base implements Element
 
             $value = $this->$method();
 
-            if ($value instanceof \Traversable) {
+            if ($value instanceof Traversable) {
                 $converted = [];
                 foreach ($value as $item) {
                     if ($item instanceof self) {

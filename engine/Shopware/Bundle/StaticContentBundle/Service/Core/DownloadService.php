@@ -91,7 +91,7 @@ class DownloadService implements DownloadServiceInterface
 
         if ($this->canServedLocal($filesystem, $downloadStrategy)) {
             $publicUrl = $this->publicUrlGenerator->generateUrl($location);
-            $path = parse_url($publicUrl, PHP_URL_PATH);
+            $path = (string) parse_url($publicUrl, PHP_URL_PATH);
             switch ($downloadStrategy) {
                 case 0:
                     $response->setRedirect($publicUrl);
@@ -135,6 +135,6 @@ class DownloadService implements DownloadServiceInterface
 
     private function canServedLocal(FilesystemInterface $filesystem, int $downloadStrategy): bool
     {
-        return $filesystem instanceof Filesystem && $filesystem->getAdapter() instanceof Local && in_array($downloadStrategy, [0, 2, 3], true);
+        return $filesystem instanceof Filesystem && $filesystem->getAdapter() instanceof Local && \in_array($downloadStrategy, [0, 2, 3], true);
     }
 }

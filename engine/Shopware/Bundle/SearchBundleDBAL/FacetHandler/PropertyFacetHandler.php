@@ -97,7 +97,6 @@ class PropertyFacetHandler implements PartialFacetHandlerInterface
         }
         $actives = $this->getFilteredValues($criteria);
 
-        /* @var Facet\PropertyFacet $facet */
         return $this->createCollectionResult($facet, $properties, $actives);
     }
 
@@ -181,7 +180,7 @@ class PropertyFacetHandler implements PartialFacetHandlerInterface
                     $listItem = new MediaListItem(
                         $option->getId(),
                         $option->getName(),
-                        in_array(
+                        \in_array(
                             $option->getId(),
                             $actives
                         ),

@@ -34,8 +34,8 @@ use Shopware\Components\Model\ModelEntity;
  */
 class Element extends ModelEntity
 {
-    const SCOPE_LOCALE = 0;
-    const SCOPE_SHOP = 1;
+    public const SCOPE_LOCALE = 0;
+    public const SCOPE_SHOP = 1;
 
     /**
      * INVERSE SIDE
@@ -63,7 +63,7 @@ class Element extends ModelEntity
     private $name;
 
     /**
-     * @var string|null
+     * @var array<array-key, mixed>|bool|float|int|string|null
      *
      * @ORM\Column(name="value", type="object", nullable=true)
      */
@@ -84,16 +84,16 @@ class Element extends ModelEntity
     private $label;
 
     /**
-     * @var string|null
+     * @var string
      *
-     * @ORM\Column(name="type", type="string", nullable=true)
+     * @ORM\Column(name="type", type="string", nullable=false)
      */
     private $type;
 
     /**
      * @var bool
      *
-     * @ORM\Column(name="required", type="boolean")
+     * @ORM\Column(name="required", type="boolean", nullable=false)
      */
     private $required = false;
 
@@ -114,7 +114,7 @@ class Element extends ModelEntity
     /**
      * @var int
      *
-     * @ORM\Column(name="form_id", type="integer", nullable=true)
+     * @ORM\Column(name="form_id", type="integer", nullable=false)
      */
     private $formId = 0;
 
@@ -129,7 +129,7 @@ class Element extends ModelEntity
      * @var Form
      *
      * @ORM\ManyToOne(targetEntity="Form", inversedBy="elements")
-     * @ORM\JoinColumn(name="form_id", referencedColumnName="id")
+     * @ORM\JoinColumn(name="form_id", referencedColumnName="id", nullable=false)
      */
     private $form;
 
@@ -184,6 +184,8 @@ class Element extends ModelEntity
     }
 
     /**
+     * @param array<array-key, mixed>|bool|float|int|string|null $value
+     *
      * @return Element
      */
     public function setValue($value)
@@ -194,7 +196,7 @@ class Element extends ModelEntity
     }
 
     /**
-     * @return mixed|null
+     * @return array<array-key, mixed>|bool|float|int|string|null
      */
     public function getValue()
     {
@@ -258,7 +260,7 @@ class Element extends ModelEntity
     {
         $fields = ['label', 'value', 'description', 'required', 'scope', 'position'];
         foreach ($fields as $field) {
-            if (array_key_exists($field, $options)) {
+            if (\array_key_exists($field, $options)) {
                 $method = 'set' . ucfirst($field);
                 $this->$method($options[$field]);
                 unset($options[$field]);
@@ -349,7 +351,7 @@ class Element extends ModelEntity
     }
 
     /**
-     * @return string|null
+     * @return string
      */
     public function getType()
     {

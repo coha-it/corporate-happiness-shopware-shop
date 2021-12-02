@@ -27,6 +27,7 @@ namespace Shopware\Bundle\PluginInstallerBundle\Service;
 use Doctrine\DBAL\Connection;
 use Enlight_Controller_Request_Request as Request;
 use Enlight_Controller_Response_ResponseHttp as Response;
+use Exception;
 use Shopware\Bundle\PluginInstallerBundle\Exception\ShopSecretException;
 use Shopware\Bundle\PluginInstallerBundle\StoreClient;
 use Shopware\Bundle\PluginInstallerBundle\Struct\AccessTokenStruct;
@@ -65,7 +66,7 @@ class SubscriptionService
     private $release;
 
     /**
-     * @var \Exception
+     * @var Exception
      */
     private $exception;
 
@@ -146,7 +147,7 @@ class SubscriptionService
             $this->resetShopSecret();
 
             return false;
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $this->exception = $e;
 
             return false;
@@ -207,7 +208,7 @@ class SubscriptionService
     }
 
     /**
-     * @return \Exception
+     * @return Exception
      */
     public function getException()
     {
@@ -228,7 +229,7 @@ class SubscriptionService
         $token = @unserialize(Shopware()->BackendSession()->offsetGet('store_token'), ['allowed_classes' => $allowedClassList]);
 
         if ($token === null || $token === false) {
-            $token = Shopware()->BackendSession()->accessToken;
+            $token = Shopware()->BackendSession()->get('accessToken');
         }
 
         $params = [
@@ -255,7 +256,7 @@ class SubscriptionService
 
         $default = $repo->getActiveDefault();
 
-        return $default->getHost();
+        return (string) $default->getHost();
     }
 
     /**

@@ -25,6 +25,7 @@
  *
  * @category   Enlight
  * @package    Enlight_Test
+ *
  * @copyright  Copyright (c) 2011, shopware AG (http://www.shopware.de)
  * @license    http://enlight.de/license     New BSD License
  */
@@ -37,23 +38,25 @@ abstract class Enlight_Components_Test_Plugin_TestCase extends Enlight_Component
      *
      * @param string|array $name
      * @param array        $args
+     *
      * @return Enlight_Event_EventArgs
      */
-    public function createEventArgs($name = null, $args = array())
+    public function createEventArgs($name = null, $args = [])
     {
         if ($name === null) {
-            $name = get_class($this);
-        } elseif (is_array($name)) {
+            $name = \get_class($this);
+        } elseif (\is_array($name)) {
             $args = $name;
-            $name = get_class($this);
+            $name = \get_class($this);
         }
+
         return new Enlight_Event_EventArgs($args);
     }
 
     /**
      * Tests set up method
      */
-    public function setUp(): void
+    protected function setUp(): void
     {
         parent::setUp();
 

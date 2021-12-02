@@ -22,12 +22,25 @@
  * our trademarks remain entirely with us.
  */
 
+use Doctrine\DBAL\Connection;
+use Doctrine\DBAL\Query\QueryBuilder;
 use Enlight_Controller_Request_Request as Request;
+use Shopware\Bundle\AccountBundle\Service\AddressServiceInterface;
+use Shopware\Bundle\AccountBundle\Service\Validator\AddressValidatorInterface;
+use Shopware\Bundle\AttributeBundle\Service\DataLoader;
+use Shopware\Bundle\CartBundle\CartPositionsMode;
+use Shopware\Bundle\StoreFrontBundle\Gateway\CountryGatewayInterface;
+use Shopware\Bundle\StoreFrontBundle\Service\ContextServiceInterface;
 use Shopware\Components\BasketSignature\BasketPersister;
 use Shopware\Components\BasketSignature\BasketSignatureGeneratorInterface;
+use Shopware\Components\Cart\BasketHelperInterface;
 use Shopware\Components\Cart\Struct\DiscountContext;
+use Shopware\Components\Cart\Struct\Price;
 use Shopware\Components\CSRFGetProtectionAware;
+use Shopware\Components\Model\ModelManager;
 use Shopware\Models\Customer\Address;
+use Shopware\Models\Shop\Currency;
+use ShopwarePlugin\PaymentMethods\Components\BasePaymentMethod;
 
 class Shopware_Controllers_Frontend_Checkout extends Enlight_Controller_Action implements CSRFGetProtectionAware
 {
@@ -204,7 +217,7 @@ class Shopware_Controllers_Frontend_Checkout extends Enlight_Controller_Action i
         $this->View()->assign('sState', $this->getSelectedState());
 
         $payment = $this->getSelectedPayment();
-        if (array_key_exists('validation', $payment) && !empty($payment['validation'])) {
+        if (\array_key_exists('validation', $payment) && !empty($payment['validation'])) {
             $this->onPaymentMethodValidationFail();
 
             return;
@@ -243,7 +256,7 @@ class Shopware_Controllers_Frontend_Checkout extends Enlight_Controller_Action i
 
         $this->saveTemporaryOrder();
 
-        if ($this->getMinimumCharge() || count($this->View()->sBasket['content']) <= 0 || $this->View()->getAssign('sInvalidCartItems')) {
+        if ($this->getMinimumCharge() || \count($this->View()->sBasket['content']) <= 0 || $this->View()->getAssign('sInvalidCartItems')) {
             return $this->forward('cart');
         }
 
@@ -324,7 +337,7 @@ class Shopware_Controllers_Frontend_Checkout extends Enlight_Controller_Action i
                 WHERE temporaryID=? AND userID=?
             ';
 
-            $order = Shopware()->Db()->fetchRow($sql, [$this->Request()->getParam('sUniqueID'), Shopware()->Session()->sUserId]);
+            $order = Shopware()->Db()->fetchRow($sql, [$this->Request()->getParam('sUniqueID'), Shopware()->Session()->get('sUserId')]);
 
             if (empty($order)) {
                 if ($this->Request()->isGet()) {
@@ -393,11 +406,11 @@ class Shopware_Controllers_Frontend_Checkout extends Enlight_Controller_Action i
             $this->session['sComment'] = trim(strip_tags($this->Request()->getParam('sComment')));
         }
 
-        $basket = $this->View()->sBasket;
+        $basket = $this->View()->getAssign('sBasket');
         $agreements = $this->getInvalidAgreements($basket, $this->Request());
 
         if (!empty($agreements)) {
-            $this->View()->assign('sAGBError', array_key_exists('agbError', $agreements));
+            $this->View()->assign('sAGBError', \array_key_exists('agbError', $agreements));
 
             return $this->forward(
                 'confirm',
@@ -502,13 +515,21 @@ class Shopware_Controllers_Frontend_Checkout extends Enlight_Controller_Action i
             $this->session['sComment'] = trim(strip_tags($this->Request()->getParam('sComment')));
         }
 
-        if (!Shopware()->Config()->get('IgnoreAGB') && !$this->Request()->getParam('sAGB')) {
-            $this->View()->assign('sAGBError', true);
+        $this->View()->assign($this->session['sOrderVariables']->getArrayCopy());
 
-            return $this->forward('confirm');
+        $agreements = $this->getInvalidAgreements($this->View()->getAssign('sBasket'), $this->Request());
+
+        if (!empty($agreements)) {
+            $this->View()->assign('sAGBError', \array_key_exists('agbError', $agreements));
+
+            return $this->forward(
+                'confirm',
+                null,
+                null,
+                ['agreementErrors' => $agreements]
+            );
         }
 
-        $this->View()->assign($this->session['sOrderVariables']->getArrayCopy());
         $this->View()->assign('sAGBError', false);
 
         if (empty($this->View()->sPayment['embediframe'])
@@ -547,7 +568,7 @@ class Shopware_Controllers_Frontend_Checkout extends Enlight_Controller_Action i
     public function addArticleAction()
     {
         if (strtolower($this->Request()->getMethod()) !== 'post') {
-            throw new \LogicException('This action only admits post requests');
+            throw new LogicException('This action only admits post requests');
         }
 
         $ordernumber = trim($this->Request()->getParam('sAdd'));
@@ -714,7 +735,7 @@ class Shopware_Controllers_Frontend_Checkout extends Enlight_Controller_Action i
         }
 
         // We might change the shop context here so we need to initialize it again
-        $this->get(\Shopware\Bundle\StoreFrontBundle\Service\ContextServiceInterface::class)->initializeShopContext();
+        $this->get(ContextServiceInterface::class)->initializeShopContext();
 
         // We need an indicator in the view to expand the shipping costs pre-calculation on page load
         $this->View()->assign('calculateShippingCosts', true);
@@ -737,7 +758,7 @@ class Shopware_Controllers_Frontend_Checkout extends Enlight_Controller_Action i
         }
 
         // Redirect if basket is empty
-        if (!array_key_exists('content', $this->getBasket())) {
+        if (!\array_key_exists('content', $this->getBasket())) {
             return $this->redirect(['controller' => 'checkout', 'action' => 'cart']);
         }
 
@@ -747,8 +768,8 @@ class Shopware_Controllers_Frontend_Checkout extends Enlight_Controller_Action i
         $getPaymentDetails = $this->admin->sGetPaymentMeanById($this->View()->sFormData['payment']);
 
         $paymentClass = $this->admin->sInitiatePaymentClass($getPaymentDetails);
-        if ($paymentClass instanceof \ShopwarePlugin\PaymentMethods\Components\BasePaymentMethod) {
-            $data = $paymentClass->getCurrentPaymentDataAsArray(Shopware()->Session()->sUserId);
+        if ($paymentClass instanceof BasePaymentMethod) {
+            $data = $paymentClass->getCurrentPaymentDataAsArray(Shopware()->Session()->get('sUserId'));
             if (!empty($data)) {
                 $this->View()->sFormData += $data;
             }
@@ -765,7 +786,7 @@ class Shopware_Controllers_Frontend_Checkout extends Enlight_Controller_Action i
         $this->View()->assign('sDispatches', $this->getDispatches($this->View()->sFormData['payment']));
 
         // We might change the shop context here so we need to initialize it again
-        $this->get(\Shopware\Bundle\StoreFrontBundle\Service\ContextServiceInterface::class)->initializeShopContext();
+        $this->get(ContextServiceInterface::class)->initializeShopContext();
 
         $this->View()->assign('sBasket', $this->getBasket());
 
@@ -843,8 +864,8 @@ class Shopware_Controllers_Frontend_Checkout extends Enlight_Controller_Action i
         }
 
         // Save payment method details to db
-        if ($checkData['sPaymentObject'] instanceof \ShopwarePlugin\PaymentMethods\Components\BasePaymentMethod) {
-            $checkData['sPaymentObject']->savePaymentData(Shopware()->Session()->sUserId, $this->Request());
+        if ($checkData['sPaymentObject'] instanceof BasePaymentMethod) {
+            $checkData['sPaymentObject']->savePaymentData(Shopware()->Session()->get('sUserId'), $this->Request());
         }
 
         // Save the payment info
@@ -855,7 +876,7 @@ class Shopware_Controllers_Frontend_Checkout extends Enlight_Controller_Action i
         if ($previousPayment['paymentTable']) {
             Shopware()->Db()->delete(
                 $previousPayment['paymentTable'],
-                ['userID = ?' => Shopware()->Session()->sUserId]
+                ['userID = ?' => Shopware()->Session()->get('sUserId')]
             );
         }
 
@@ -892,14 +913,14 @@ class Shopware_Controllers_Frontend_Checkout extends Enlight_Controller_Action i
             if ($taxFree) {
                 $system->sUSERGROUPDATA['tax'] = 0;
                 $system->sCONFIG['sARTICLESOUTPUTNETTO'] = 1; //Old template
-                Shopware()->Session()->sUserGroupData = $system->sUSERGROUPDATA;
+                Shopware()->Session()->set('sUserGroupData', $system->sUSERGROUPDATA);
                 $userData['additional']['charge_vat'] = false;
                 $userData['additional']['show_net'] = false;
-                Shopware()->Session()->sOutputNet = true;
+                Shopware()->Session()->set('sOutputNet', true);
             } else {
                 $userData['additional']['charge_vat'] = true;
                 $userData['additional']['show_net'] = !empty($system->sUSERGROUPDATA['tax']);
-                Shopware()->Session()->sOutputNet = empty($system->sUSERGROUPDATA['tax']);
+                Shopware()->Session()->set('sOutputNet', empty($system->sUSERGROUPDATA['tax']));
             }
         }
 
@@ -1000,7 +1021,7 @@ class Shopware_Controllers_Frontend_Checkout extends Enlight_Controller_Action i
                 true
             );
         }
-        if (!empty($inStock['laststock']) || !empty(Shopware()->Config()->InstockInfo)) {
+        if (!empty($inStock['laststock']) || !empty(Shopware()->Config()->get('InstockInfo'))) {
             if ($inStock['instock'] <= 0 && !empty($inStock['laststock'])) {
                 return Shopware()->Snippets()->getNamespace('frontend')->get(
                     'CheckoutArticleNoStock',
@@ -1093,10 +1114,10 @@ class Shopware_Controllers_Frontend_Checkout extends Enlight_Controller_Action i
 
         $basket = $this->basket->sGetBasket();
 
-        /** @var \Shopware\Models\Shop\Currency $currency */
+        /** @var Currency $currency */
         $currency = $this->get('shop')->getCurrency();
 
-        $positions = $this->container->get(\Shopware\Components\Cart\BasketHelperInterface::class)->getPositionPrices(
+        $positions = $this->container->get(BasketHelperInterface::class)->getPositionPrices(
             new DiscountContext(
                 $this->session->get('sessionId'),
                 null,
@@ -1116,7 +1137,7 @@ class Shopware_Controllers_Frontend_Checkout extends Enlight_Controller_Action i
         $basket['sCurrencyName'] = $currency->getCurrency();
         $basket['sCurrencyFactor'] = $currency->getFactor();
 
-        if ($hasDifferentTaxes && empty($shippingCosts['taxMode']) && $this->get(\Shopware_Components_Config::class)->get('proportionalTaxCalculation') && !$this->session->get('taxFree')) {
+        if ($hasDifferentTaxes && empty($shippingCosts['taxMode']) && $this->get(Shopware_Components_Config::class)->get('proportionalTaxCalculation') && !$this->session->get('taxFree')) {
             $taxProportional = $taxCalculator->calculate($shippingCosts['brutto'], $positions, false);
 
             $basket['sShippingcostsTaxProportional'] = $taxProportional;
@@ -1163,7 +1184,7 @@ class Shopware_Controllers_Frontend_Checkout extends Enlight_Controller_Action i
         }
 
         $this->View()->assign('sBasketProportional', $basket);
-        if ($mergeProportional && $hasDifferentTaxes && $this->get(\Shopware_Components_Config::class)->get('proportionalTaxCalculation')) {
+        if ($mergeProportional && $hasDifferentTaxes && $this->get(Shopware_Components_Config::class)->get('proportionalTaxCalculation')) {
             $basket['content'] = $this->get('shopware.cart.proportional_cart_merger')->mergeProportionalItems($basket['content']);
         }
 
@@ -1185,7 +1206,7 @@ class Shopware_Controllers_Frontend_Checkout extends Enlight_Controller_Action i
 
         if (!empty($basket['sShippingcostsTax'])) {
             if (!empty($basket['sShippingcostsTaxProportional'])) {
-                /** @var \Shopware\Components\Cart\Struct\Price $shippingTax */
+                /** @var Price $shippingTax */
                 foreach ($basket['sShippingcostsTaxProportional'] as $shippingTax) {
                     $result[number_format($shippingTax->getTaxRate(), 2)] += $shippingTax->getTax();
                 }
@@ -1209,7 +1230,7 @@ class Shopware_Controllers_Frontend_Checkout extends Enlight_Controller_Action i
             if (!empty($item['tax_rate'])) {
             } elseif (!empty($item['taxPercent'])) {
                 $item['tax_rate'] = $item['taxPercent'];
-            } elseif ($item['modus'] == 2) {
+            } elseif ($item['modus'] == CartPositionsMode::VOUCHER) {
                 // Ticket 4842 - dynamic tax-rates
                 $resultVoucherTaxMode = Shopware()->Db()->fetchOne(
                     'SELECT taxconfig FROM s_emarketing_vouchers WHERE ordercode=?',
@@ -1336,7 +1357,7 @@ class Shopware_Controllers_Frontend_Checkout extends Enlight_Controller_Action i
      */
     public function getDispatchNoOrder()
     {
-        return !empty(Shopware()->Config()->PremiumShippingNoOrder) && (empty($this->session['sDispatch']) || empty($this->session['sCountry']));
+        return !empty(Shopware()->Config()->get('PremiumShippingNoOrder')) && (empty($this->session['sDispatch']) || empty($this->session['sCountry']));
     }
 
     /**
@@ -1524,8 +1545,8 @@ class Shopware_Controllers_Frontend_Checkout extends Enlight_Controller_Action i
         }
 
         $paymentClass = $this->admin->sInitiatePaymentClass($payment);
-        if ($payment && $paymentClass instanceof \ShopwarePlugin\PaymentMethods\Components\BasePaymentMethod) {
-            $data = $paymentClass->getCurrentPaymentDataAsArray(Shopware()->Session()->sUserId);
+        if ($payment && $paymentClass instanceof BasePaymentMethod) {
+            $data = $paymentClass->getCurrentPaymentDataAsArray(Shopware()->Session()->get('sUserId'));
             $payment['validation'] = $paymentClass->validate($data);
             if (!empty($data)) {
                 $payment['data'] = $data;
@@ -1549,7 +1570,7 @@ class Shopware_Controllers_Frontend_Checkout extends Enlight_Controller_Action i
         $this->admin->sUpdatePayment();
 
         //if customer logged in and payment switched to fallback, display cart notice. Otherwise anonymous customers will see the message too
-        if (Shopware()->Session()->sUserId) {
+        if (Shopware()->Session()->get('sUserId')) {
             $this->flagPaymentBlocked();
         }
 
@@ -1637,12 +1658,12 @@ class Shopware_Controllers_Frontend_Checkout extends Enlight_Controller_Action i
      *
      * After the product was added to the basket, the whole cart content will be returned.
      *
-     * @throws \LogicException
+     * @throws LogicException
      */
     public function ajaxAddArticleCartAction()
     {
         if (strtolower($this->Request()->getMethod()) !== 'post') {
-            throw new \LogicException('This action only admits post requests');
+            throw new LogicException('This action only admits post requests');
         }
 
         $orderNumber = $this->Request()->getParam('sAdd');
@@ -1678,7 +1699,7 @@ class Shopware_Controllers_Frontend_Checkout extends Enlight_Controller_Action i
     public function ajaxDeleteArticleCartAction()
     {
         if (strtolower($this->Request()->getMethod()) !== 'post') {
-            throw new \LogicException('This action only admits post requests');
+            throw new LogicException('This action only admits post requests');
         }
 
         $itemId = $this->Request()->getParam('sDelete');
@@ -1805,12 +1826,12 @@ class Shopware_Controllers_Frontend_Checkout extends Enlight_Controller_Action i
     {
         $errors = [];
 
-        if (!$this->container->get(\Shopware_Components_Config::class)->get('IgnoreAGB') && !$this->Request()->getParam('sAGB')) {
+        if (!$this->container->get(Shopware_Components_Config::class)->get('IgnoreAGB') && !$this->Request()->getParam('sAGB')) {
             $errors['agbError'] = true;
         }
 
         $esdAgreement = $request->getParam('esdAgreementChecked');
-        if ($this->container->get(\Shopware_Components_Config::class)->get('showEsdWarning')
+        if ($this->container->get(Shopware_Components_Config::class)->get('showEsdWarning')
             && $this->basketHasEsdProducts($basket)
             && empty($esdAgreement)
         ) {
@@ -1850,11 +1871,11 @@ class Shopware_Controllers_Frontend_Checkout extends Enlight_Controller_Action i
      */
     private function addAccessories($accessories, $quantities)
     {
-        if (is_string($accessories)) {
+        if (\is_string($accessories)) {
             $accessories = explode(';', $accessories);
         }
 
-        if (empty($accessories) || !is_array($accessories)) {
+        if (empty($accessories) || !\is_array($accessories)) {
             return;
         }
 
@@ -1910,7 +1931,7 @@ class Shopware_Controllers_Frontend_Checkout extends Enlight_Controller_Action i
             return false;
         }
 
-        $attrName = $config->serviceAttrField;
+        $attrName = $config->offsetGet('serviceAttrField');
         if (empty($attrName) || !isset($basket['content'])) {
             return false;
         }
@@ -1930,22 +1951,18 @@ class Shopware_Controllers_Frontend_Checkout extends Enlight_Controller_Action i
      * Helper function that iterates through the basket products.
      * If checks if the basket has a normal product e.g. not an esd product
      * and not a product with the service attribute is set to true.
-     *
-     * @param array $basket
-     *
-     * @return bool
      */
-    private function basketHasMixedProducts($basket)
+    private function basketHasMixedProducts(array $basket): bool
     {
         $config = Shopware()->Config();
-        $attrName = $config->serviceAttrField;
+        $attrName = $config->get('serviceAttrField');
 
         if (!isset($basket['content'])) {
             return false;
         }
 
         foreach ($basket['content'] as $cartItem) {
-            if ((int) $cartItem['modus'] === 4 || $cartItem['esd']) {
+            if ((int) $cartItem['modus'] === CartPositionsMode::PAYMENT_SURCHARGE_OR_DISCOUNT || $cartItem['esd']) {
                 continue;
             }
 
@@ -2021,25 +2038,25 @@ class Shopware_Controllers_Frontend_Checkout extends Enlight_Controller_Action i
         }
 
         if ($billingId && $billingId != $this->View()->sUserData['additional']['user']['default_billing_address_id']) {
-            $address = $this->get(\Shopware\Components\Model\ModelManager::class)
+            $address = $this->get(ModelManager::class)
                 ->getRepository(Address::class)
                 ->getOneByUser(
                     $billingId,
                     $this->View()->sUserData['additional']['user']['id']
                 );
 
-            $this->get(\Shopware\Bundle\AccountBundle\Service\AddressServiceInterface::class)->setDefaultBillingAddress($address);
+            $this->get(AddressServiceInterface::class)->setDefaultBillingAddress($address);
         }
 
         if ($shippingId && $shippingId != $this->View()->sUserData['additional']['user']['default_shipping_address_id']) {
-            $address = $this->get(\Shopware\Components\Model\ModelManager::class)
+            $address = $this->get(ModelManager::class)
                 ->getRepository(Address::class)
                 ->getOneByUser(
                     $shippingId,
                     $this->View()->sUserData['additional']['user']['id']
                 );
 
-            $this->get(\Shopware\Bundle\AccountBundle\Service\AddressServiceInterface::class)->setDefaultShippingAddress($address);
+            $this->get(AddressServiceInterface::class)->setDefaultShippingAddress($address);
         }
     }
 
@@ -2053,10 +2070,10 @@ class Shopware_Controllers_Frontend_Checkout extends Enlight_Controller_Action i
      */
     private function isValidAddress($addressId, $isShippingAddress = false)
     {
-        $address = $this->get(\Shopware\Components\Model\ModelManager::class)->find(Address::class, $addressId);
+        $address = $this->get(ModelManager::class)->find(Address::class, $addressId);
 
-        $context = $this->get(\Shopware\Bundle\StoreFrontBundle\Service\ContextServiceInterface::class)->getContext();
-        $country = $this->get(\Shopware\Bundle\StoreFrontBundle\Gateway\CountryGatewayInterface::class)->getCountry($address->getCountry()->getId(), $context);
+        $context = $this->get(ContextServiceInterface::class)->getContext();
+        $country = $this->get(CountryGatewayInterface::class)->getCountry($address->getCountry()->getId(), $context);
 
         if ($address && $isShippingAddress && !$country->allowShipping()) {
             $this->View()->assign('invalidShippingCountry', true);
@@ -2064,7 +2081,7 @@ class Shopware_Controllers_Frontend_Checkout extends Enlight_Controller_Action i
             return false;
         }
 
-        return $this->get(\Shopware\Bundle\AccountBundle\Service\Validator\AddressValidatorInterface::class)->isValid($address);
+        return $this->get(AddressValidatorInterface::class)->isValid($address);
     }
 
     /**
@@ -2075,9 +2092,9 @@ class Shopware_Controllers_Frontend_Checkout extends Enlight_Controller_Action i
      */
     private function getOrderAddress($orderNumber, $source)
     {
-        /** @var \Doctrine\DBAL\Query\QueryBuilder $builder */
-        $builder = $this->get(\Doctrine\DBAL\Connection::class)->createQueryBuilder();
-        $context = $this->get(\Shopware\Bundle\StoreFrontBundle\Service\ContextServiceInterface::class)->getShopContext();
+        /** @var QueryBuilder $builder */
+        $builder = $this->get(Connection::class)->createQueryBuilder();
+        $context = $this->get(ContextServiceInterface::class)->getShopContext();
 
         $sourceTable = $source === 'billing' ? 's_order_billingaddress' : 's_order_shippingaddress';
 
@@ -2088,12 +2105,12 @@ class Shopware_Controllers_Frontend_Checkout extends Enlight_Controller_Action i
             ->execute()
             ->fetch();
 
-        $countryStruct = $this->get(\Shopware\Bundle\StoreFrontBundle\Gateway\CountryGatewayInterface::class)->getCountry($address['countryID'], $context);
-        $stateStruct = $this->get(\Shopware\Bundle\StoreFrontBundle\Gateway\CountryGatewayInterface::class)->getState($address['stateID'], $context);
+        $countryStruct = $this->get(CountryGatewayInterface::class)->getCountry($address['countryID'], $context);
+        $stateStruct = $this->get(CountryGatewayInterface::class)->getState($address['stateID'], $context);
 
         $address['country'] = json_decode(json_encode($countryStruct), true);
         $address['state'] = json_decode(json_encode($stateStruct), true);
-        $address['attribute'] = $this->get(\Shopware\Bundle\AttributeBundle\Service\DataLoader::class)->load($sourceTable . '_attributes', $address['id']);
+        $address['attribute'] = $this->get(DataLoader::class)->load($sourceTable . '_attributes', $address['id']);
 
         return $address;
     }
@@ -2108,7 +2125,7 @@ class Shopware_Controllers_Frontend_Checkout extends Enlight_Controller_Action i
             unset($addressA[$key], $addressB[$key]);
         }
 
-        return count(array_diff($addressA, $addressB)) === 0;
+        return \count(array_diff($addressA, $addressB)) === 0;
     }
 
     /**
@@ -2135,18 +2152,18 @@ class Shopware_Controllers_Frontend_Checkout extends Enlight_Controller_Action i
      */
     private function updateCurrencyDependencies($currencyId)
     {
-        /** @var \Shopware\Models\Shop\Currency $currencyModel */
-        $currencyModel = $this->get(\Shopware\Components\Model\ModelManager::class)->find(\Shopware\Models\Shop\Currency::class, $currencyId);
+        /** @var Currency $currencyModel */
+        $currencyModel = $this->get(ModelManager::class)->find(Currency::class, $currencyId);
 
-        /** @var Shopware\Models\Shop\Shop $shopModel */
+        /** @var \Shopware\Models\Shop\Shop $shopModel */
         $shopModel = $this->get('shop');
         $shopModel->setCurrency($currencyModel);
 
-        /** @var \Zend_Currency $currency */
+        /** @var Zend_Currency $currency */
         $currency = $this->get('currency');
         $currency->setFormat($currencyModel->toArray());
 
-        $this->get(\Shopware\Bundle\StoreFrontBundle\Service\ContextServiceInterface::class)->initializeShopContext();
+        $this->get(ContextServiceInterface::class)->initializeShopContext();
     }
 
     private function getInvalidProducts(array $basket): array
@@ -2154,7 +2171,7 @@ class Shopware_Controllers_Frontend_Checkout extends Enlight_Controller_Action i
         $products = [];
 
         foreach ($basket['content'] as $item) {
-            if ((int) $item['modus'] !== 0) {
+            if ((int) $item['modus'] !== CartPositionsMode::PRODUCT) {
                 continue;
             }
 
@@ -2185,11 +2202,11 @@ class Shopware_Controllers_Frontend_Checkout extends Enlight_Controller_Action i
             return $allowedByDefault;
         }
 
-        if (!array_key_exists($countryId, $countryTranslations)) {
+        if (!\array_key_exists($countryId, $countryTranslations)) {
             return $allowedByDefault;
         }
 
-        if (!array_key_exists('allow_shipping', $countryTranslations[$countryId])) {
+        if (!\array_key_exists('allow_shipping', $countryTranslations[$countryId])) {
             return $allowedByDefault;
         }
 

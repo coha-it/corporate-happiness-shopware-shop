@@ -25,6 +25,10 @@
 namespace ShopwarePlugins\SwagUpdate\Components;
 
 use Doctrine\DBAL\Connection;
+use Enlight_Components_Snippet_Namespace;
+use Exception;
+use PDO;
+use PDOStatement;
 use Shopware\Bundle\PluginInstallerBundle\Context\PluginsByTechnicalNameRequest;
 use Shopware\Components\DependencyInjection\Container;
 
@@ -54,6 +58,7 @@ class PluginCheck
         $technicalNames = array_column($installedPlugins, 'name');
         $locale = $this->getLocale();
 
+        /** @var string $shopwareVersion */
         $shopwareVersion = $this->container->getParameter('shopware.release.version');
 
         $request = new PluginsByTechnicalNameRequest($locale, $shopwareVersion, $technicalNames);
@@ -69,8 +74,8 @@ class PluginCheck
                 $key = strtolower($plugin['name']);
                 $name = $plugin['label'];
 
-                $inStore = array_key_exists($key, $storePlugins);
-                $targetVersionUpdateAvailable = array_key_exists($key, $updatesAvailable);
+                $inStore = \array_key_exists($key, $storePlugins);
+                $targetVersionUpdateAvailable = \array_key_exists($key, $updatesAvailable);
                 $description = $this->getPluginStateDescription($inStore, $targetVersionUpdateAvailable);
 
                 $results[] = [
@@ -81,10 +86,10 @@ class PluginCheck
                     'updatableAfterUpgrade' => $inStore && $targetVersionUpdateAvailable && $storePlugins[$key]->getVersion() !== $updatesAvailable[$key]->getVersion(),
                     'id' => sprintf('plugin_incompatible-%s', $name),
                     'technicalName' => $technicalName,
-                    'errorLevel' => ($targetVersionUpdateAvailable) ? Validation::REQUIREMENT_VALID : Validation::REQUIREMENT_WARNING,
+                    'errorLevel' => $targetVersionUpdateAvailable ? Validation::REQUIREMENT_VALID : Validation::REQUIREMENT_WARNING,
                 ];
             }
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $results[] = [
                 'name' => 'Error',
                 'message' => 'Could not query plugins which are available for your shopware version',
@@ -110,7 +115,7 @@ class PluginCheck
     /**
      * Helper which returns an snippet-instance
      *
-     * @return \Enlight_Components_Snippet_Namespace
+     * @return Enlight_Components_Snippet_Namespace
      */
     public function getSnippetNamespace()
     {
@@ -124,7 +129,7 @@ class PluginCheck
     {
         try {
             return $this->container->get('auth')->getIdentity()->locale->getLocale();
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return null;
         }
     }
@@ -144,10 +149,10 @@ class PluginCheck
             ->setParameter(':source', 'Default')
             ->setParameter(':names', ['PluginManager', 'StoreApi'], Connection::PARAM_STR_ARRAY);
 
-        /** @var \PDOStatement $statement */
+        /** @var PDOStatement $statement */
         $statement = $query->execute();
 
-        return $statement->fetchAll(\PDO::FETCH_ASSOC);
+        return $statement->fetchAll(PDO::FETCH_ASSOC);
     }
 
     /**

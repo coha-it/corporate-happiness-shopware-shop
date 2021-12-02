@@ -24,19 +24,21 @@
 
 namespace Shopware\Bundle\SitemapBundle\Service;
 
+use IteratorAggregate;
+use RuntimeException;
 use Shopware\Bundle\SitemapBundle\ConfigHandler\ConfigHandlerInterface;
 
 class ConfigHandler
 {
-    const EXCLUDED_URLS_KEY = 'excludedUrls';
-    const CUSTOM_URLS_KEY = 'customUrls';
+    public const EXCLUDED_URLS_KEY = 'excludedUrls';
+    public const CUSTOM_URLS_KEY = 'customUrls';
 
     /**
      * @var ConfigHandlerInterface[]
      */
     private $configHandlers;
 
-    public function __construct(\IteratorAggregate $configHandlers)
+    public function __construct(IteratorAggregate $configHandlers)
     {
         $this->configHandlers = iterator_to_array($configHandlers, false);
     }
@@ -65,7 +67,7 @@ class ConfigHandler
             return $customUrls;
         }
 
-        throw new \RuntimeException(sprintf("Invalid sitemap config key: '%s'", $key));
+        throw new RuntimeException(sprintf("Invalid sitemap config key: '%s'", $key));
     }
 
     public function save(array $config): void

@@ -25,6 +25,7 @@
 namespace Shopware\Bundle\StoreFrontBundle\Gateway\DBAL;
 
 use Doctrine\DBAL\Connection;
+use PDO;
 use Shopware\Bundle\StoreFrontBundle\Gateway;
 use Shopware\Bundle\StoreFrontBundle\Struct;
 
@@ -72,15 +73,15 @@ class BlogGateway implements Gateway\BlogGatewayInterface
     {
         $data = $this->getQuery($blogIds, $context)
             ->execute()
-            ->fetchAll(\PDO::FETCH_ASSOC);
+            ->fetchAll(PDO::FETCH_ASSOC);
 
         $articles = $this->getArticlesQuery(array_column($data, '__blog_id'))
             ->execute()
-            ->fetchAll(\PDO::FETCH_GROUP | \PDO::FETCH_COLUMN);
+            ->fetchAll(PDO::FETCH_GROUP | PDO::FETCH_COLUMN);
 
         $medias = $this->getMediaQuery(array_column($data, '__blog_id'))
             ->execute()
-            ->fetchAll(\PDO::FETCH_GROUP | \PDO::FETCH_COLUMN);
+            ->fetchAll(PDO::FETCH_GROUP | PDO::FETCH_COLUMN);
 
         $blogs = [];
         foreach ($data as $row) {
@@ -88,11 +89,11 @@ class BlogGateway implements Gateway\BlogGatewayInterface
 
             $blog = $this->blogHydrator->hydrate($row);
 
-            if (array_key_exists($id, $articles)) {
+            if (\array_key_exists($id, $articles)) {
                 $blog->setProductNumbers($articles[$id]);
             }
 
-            if (array_key_exists($id, $medias)) {
+            if (\array_key_exists($id, $medias)) {
                 $blog->setMediaIds($medias[$id]);
             }
 

@@ -24,6 +24,7 @@
 
 namespace Shopware\Bundle\EmotionBundle\Service;
 
+use Enlight_Event_EventManager;
 use Shopware\Bundle\EmotionBundle\ComponentHandler\ArticleComponentHandler;
 use Shopware\Bundle\EmotionBundle\ComponentHandler\ArticleSliderComponentHandler;
 use Shopware\Bundle\EmotionBundle\ComponentHandler\BannerComponentHandler;
@@ -36,6 +37,7 @@ use Shopware\Bundle\EmotionBundle\Struct\Emotion;
 use Shopware\Bundle\MediaBundle\MediaServiceInterface;
 use Shopware\Bundle\StoreFrontBundle\Struct\Product\Manufacturer;
 use Shopware\Components\Compatibility\LegacyStructConverter;
+use Shopware_Components_Config;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
 class StructConverter
@@ -51,7 +53,7 @@ class StructConverter
     private $mediaService;
 
     /**
-     * @var \Enlight_Event_EventManager
+     * @var Enlight_Event_EventManager
      */
     private $eventManager;
 
@@ -60,7 +62,7 @@ class StructConverter
      */
     private $container;
 
-    public function __construct(LegacyStructConverter $converter, MediaServiceInterface $mediaService, \Enlight_Event_EventManager $eventManager, ContainerInterface $container)
+    public function __construct(LegacyStructConverter $converter, MediaServiceInterface $mediaService, Enlight_Event_EventManager $eventManager, ContainerInterface $container)
     {
         $this->converter = $converter;
         $this->mediaService = $mediaService;
@@ -87,7 +89,7 @@ class StructConverter
             $category['hideFilter'] = !$category['displayFacets'];
             $category['external'] = $category['externalLink'];
             $category['mediaId'] = $category['media'] ? $category['media']['id'] : null;
-            $category['path'] = count($category['path']) ? '|' . implode('|', $category['path']) . '|' : null;
+            $category['path'] = \count($category['path']) ? '|' . implode('|', $category['path']) . '|' : null;
             $category['active'] = true;
         }
 
@@ -206,7 +208,7 @@ class StructConverter
                 foreach ($element->getData()->get('manufacturers') as $manufacturer) {
                     $manufacturerArray = $this->converter->convertManufacturerStruct($manufacturer);
 
-                    $manufacturerArray['link'] = $this->container->get(\Shopware_Components_Config::class)->get('baseFile') . '?controller=listing&action=manufacturer&sSupplier=' . $manufacturer->getId();
+                    $manufacturerArray['link'] = $this->container->get(Shopware_Components_Config::class)->get('baseFile') . '?controller=listing&action=manufacturer&sSupplier=' . $manufacturer->getId();
                     $manufacturerArray['website'] = $manufacturer->getLink();
 
                     $elementArray['data']['values'][$manufacturer->getId()] = $manufacturerArray;
@@ -219,7 +221,7 @@ class StructConverter
                     $entries[] = $this->converter->convertBlogStruct($blog);
                 }
 
-                $elementArray['data']['totalCount'] = count($entries);
+                $elementArray['data']['totalCount'] = \count($entries);
                 $elementArray['data']['entries'] = $entries;
                 break;
         }

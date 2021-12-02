@@ -27,17 +27,17 @@ class Shopware_Plugins_Core_MarketingAggregate_Bootstrap extends Shopware_Compon
     /**
      * Refresh the marketing data only manuel.
      */
-    const AGGREGATE_STRATEGY_MANUAL = 1;
+    public const AGGREGATE_STRATEGY_MANUAL = 1;
 
     /**
      * Refresh the marketing data over a cron job.
      */
-    const AGGREGATE_STRATEGY_CRON_JOB = 2;
+    public const AGGREGATE_STRATEGY_CRON_JOB = 2;
 
     /**
      * Refresh the marketing data after access the specified core function
      */
-    const AGGREGATE_STRATEGY_LIVE = 3;
+    public const AGGREGATE_STRATEGY_LIVE = 3;
 
     /**
      * Returns the capabilities for this plugin.
@@ -195,7 +195,7 @@ class Shopware_Plugins_Core_MarketingAggregate_Bootstrap extends Shopware_Compon
      */
     public function beforeSetLastArticle(Enlight_Event_EventArgs $arguments)
     {
-        if (Shopware()->Session()->Bot || !($this->isSimilarShownActivated())) {
+        if (Shopware()->Session()->get('Bot') || !($this->isSimilarShownActivated())) {
             return $arguments->getReturn();
         }
 
@@ -297,12 +297,12 @@ class Shopware_Plugins_Core_MarketingAggregate_Bootstrap extends Shopware_Compon
      */
     public function addNewAlsoBought(Enlight_Event_EventArgs $arguments)
     {
-        if (Shopware()->Session()->Bot) {
+        if (Shopware()->Session()->get('Bot')) {
             return $arguments->getReturn();
         }
 
         $variants = $arguments->getDetails();
-        if (count($variants) <= 1) {
+        if (\count($variants) <= 1) {
             return $arguments->getReturn();
         }
         $sql = '
@@ -364,7 +364,7 @@ class Shopware_Plugins_Core_MarketingAggregate_Bootstrap extends Shopware_Compon
      */
     public function incrementTopSeller(Enlight_Event_EventArgs $arguments)
     {
-        if (Shopware()->Session()->Bot || !($this->isTopSellerActivated())) {
+        if (Shopware()->Session()->get('Bot') || !($this->isTopSellerActivated())) {
             return $arguments->getReturn();
         }
 
@@ -414,7 +414,7 @@ class Shopware_Plugins_Core_MarketingAggregate_Bootstrap extends Shopware_Compon
      */
     public function afterTopSellerSelected(Enlight_Event_EventArgs $arguments)
     {
-        if (Shopware()->Session()->Bot) {
+        if (Shopware()->Session()->get('Bot')) {
             return $arguments->getReturn();
         }
 

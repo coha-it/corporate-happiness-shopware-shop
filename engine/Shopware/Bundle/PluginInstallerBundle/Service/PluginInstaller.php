@@ -24,9 +24,16 @@
 
 namespace Shopware\Bundle\PluginInstallerBundle\Service;
 
+use DateTime;
+use DateTimeInterface;
 use Doctrine\DBAL\Connection;
+use Doctrine\DBAL\Driver\ResultStatement;
 use Enlight_Event_EventManager;
+use Exception;
+use InvalidArgumentException;
+use PDO;
 use Psr\Log\LoggerInterface;
+use RuntimeException;
 use Shopware\Bundle\PluginInstallerBundle\Events\PluginEvent;
 use Shopware\Bundle\PluginInstallerBundle\Events\PostPluginActivateEvent;
 use Shopware\Bundle\PluginInstallerBundle\Events\PostPluginDeactivateEvent;
@@ -84,7 +91,7 @@ class PluginInstaller
     private $requirementValidator;
 
     /**
-     * @var \PDO
+     * @var PDO
      */
     private $pdo;
 
@@ -109,17 +116,23 @@ class PluginInstaller
     private $logger;
 
     /**
+     * @var Kernel
+     */
+    private $kernel;
+
+    /**
      * @param string|string[] $pluginDirectories
      */
     public function __construct(
         ModelManager $em,
         DatabaseHandler $snippetHandler,
         RequirementValidator $requirementValidator,
-        \PDO $pdo,
+        PDO $pdo,
         Enlight_Event_EventManager $events,
         $pluginDirectories,
         ShopwareReleaseStruct $release,
-        LoggerInterface $logger
+        LoggerInterface $logger,
+        Kernel $kernel
     ) {
         $this->em = $em;
         $this->connection = $this->em->getConnection();
@@ -130,10 +143,11 @@ class PluginInstaller
         $this->pluginDirectories = (array) $pluginDirectories;
         $this->release = $release;
         $this->logger = $logger;
+        $this->kernel = $kernel;
     }
 
     /**
-     * @throws \Exception
+     * @throws Exception
      *
      * @return InstallContext
      */
@@ -161,8 +175,8 @@ class PluginInstaller
 
         $this->events->notify(PluginEvent::POST_INSTALL, new PostPluginInstallEvent($context, $pluginBootstrap));
 
-        $plugin->setInstalled(new \DateTime());
-        $plugin->setUpdated(new \DateTime());
+        $plugin->setInstalled(new DateTime());
+        $plugin->setUpdated(new DateTime());
 
         $this->em->flush($plugin);
 
@@ -172,7 +186,7 @@ class PluginInstaller
     /**
      * @param bool $removeData
      *
-     * @throws \Exception
+     * @throws Exception
      * @throws \Doctrine\DBAL\DBALException
      * @throws \Doctrine\ORM\OptimisticLockException
      *
@@ -216,7 +230,7 @@ class PluginInstaller
     }
 
     /**
-     * @throws \Exception
+     * @throws Exception
      *
      * @return UpdateContext
      */
@@ -245,7 +259,7 @@ class PluginInstaller
         $plugin->setVersion($context->getUpdateVersion());
         $plugin->setUpdateVersion(null);
         $plugin->setUpdateSource(null);
-        $plugin->setUpdated(new \DateTime());
+        $plugin->setUpdated(new DateTime());
 
         $this->em->flush($plugin);
 
@@ -253,7 +267,7 @@ class PluginInstaller
     }
 
     /**
-     * @throws \Exception
+     * @throws Exception
      * @throws \Doctrine\ORM\OptimisticLockException
      *
      * @return ActivateContext
@@ -278,7 +292,7 @@ class PluginInstaller
     }
 
     /**
-     * @throws \Exception
+     * @throws Exception
      * @throws \Doctrine\ORM\OptimisticLockException
      *
      * @return DeactivateContext
@@ -301,9 +315,9 @@ class PluginInstaller
     }
 
     /**
-     * @throws \RuntimeException
+     * @throws RuntimeException
      */
-    public function refreshPluginList(\DateTimeInterface $refreshDate)
+    public function refreshPluginList(DateTimeInterface $refreshDate)
     {
         $initializer = new PluginInitializer(
             $this->pdo,
@@ -329,7 +343,7 @@ class PluginInstaller
             $translations = [];
             $translatableInfoKeys = ['label', 'description'];
             foreach ($info as $key => $value) {
-                if (!in_array($key, $translatableInfoKeys, true)) {
+                if (!\in_array($key, $translatableInfoKeys, true)) {
                     continue;
                 }
 
@@ -388,7 +402,7 @@ class PluginInstaller
     }
 
     /**
-     * @throws \Exception
+     * @throws Exception
      *
      * @return string
      */
@@ -408,7 +422,7 @@ class PluginInstaller
     }
 
     /**
-     * @throws \Exception
+     * @throws Exception
      */
     private function installResources(PluginBootstrap $bootstrap, Plugin $plugin)
     {
@@ -437,7 +451,7 @@ class PluginInstaller
     /**
      * @param string $file
      *
-     * @throws \Exception
+     * @throws Exception
      */
     private function installForm(Plugin $plugin, $file)
     {
@@ -451,7 +465,7 @@ class PluginInstaller
     /**
      * @param string $file
      *
-     * @throws \InvalidArgumentException
+     * @throws InvalidArgumentException
      */
     private function installMenu(Plugin $plugin, $file)
     {
@@ -465,7 +479,7 @@ class PluginInstaller
     /**
      * @param string $file
      *
-     * @throws \InvalidArgumentException
+     * @throws InvalidArgumentException
      */
     private function installCronjob(Plugin $plugin, $file)
     {
@@ -490,18 +504,16 @@ class PluginInstaller
     /**
      * @param string $pluginName
      *
-     * @throws \Exception
+     * @throws Exception
      *
      * @return PluginBootstrap
      */
     private function getPluginByName($pluginName)
     {
-        /** @var Kernel $kernel */
-        $kernel = Shopware()->Container()->get('kernel');
-        $plugins = $kernel->getPlugins();
+        $plugins = $this->kernel->getPlugins();
 
         if (!isset($plugins[$pluginName])) {
-            throw new \InvalidArgumentException(sprintf('Plugin by name "%s" not found.', $pluginName));
+            throw new InvalidArgumentException(sprintf('Plugin by name "%s" not found.', $pluginName));
         }
 
         return $plugins[$pluginName];
@@ -565,12 +577,44 @@ SQL;
     }
 
     /**
-     * @param int $pluginId
-     *
      * @throws \Doctrine\DBAL\DBALException
      */
-    private function removeMenuEntries($pluginId)
+    private function removeMenuEntries(int $pluginId)
     {
+        $builder = $this->em->getConnection()->createQueryBuilder();
+        $builder->select(['id', 'controller', 'action']);
+        $builder->from('s_core_menu');
+        $builder->andWhere('pluginID = :pluginId');
+        $builder->setParameter(':pluginId', $pluginId);
+
+        /** @var ResultStatement<array> $statement */
+        $statement = $builder->execute();
+
+        $menuItems = $statement->fetchAll();
+
+        if (\count($menuItems) === 0) {
+            return;
+        }
+
+        $deleteSnippets = [];
+
+        foreach ($menuItems as $menuItem) {
+            $name = $menuItem['controller'];
+
+            // Index actions aren't appended to the name of the snippet, they are an exemption from the rule
+            if ($menuItem['action'] !== 'Index') {
+                $name .= '/' . $menuItem['action'];
+            }
+
+            $deleteSnippets[] = $name;
+        }
+
+        $this->em->getConnection()->executeQuery(
+            'DELETE FROM s_core_snippets WHERE namespace = "backend/index/view/main" AND `name` IN (:names)',
+            ['names' => $deleteSnippets],
+            ['names' => Connection::PARAM_STR_ARRAY]
+        );
+
         $sql = 'DELETE FROM s_core_menu WHERE pluginID = :pluginId';
         $this->connection->executeStatement($sql, [':pluginId' => $pluginId]);
     }

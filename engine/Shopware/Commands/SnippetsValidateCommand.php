@@ -24,6 +24,9 @@
 
 namespace Shopware\Commands;
 
+use DirectoryIterator;
+use Exception;
+use RuntimeException;
 use Shopware\Components\Snippet\SnippetValidator;
 use Stecman\Component\Symfony\Console\BashCompletion\Completion\CompletionAwareInterface;
 use Stecman\Component\Symfony\Console\BashCompletion\CompletionContext;
@@ -79,7 +82,12 @@ class SnippetsValidateCommand extends ShopwareCommand implements CompletionAware
         $validator = $this->container->get('shopware.snippet_validator');
 
         if (empty($argument)) {
-            $invalidPaths = $validator->validate($this->container->getParameter('kernel.root_dir') . '/snippets');
+            $rootDir = $this->container->getParameter('kernel.root_dir');
+            if (!\is_string($rootDir)) {
+                throw new RuntimeException('Parameter kernel.root_dir has to be an string');
+            }
+
+            $invalidPaths = $validator->validate($rootDir . '/snippets');
             $invalidPaths = array_merge(
                 $invalidPaths,
                 $this->validatePlugins($validator)
@@ -103,7 +111,7 @@ class SnippetsValidateCommand extends ShopwareCommand implements CompletionAware
     }
 
     /**
-     * @throws \Exception
+     * @throws Exception
      *
      * @return string[]
      */
@@ -135,7 +143,7 @@ class SnippetsValidateCommand extends ShopwareCommand implements CompletionAware
     {
         $invalidPaths = [];
 
-        foreach (new \DirectoryIterator($pluginBasePath) as $pluginDir) {
+        foreach (new DirectoryIterator($pluginBasePath) as $pluginDir) {
             if ($pluginDir->isDot() || !$pluginDir->isDir()) {
                 continue;
             }

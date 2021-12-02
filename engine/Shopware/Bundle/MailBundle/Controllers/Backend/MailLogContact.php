@@ -25,8 +25,12 @@
 namespace Shopware\Bundle\MailBundle\Controllers\Backend;
 
 use Shopware\Models\Mail\Contact;
+use Shopware_Controllers_Backend_Application;
 
-class MailLogContact extends \Shopware_Controllers_Backend_Application
+/**
+ * @extends \Shopware_Controllers_Backend_Application<Contact>
+ */
+class MailLogContact extends Shopware_Controllers_Backend_Application
 {
     /**
      * {@inheritdoc}
@@ -43,7 +47,7 @@ class MailLogContact extends \Shopware_Controllers_Backend_Application
      */
     protected function getList($offset, $limit, $sort = [], $filter = [], array $wholeParams = [])
     {
-        if (!array_key_exists('id', $wholeParams)) {
+        if (!\array_key_exists('id', $wholeParams)) {
             return parent::getList($offset, $limit, $sort, $filter, $wholeParams);
         }
 

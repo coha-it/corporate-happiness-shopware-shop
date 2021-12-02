@@ -24,7 +24,9 @@
 
 namespace Shopware\Bundle\PluginInstallerBundle\Service;
 
+use DirectoryIterator;
 use PDO;
+use RuntimeException;
 use Shopware\Components\Plugin;
 use Symfony\Component\ClassLoader\Psr4ClassLoader;
 
@@ -60,7 +62,7 @@ class PluginInitializer
     }
 
     /**
-     * @throws \RuntimeException
+     * @throws RuntimeException
      *
      * @return Plugin[]
      */
@@ -83,7 +85,7 @@ class PluginInitializer
         $this->activePlugins = $stmt->fetchAll(PDO::FETCH_UNIQUE);
 
         foreach ($this->activePlugins as $pluginName => &$pluginData) {
-            if (in_array($pluginData['namespace'], ['ShopwarePlugins', 'ProjectPlugins'], true)) {
+            if (\in_array($pluginData['namespace'], ['ShopwarePlugins', 'ProjectPlugins'], true)) {
                 $shopwarePlugins[] = $pluginName;
             }
             $pluginData = $pluginData['version'];
@@ -92,7 +94,7 @@ class PluginInitializer
 
         // As first we register all plugin namespaces, to make sure to all namespaces are available on plugin construction
         foreach ($this->pluginDirectories as $pluginNamespace => $pluginDirectory) {
-            foreach (new \DirectoryIterator($pluginDirectory) as $pluginDir) {
+            foreach (new DirectoryIterator($pluginDirectory) as $pluginDir) {
                 if ($pluginDir->isFile() || strpos($pluginDir->getBasename(), '.') === 0) {
                     continue;
                 }
@@ -107,7 +109,7 @@ class PluginInitializer
 
                 $pluginsAvailable[$pluginName] = [
                     'className' => '\\' . $pluginName . '\\' . $pluginName,
-                    'isActive' => in_array($pluginName, $shopwarePlugins, true),
+                    'isActive' => \in_array($pluginName, $shopwarePlugins, true),
                     'pluginFile' => $pluginFile,
                     'pluginNamespace' => $pluginNamespace,
                 ];
@@ -116,14 +118,14 @@ class PluginInitializer
 
         foreach ($pluginsAvailable as $pluginName => $pluginDetails) {
             if (!class_exists($pluginDetails['className'])) {
-                throw new \RuntimeException(sprintf('Unable to load class %s for plugin %s in file %s', $pluginDetails['className'], $pluginName, $pluginDetails['pluginFile']));
+                throw new RuntimeException(sprintf('Unable to load class %s for plugin %s in file %s', $pluginDetails['className'], $pluginName, $pluginDetails['pluginFile']));
             }
 
             /** @var Plugin $plugin */
             $plugin = new $pluginDetails['className']($pluginDetails['isActive'], $pluginDetails['pluginNamespace']);
 
             if (!$plugin instanceof Plugin) {
-                throw new \RuntimeException(sprintf('Class %s must extend %s in file %s', get_class($plugin), Plugin::class, $pluginDetails['pluginFile']));
+                throw new RuntimeException(sprintf('Class %s must extend %s in file %s', \get_class($plugin), Plugin::class, $pluginDetails['pluginFile']));
             }
 
             $plugins[$plugin->getName()] = $plugin;
@@ -156,7 +158,7 @@ class PluginInitializer
         }
 
         if ($this->originalErrorHandler) {
-            return call_user_func($this->originalErrorHandler, $errno, $errstr, $errfile, $errline);
+            return \call_user_func($this->originalErrorHandler, $errno, $errstr, $errfile, $errline);
         }
     }
 }

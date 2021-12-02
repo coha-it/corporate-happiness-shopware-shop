@@ -26,6 +26,7 @@ declare(strict_types=1);
 
 namespace Shopware\Bundle\SitemapBundle\ConfigHandler;
 
+use DateTimeImmutable;
 use Doctrine\DBAL\Connection;
 use Shopware\Bundle\SitemapBundle\Service\ConfigHandler;
 
@@ -55,18 +56,18 @@ class Database implements ConfigHandlerInterface
         $this->connection->exec('TRUNCATE s_sitemap_custom');
 
         $customUrls = array_map(static function (array $customUrl) {
-            if (array_key_exists('shopId', $customUrl)) {
+            if (\array_key_exists('shopId', $customUrl)) {
                 $customUrl['shop_id'] = $customUrl['shopId'];
                 unset($customUrl['shopId']);
             }
 
-            if (array_key_exists('lastMod', $customUrl)) {
+            if (\array_key_exists('lastMod', $customUrl)) {
                 $customUrl['last_mod'] = $customUrl['lastMod'];
                 unset($customUrl['lastMod']);
             }
 
             if (!$customUrl['last_mod']) {
-                $customUrl['last_mod'] = (new \DateTimeImmutable('now'))->format('Y-m-d H:i:s');
+                $customUrl['last_mod'] = (new DateTimeImmutable('now'))->format('Y-m-d H:i:s');
             }
 
             if (isset($customUrl['changeFreq'])) {
@@ -93,7 +94,7 @@ class Database implements ConfigHandlerInterface
         $this->connection->exec('TRUNCATE s_sitemap_exclude');
 
         $excludedUrls = array_map(static function (array $excludedUrl) {
-            if (array_key_exists('shopId', $excludedUrl)) {
+            if (\array_key_exists('shopId', $excludedUrl)) {
                 $excludedUrl['shop_id'] = $excludedUrl['shopId'];
                 unset($excludedUrl['shopId']);
             }

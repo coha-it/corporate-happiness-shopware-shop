@@ -31,7 +31,7 @@
 abstract class Enlight_Plugin_Bootstrap extends Enlight_Class
 {
     /**
-     * @var string contains the name of the plugin
+     * @var string|null contains the name of the plugin
      */
     protected $name;
 
@@ -62,7 +62,7 @@ abstract class Enlight_Plugin_Bootstrap extends Enlight_Class
     /**
      * Getter method for the plugin name property.
      *
-     * @return string
+     * @return string|null
      */
     public function getName()
     {
@@ -71,8 +71,6 @@ abstract class Enlight_Plugin_Bootstrap extends Enlight_Class
 
     /**
      * Setter method for the collection property.
-     *
-     * @param Enlight_Plugin_PluginCollection|null $collection
      *
      * @return Enlight_Plugin_Bootstrap
      */
@@ -108,8 +106,6 @@ abstract class Enlight_Plugin_Bootstrap extends Enlight_Class
      * Get service from resource loader
      *
      * @param string $name
-     *
-     * @return mixed
      */
     public function get($name)
     {
