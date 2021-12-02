@@ -130,3 +130,4 @@ DirectoryIndex shopware.php
 Redirect /koeln /botschafter-ausbildung-in-koeln
 Redirect /koln /koeln
 Redirect /cologne /koeln
+Redirect /intensiv-seminar-das-neue-fuehren https://das-neue-fuehren.de/intensiv-seminar/
