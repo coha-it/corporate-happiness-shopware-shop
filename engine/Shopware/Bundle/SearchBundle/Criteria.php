@@ -419,8 +419,11 @@ class Criteria extends Extendable implements ReflectionAwareInterface
     }
 
     /**
-     * {@inheritdoc}
+     * @return array<string, mixed>
+     *
+     * @deprecated - Native return type will be added with Shopware 5.8
      */
+    #[\ReturnTypeWillChange]
     public function jsonSerialize()
     {
         $data = get_object_vars($this);
@@ -503,7 +506,9 @@ class Criteria extends Extendable implements ReflectionAwareInterface
     }
 
     /**
-     * @param string $class
+     * @template TCondition of ConditionInterface
+     *
+     * @param class-string<TCondition> $class
      *
      * @return bool
      */
@@ -515,9 +520,11 @@ class Criteria extends Extendable implements ReflectionAwareInterface
     }
 
     /**
-     * @param string $class
+     * @template TCondition of ConditionInterface
      *
-     * @return ConditionInterface[]
+     * @param class-string<TCondition> $class
+     *
+     * @return array<TCondition>
      */
     public function getConditionsByClass($class)
     {

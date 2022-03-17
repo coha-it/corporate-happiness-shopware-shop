@@ -5,7 +5,7 @@
         'type' => 'library',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
-        'reference' => '25d14e7334b7da60d00c24c0cc1250311f6e8511',
+        'reference' => '9821b04b99a44dfc6d7cca46fa27c1f1a11ba64b',
         'name' => '__root__',
         'dev' => false,
     ),
@@ -16,7 +16,7 @@
             'type' => 'library',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
-            'reference' => '25d14e7334b7da60d00c24c0cc1250311f6e8511',
+            'reference' => '9821b04b99a44dfc6d7cca46fa27c1f1a11ba64b',
             'dev_requirement' => false,
         ),
         'knplabs/gaufrette' => array(

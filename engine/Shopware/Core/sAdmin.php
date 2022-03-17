@@ -30,6 +30,7 @@ use Shopware\Bundle\AccountBundle\Service\OptInLoginServiceInterface;
 use Shopware\Bundle\AttributeBundle\Service\CrudServiceInterface;
 use Shopware\Bundle\AttributeBundle\Service\DataLoader;
 use Shopware\Bundle\AttributeBundle\Service\DataLoaderInterface;
+use Shopware\Bundle\CartBundle\CartKey;
 use Shopware\Bundle\StoreFrontBundle\Gateway\PaymentGatewayInterface;
 use Shopware\Bundle\StoreFrontBundle\Service\ContextServiceInterface;
 use Shopware\Bundle\StoreFrontBundle\Service\ListProductServiceInterface;
@@ -771,6 +772,7 @@ class sAdmin implements \Enlight_Hook
             $sErrorMessages[] = $this->snippetManager->getNamespace('frontend/account/internalMessages')
                 ->get('LoginFailure', 'Wrong email or password');
             $this->session->offsetUnset('sUserMail');
+            $this->session->offsetUnset('sUserPasswordChangeDate');
             $this->session->offsetUnset('sUserId');
         }
 
@@ -798,14 +800,14 @@ class sAdmin implements \Enlight_Hook
 
         if ($ignoreAccountMode) {
             $sql = '
-                SELECT id, customergroup, password, encoder
+                SELECT id, customergroup, password, encoder, password_change_date
                 FROM s_user WHERE email = ? AND active=1
                 AND (lockeduntil < now() OR lockeduntil IS NULL) '
                 . $addScopeSql
                 . $preHashedSql;
         } else {
             $sql = '
-                SELECT id, customergroup, password, encoder
+                SELECT id, customergroup, password, encoder, password_change_date
                 FROM s_user
                 WHERE email = ? AND active=1 AND accountmode != 1
                 AND (lockeduntil < now() OR lockeduntil IS NULL) '
@@ -871,11 +873,14 @@ class sAdmin implements \Enlight_Hook
 
         $userId = $this->session->offsetGet('sUserId');
         $userMail = $this->session->offsetGet('sUserMail');
+        $passwordChangeDate = $this->session->offsetGet('sUserPasswordChangeDate');
 
         if (empty($userMail)
+            || empty($passwordChangeDate)
             || empty($userId)
         ) {
             $this->session->offsetUnset('sUserMail');
+            $this->session->offsetUnset('sUserPasswordChangeDate');
             $this->session->offsetUnset('sUserId');
 
             return false;
@@ -883,13 +888,14 @@ class sAdmin implements \Enlight_Hook
 
         $sql = '
             SELECT * FROM s_user
-            WHERE email = ? AND id = ?
+            WHERE password_change_date = ? AND email = ? AND id = ?
             AND UNIX_TIMESTAMP(lastlogin) >= (UNIX_TIMESTAMP(NOW())-?)
         ';
 
         $getUser = $this->db->fetchRow(
             $sql,
             [
+                $passwordChangeDate,
                 $userMail,
                 $userId,
                 (int) ini_get('session.gc_maxlifetime'),
@@ -927,6 +933,7 @@ class sAdmin implements \Enlight_Hook
             return true;
         }
         $this->session->offsetUnset('sUserMail');
+        $this->session->offsetUnset('sUserPasswordChangeDate');
         $this->session->offsetUnset('sUserId');
         $this->eventManager->notify(
             'Shopware_Modules_Admin_CheckUser_Failure',
@@ -1633,7 +1640,7 @@ class sAdmin implements \Enlight_Hook
      */
     public function sRiskORDERVALUEMORE($user, $order, $value)
     {
-        $basketValue = $order['AmountNumeric'];
+        $basketValue = $order[CartKey::AMOUNT_NUMERIC];
 
         if ($this->sSYSTEM->sCurrency['factor']) {
             $basketValue /= $this->sSYSTEM->sCurrency['factor'];
@@ -1653,7 +1660,7 @@ class sAdmin implements \Enlight_Hook
      */
     public function sRiskORDERVALUELESS($user, $order, $value)
     {
-        $basketValue = $order['AmountNumeric'];
+        $basketValue = $order[CartKey::AMOUNT_NUMERIC];
 
         if ($this->sSYSTEM->sCurrency['factor']) {
             $basketValue /= $this->sSYSTEM->sCurrency['factor'];
@@ -1880,7 +1887,7 @@ class sAdmin implements \Enlight_Hook
      */
     public function sRiskORDERPOSITIONSMORE($user, $order, $value)
     {
-        return \is_array($order['content']) ? \count($order['content']) : $order['content'] >= $value;
+        return \is_array($order[CartKey::POSITIONS]) ? \count($order[CartKey::POSITIONS]) : $order[CartKey::POSITIONS] >= $value;
     }
 
     /**
@@ -1894,7 +1901,7 @@ class sAdmin implements \Enlight_Hook
      */
     public function sRiskATTRIS($user, $order, $value)
     {
-        if (!empty($order['content'])) {
+        if (!empty($order[CartKey::POSITIONS])) {
             $value = explode('|', $value);
 
             if (!isset($value[0], $value[1])) {
@@ -1918,7 +1925,7 @@ class sAdmin implements \Enlight_Hook
      */
     public function sRiskATTRISNOT($user, $order, $value)
     {
-        if (!empty($order['content'])) {
+        if (!empty($order[CartKey::POSITIONS])) {
             $value = explode('|', $value);
 
             if (!isset($value[0], $value[1])) {
@@ -3245,6 +3252,7 @@ class sAdmin implements \Enlight_Hook
         }
 
         $this->session->offsetSet('sUserMail', $email);
+        $this->session->offsetSet('sUserPasswordChangeDate', $getUser['password_change_date']);
         $this->session->offsetSet('sUserId', $userId);
         $this->session->offsetSet('sNotesQuantity', $this->moduleManager->Basket()->sCountNotes());
 
@@ -3622,6 +3630,7 @@ SQL;
         );
 
         $this->session->offsetUnset('sUserMail');
+        $this->session->offsetUnset('sUserPasswordChangeDate');
         $this->session->offsetUnset('sUserId');
 
         return $sErrorMessages;
@@ -4333,10 +4342,6 @@ SQL;
 
         if (!$shippingAddress instanceof Address) {
             return null;
-        }
-
-        if ($shippingAddress->getCustomer()->getId() !== $customer->getId()) {
-            throw new \UnexpectedValueException('Address did not match the user');
         }
 
         $shippingAddressArray = $this->convertToLegacyAddressArray($shippingAddress);

@@ -39,9 +39,11 @@ use Shopware\Models\Widget\Widget;
  * @method Shopware_Plugins_Core_HttpCache_Bootstrap          HttpCache()
  * @method Shopware_Plugins_Core_MarketingAggregate_Bootstrap MarketingAggregate()
  * @method Shopware_Plugins_Core_PostFilter_Bootstrap         PostFilter()
+ * @method Shopware_Plugins_Core_Router_Bootstrap             Router()
  * @method Shopware_Plugins_Frontend_Statistics_Bootstrap     Statistics()
  * @method Shopware_Plugins_Backend_SwagUpdate_Bootstrap      SwagUpdate()
  * @method Shopware_Plugins_Frontend_TagCloud_Bootstrap       TagCloud()
+ * @method Shopware_Plugins_Core_RestApi_Bootstrap            RestApi()
  * @method Enlight_Controller_Plugins_ViewRenderer_Bootstrap  ViewRenderer()
  */
 class Shopware_Components_Plugin_Namespace extends Enlight_Plugin_Namespace_Config

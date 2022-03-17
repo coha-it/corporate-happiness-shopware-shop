@@ -107,9 +107,9 @@ class Kernel extends SymfonyKernel
      * Is available in the DIC as parameter 'shopware.release.*' or a Struct containing all the parameters below.
      */
     protected $release = [
-        'version' => '5.7.6',
+        'version' => '5.7.7',
         'version_text' => '',
-        'revision' => '202110251506',
+        'revision' => '202201031510',
     ];
 
     /**
@@ -130,7 +130,7 @@ class Kernel extends SymfonyKernel
     protected $container;
 
     /**
-     * @var string[]
+     * @var array<string, string>
      */
     private $activePlugins = [];
 

@@ -27,12 +27,15 @@ namespace Shopware\Bundle\SearchBundle\Condition;
 use Assert\Assertion;
 use JsonSerializable;
 use Shopware\Bundle\SearchBundle\ConditionInterface;
+use Shopware\Components\ObjectJsonSerializeTraitDeprecated;
 
 /**
- * @deprecated in 5.6, will be removed in 5.7, without replacement
+ * @deprecated in 5.6, will be removed in 5.8, without replacement
  */
 class SimpleCondition implements ConditionInterface, JsonSerializable
 {
+    use ObjectJsonSerializeTraitDeprecated;
+
     /**
      * @var string
      */
@@ -54,13 +57,5 @@ class SimpleCondition implements ConditionInterface, JsonSerializable
     public function getName()
     {
         return $this->name;
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function jsonSerialize()
-    {
-        return get_object_vars($this);
     }
 }
